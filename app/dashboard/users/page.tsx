@@ -56,7 +56,7 @@ export default function UsersPage() {
     const matchesSearch =
       user.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
       user.email.toLowerCase().includes(searchTerm.toLowerCase())
-    const matchesRole = roleFilter === "all" || user.role === roleFilter
+    const matchesRole = roleFilter === "all" || user.profilLabel === roleFilter
     const matchesStatus = statusFilter === "all" || user.status === statusFilter
 
     return matchesSearch && matchesRole && matchesStatus
@@ -184,9 +184,15 @@ export default function UsersPage() {
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
+                        <SelectItem value="Administratif">Administratif</SelectItem>
+                        <SelectItem value="Consultant">Consultant</SelectItem>
+                        <SelectItem value="Prospect ou visiteur">Prospect ou visiteur</SelectItem>
+                        <SelectItem value="Candidat">Candidat</SelectItem>
+                        <SelectItem value="Professeur">Professeur</SelectItem>
+                        <SelectItem value="Direction">Direction</SelectItem>
+                        <SelectItem value="Financier">Financier</SelectItem>
+                        <SelectItem value="Organisme">Organisme</SelectItem>
                         <SelectItem value="Admin">Admin</SelectItem>
-                        <SelectItem value="Editor">Editor</SelectItem>
-                        <SelectItem value="User">User</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
@@ -230,22 +236,28 @@ export default function UsersPage() {
 
           <div className="flex gap-2">
             <Select value={roleFilter} onValueChange={setRoleFilter}>
-              <SelectTrigger className="w-[130px]">
+              <SelectTrigger className="w-[150px]">
                 <Filter className="h-4 w-4 mr-2" />
-                <SelectValue placeholder="Role" />
+                <SelectValue placeholder="All Roles" />
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">All Roles</SelectItem>
+                <SelectItem value="Administratif">Administratif</SelectItem>
+                <SelectItem value="Consultant">Consultant</SelectItem>
+                <SelectItem value="Prospect ou visiteur">Prospect ou visiteur</SelectItem>
+                <SelectItem value="Candidat">Candidat</SelectItem>
+                <SelectItem value="Professeur">Professeur</SelectItem>
+                <SelectItem value="Direction">Direction</SelectItem>
+                <SelectItem value="Financier">Financier</SelectItem>
+                <SelectItem value="Organisme">Organisme</SelectItem>
                 <SelectItem value="Admin">Admin</SelectItem>
-                <SelectItem value="Editor">Editor</SelectItem>
-                <SelectItem value="User">User</SelectItem>
               </SelectContent>
             </Select>
 
             <Select value={statusFilter} onValueChange={setStatusFilter}>
               <SelectTrigger className="w-[130px]">
                 <Filter className="h-4 w-4 mr-2" />
-                <SelectValue placeholder="Status" />
+                <SelectValue placeholder="All Status" />
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">All Status</SelectItem>
@@ -318,7 +330,7 @@ export default function UsersPage() {
                   <TableCell className="p-4 align-middle">
                     <div className="flex flex-col gap-1">
                       <Badge
-                        className="bg-[#3A90DA] text-white hover:bg-[#2980c9]"
+                        variant={user.profilLabel === "Administratif" ? "default" : user.profilLabel === "Consultant" ? "secondary" : "outline"}
                       >
                         {user.profilLabel}
                       </Badge>
@@ -327,11 +339,7 @@ export default function UsersPage() {
                   </TableCell>
                   <TableCell className="p-4 align-middle">
                     <Badge 
-                      className={
-                        user.status === "Active" 
-                          ? "bg-green-100 text-green-800 hover:bg-green-200" 
-                          : "bg-red-100 text-red-800 hover:bg-red-200"
-                      }
+                      variant={user.status === "Active" ? "default" : "secondary"}
                     >
                       {user.status}
                     </Badge>
