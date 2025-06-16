@@ -19,6 +19,7 @@ import { useAuthStatus } from "@/hooks/useAuth"
 import { useRouter, usePathname } from "next/navigation"
 import { useEffect } from "react"
 
+
 interface DashboardLayoutProps {
   children: React.ReactNode
 }

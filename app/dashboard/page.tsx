@@ -38,9 +38,15 @@ export default function DashboardPage() {
         </h1>
         <div className="flex items-center gap-2">
           <Badge variant="secondary" className="bg-[#3A90DA] text-white">
-            {user.role.charAt(0).toUpperCase() + user.role.slice(1)}
+            {user.profilLabel || user.role}
+          </Badge>
+          <Badge variant="outline" className="text-gray-600">
+            Profil: {user.profil}
           </Badge>
           <span className="text-gray-600">{user.email}</span>
+        </div>
+        <div className="text-sm text-gray-500">
+          Type: {user.typeUtilisateur}
         </div>
       </div>
 

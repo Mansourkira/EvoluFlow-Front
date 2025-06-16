@@ -113,3 +113,41 @@
   }
 
 }  */
+
+/* Print styles */
+@media print {
+  body {
+    font-size: 12px;
+    line-height: 1.4;
+  }
+  
+  .no-print {
+    display: none !important;
+  }
+  
+  table {
+    page-break-inside: auto;
+  }
+  
+  tr {
+    page-break-inside: avoid;
+    page-break-after: auto;
+  }
+  
+  thead {
+    display: table-header-group;
+  }
+  
+  .print-title {
+    font-size: 18px;
+    font-weight: bold;
+    margin-bottom: 10px;
+    color: #000;
+  }
+  
+  .print-date {
+    font-size: 10px;
+    color: #666;
+    margin-bottom: 15px;
+  }
+}

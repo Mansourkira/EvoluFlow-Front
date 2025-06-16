@@ -30,78 +30,13 @@ import {
   FileText,
   FileSpreadsheet,
   Filter,
+  RefreshCw,
 } from "lucide-react"
-
-// Sample user data
-const sampleUsers = [
-  {
-    id: 1,
-    name: "John Doe",
-    email: "john.doe@example.com",
-    role: "Admin",
-    status: "Active",
-    joinDate: "2024-01-15",
-  },
-  {
-    id: 2,
-    name: "Jane Smith",
-    email: "jane.smith@example.com",
-    role: "User",
-    status: "Active",
-    joinDate: "2024-02-20",
-  },
-  {
-    id: 3,
-    name: "Mike Johnson",
-    email: "mike.johnson@example.com",
-    role: "Editor",
-    status: "Inactive",
-    joinDate: "2024-01-10",
-  },
-  {
-    id: 4,
-    name: "Sarah Wilson",
-    email: "sarah.wilson@example.com",
-    role: "User",
-    status: "Active",
-    joinDate: "2024-03-05",
-  },
-  {
-    id: 5,
-    name: "David Brown",
-    email: "david.brown@example.com",
-    role: "Admin",
-    status: "Active",
-    joinDate: "2024-02-28",
-  },
-  {
-    id: 6,
-    name: "Lisa Davis",
-    email: "lisa.davis@example.com",
-    role: "User",
-    status: "Inactive",
-    joinDate: "2024-01-25",
-  },
-  {
-    id: 7,
-    name: "Tom Anderson",
-    email: "tom.anderson@example.com",
-    role: "Editor",
-    status: "Active",
-    joinDate: "2024-03-10",
-  },
-  {
-    id: 8,
-    name: "Emma Taylor",
-    email: "emma.taylor@example.com",
-    role: "User",
-    status: "Active",
-    joinDate: "2024-02-15",
-  },
-]
+import { useUsers } from "@/hooks/useAuth"
 
 export default function UsersPage() {
-  const [users, setUsers] = useState(sampleUsers)
+  // Use custom hook to fetch users from API
+  const { users, isLoading, error, refetch } = useUsers()
   const [searchTerm, setSearchTerm] = useState("")
   const [roleFilter, setRoleFilter] = useState("all")
   const [statusFilter, setStatusFilter] = useState("all")
@@ -134,19 +69,20 @@ export default function UsersPage() {
 
   const handleAddUser = () => {
     if (newUser.name && newUser.email) {
-      const user = {
-        id: users.length + 1,
-        ...newUser,
-        joinDate: new Date().toISOString().split("T")[0],
-      }
-      setUsers([...users, user])
+      // TODO: Implement API call to add user
+      console.log('Adding user:', newUser)
       setNewUser({ name: "", email: "", role: "User", status: "Active" })
       setIsAddUserOpen(false)
+      // Refresh users list after adding
+      refetch()
     }
   }
 
   const handleDeleteUser = (id: number) => {
-    setUsers(users.filter((user) => user.id !== id))
+    // TODO: Implement API call to delete user
+    console.log('Deleting user with id:', id)
+    // Refresh users list after deletion
+    refetch()
   }
 
   const handleExport = (format: string) => {
@@ -160,16 +96,28 @@ export default function UsersPage() {
   }
 
   return (
-    <div className="container mx-auto py-8 px-4">
-      <div className="max-w-7xl mx-auto">
-        {/* Header */}
-        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
-          <div>
-            <h1 className="text-3xl font-bold">User Management</h1>
-            <p className="text-muted-foreground">Manage your users and their permissions</p>
-          </div>
+    <div className="min-h-screen bg-background">
+      <div className="container mx-auto py-8 px-4">
+        <div className="max-w-7xl mx-auto space-y-6">
+          {/* Header */}
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+            <div>
+              <h1 className="text-3xl font-bold tracking-tight text-foreground">User Management</h1>
+              <p className="text-muted-foreground">Manage your users and their permissions</p>
+            </div>
 
           <div className="flex flex-wrap gap-2">
+            {/* Refresh Button */}
+            <Button 
+              variant="outline" 
+              size="sm" 
+              onClick={() => refetch()}
+              disabled={isLoading}
+            >
+              <RefreshCw className={`h-4 w-4 mr-2 ${isLoading ? 'animate-spin' : ''}`} />
+              Actualiser
+            </Button>
+
             {/* Export Dropdown */}
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
@@ -308,60 +256,108 @@ export default function UsersPage() {
           </div>
         </div>
 
+        {/* Error State */}
+        {error && (
+          <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-md mb-4">
+            <div className="flex items-center gap-2">
+              <span>{error}</span>
+              <Button 
+                variant="outline" 
+                size="sm" 
+                onClick={() => refetch()}
+                className="ml-auto"
+              >
+                Réessayer
+              </Button>
+            </div>
+          </div>
+        )}
+
+        {/* Loading State */}
+        {isLoading && (
+          <div className="flex items-center justify-center py-8">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#3A90DA]"></div>
+            <span className="ml-2 text-gray-600">Chargement des utilisateurs...</span>
+          </div>
+        )}
+
         {/* Users Table */}
-        <div className="border rounded-lg overflow-hidden">
-          <Table>
+        {!isLoading && !error && (
+          <div className="rounded-lg border bg-card text-card-foreground shadow-sm">
+            <Table>
             <TableHeader>
-              <TableRow>
-                <TableHead>Name</TableHead>
-                <TableHead>Email</TableHead>
-                <TableHead>Role</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead>Join Date</TableHead>
-                <TableHead className="text-center">Actions</TableHead>
+              <TableRow className="border-b bg-muted/50 hover:bg-muted/50">
+                <TableHead className="h-12 px-4 text-left align-middle font-medium text-muted-foreground">Name</TableHead>
+                <TableHead className="h-12 px-4 text-left align-middle font-medium text-muted-foreground">Email</TableHead>
+                <TableHead className="h-12 px-4 text-left align-middle font-medium text-muted-foreground">Role</TableHead>
+                <TableHead className="h-12 px-4 text-left align-middle font-medium text-muted-foreground">Status</TableHead>
+                <TableHead className="h-12 px-4 text-left align-middle font-medium text-muted-foreground">Join Date</TableHead>
+                <TableHead className="h-12 px-4 text-center align-middle font-medium text-muted-foreground">Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {paginatedUsers.map((user) => (
-                <TableRow key={user.id}>
-                  <TableCell className="font-medium">{user.name}</TableCell>
-                  <TableCell>
+                <TableRow 
+                  key={user.id} 
+                  className="border-b transition-colors hover:bg-muted/50 data-[state=selected]:bg-muted"
+                >
+                  <TableCell className="p-4 align-middle font-medium">{user.name}</TableCell>
+                  <TableCell className="p-4 align-middle">
                     <div className="flex items-center gap-2">
-                      {user.email}
+                      <span className="text-muted-foreground">{user.email}</span>
                       <Button
                         variant="ghost"
                         size="sm"
                         onClick={() => handleSendEmail(user.email)}
-                        className="h-6 w-6 p-0"
+                        className="h-6 w-6 p-0 hover:bg-blue-100 hover:text-blue-600"
                       >
                         <Mail className="h-3 w-3" />
                       </Button>
                     </div>
                   </TableCell>
-                  <TableCell>
-                    <Badge
-                      variant={user.role === "Admin" ? "default" : user.role === "Editor" ? "secondary" : "outline"}
+                  <TableCell className="p-4 align-middle">
+                    <div className="flex flex-col gap-1">
+                      <Badge
+                        className="bg-[#3A90DA] text-white hover:bg-[#2980c9]"
+                      >
+                        {user.profilLabel}
+                      </Badge>
+                      <span className="text-xs text-muted-foreground">Profil: {user.profil}</span>
+                    </div>
+                  </TableCell>
+                  <TableCell className="p-4 align-middle">
+                    <Badge 
+                      className={
+                        user.status === "Active" 
+                          ? "bg-green-100 text-green-800 hover:bg-green-200" 
+                          : "bg-red-100 text-red-800 hover:bg-red-200"
+                      }
                     >
-                      {user.role}
+                      {user.status}
                     </Badge>
                   </TableCell>
-                  <TableCell>
-                    <Badge variant={user.status === "Active" ? "default" : "secondary"}>{user.status}</Badge>
-                  </TableCell>
-                  <TableCell>{user.joinDate}</TableCell>
-                  <TableCell>
+                  <TableCell className="p-4 align-middle text-muted-foreground">{user.joinDate}</TableCell>
+                  <TableCell className="p-4 align-middle">
                     <div className="flex justify-center gap-1">
-                      <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+                      <Button 
+                        variant="ghost" 
+                        size="sm" 
+                        className="h-8 w-8 p-0 hover:bg-blue-100 hover:text-blue-600 transition-colors"
+                      >
                         <Eye className="h-4 w-4" />
                       </Button>
-                      <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+                      <Button 
+                        variant="ghost" 
+                        size="sm" 
+                        className="h-8 w-8 p-0 hover:bg-green-100 hover:text-green-600 transition-colors"
+                      >
                         <Edit className="h-4 w-4" />
                       </Button>
                       <Button
                         variant="ghost"
                         size="sm"
-                        className="h-8 w-8 p-0 text-destructive hover:text-destructive"
-                        onClick={() => handleDeleteUser(user.id)}
+                        className="h-8 w-8 p-0 hover:bg-red-100 hover:text-red-600 transition-colors"
+                        onClick={() => user.id && handleDeleteUser(user.id)}
                       >
                         <Trash2 className="h-4 w-4" />
                       </Button>
@@ -372,8 +368,10 @@ export default function UsersPage() {
             </TableBody>
           </Table>
         </div>
+        )}
 
         {/* Pagination */}
+        {!isLoading && !error && (
         <div className="flex flex-col sm:flex-row justify-between items-center gap-4 mt-6">
           <div className="text-sm text-muted-foreground">
             Showing {startIndex + 1} to {Math.min(startIndex + itemsPerPage, filteredUsers.length)} of{" "}
@@ -416,7 +414,9 @@ export default function UsersPage() {
             </Button>
           </div>
         </div>
+        )}
       </div>
+    </div>
     </div>
   )
 }
