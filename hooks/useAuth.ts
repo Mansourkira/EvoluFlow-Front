@@ -1,19 +1,44 @@
 import { useState, useEffect, useCallback } from 'react'
 
+// Profile mapping
+const PROFILE_MAPPING = {
+  '01': 'Administratif',
+  '02': 'Consultant', 
+  '03': 'Prospect ou visiteur',
+  '04': 'Candidat',
+  '05': 'Professeur',
+  '06': 'Direction',
+  '07': 'Financier',
+  '08': 'Organisme',
+  '09': 'Admin'
+} as const
+
 // Types
 interface User {
-  id: number
+  id?: number
   email: string
   role: string
   name: string
   avatar?: string
+  profil: string
+  profilLabel: string
+  typeUtilisateur: string
+  status?: string
+  joinDate?: string
+}
+
+interface LoginApiResponse {
+  Nom_Prenom: string
+  E_mail: string
+  Type_Utilisateur: string
+  Profil: string
 }
 
 interface LoginResponse {
   success: boolean
   message: string
   user: User
-  token: string
+  token?: string
 }
 
 interface ApiError {
@@ -30,24 +55,44 @@ export const useLogin = () => {
     setError(null)
 
     try {
-      const response = await fetch('/api/auth/login', {
+      const response = await fetch('http://localhost:3000/api/v1/login', {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json',
+          'Content-Type': 'application/json', 
         },
-        body: JSON.stringify({ email, password }),
+        body: JSON.stringify({ E_mail: email, Mot_de_passe: password }),
       })
 
-      const data = await response.json()
-
-      if (response.ok && data.success) {
-        // Store user data in localStorage
-        localStorage.setItem('user', JSON.stringify(data.user))
-        localStorage.setItem('token', data.token)
+      if (response.ok) {
+        const data: LoginApiResponse = await response.json()
         
-        return data as LoginResponse
+        // Transform API response to our User format
+        const user: User = {
+          email: data.E_mail,
+          name: data.Nom_Prenom,
+          role: data.Type_Utilisateur,
+          profil: data.Profil,
+          profilLabel: PROFILE_MAPPING[data.Profil as keyof typeof PROFILE_MAPPING] || data.Profil,
+          typeUtilisateur: data.Type_Utilisateur
+        }
+
+        const loginResponse: LoginResponse = {
+          success: true,
+          message: 'Connexion réussie',
+          user: user,
+          token: `token_${Date.now()}` // Generate a simple token since API doesn't provide one
+        }
+
+        // Store user data in localStorage
+        localStorage.setItem('user', JSON.stringify(user))
+        if (loginResponse.token) {
+          localStorage.setItem('token', loginResponse.token)
+        }
+        
+        return loginResponse
       } else {
-        setError(data.error || 'Erreur de connexion')
+        const errorData = await response.json().catch(() => ({}))
+        setError(errorData.error || 'Email ou mot de passe incorrect')
         return null
       }
     } catch (err) {
@@ -85,7 +130,7 @@ export const useLogout = () => {
         // Clear local storage
         localStorage.removeItem('user')
         localStorage.removeItem('token')
-        
+          
         return true
       } else {
         setError(data.error || 'Erreur lors de la déconnexion')
@@ -188,5 +233,68 @@ export const useAuthStatus = () => {
     isAuthenticated, 
     user, 
     isLoading
+  }
+}
+
+// Custom hook for fetching users
+export const useUsers = () => {
+  const [users, setUsers] = useState<User[]>([])
+  const [isLoading, setIsLoading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+
+  const fetchUsers = async (): Promise<User[]> => {
+    setIsLoading(true)
+    setError(null)
+
+    try {
+      const response = await fetch('http://localhost:3000/api/v1/UsersList', {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      })
+
+      if (response.ok) {
+        const data: LoginApiResponse[] = await response.json()
+        
+        // Transform API response to our User format
+        const transformedUsers: User[] = data.map((apiUser, index) => ({
+          id: index + 1, // Generate an ID since API doesn't provide one
+          email: apiUser.E_mail,
+          name: apiUser.Nom_Prenom,
+          role: apiUser.Type_Utilisateur || 'User',
+          profil: apiUser.Profil,
+          profilLabel: PROFILE_MAPPING[apiUser.Profil as keyof typeof PROFILE_MAPPING] || apiUser.Profil,
+          typeUtilisateur: apiUser.Type_Utilisateur || 'User',
+          status: 'Active', // Default status since API doesn't provide this
+          joinDate: new Date().toISOString().split('T')[0] // Default to today
+        }))
+
+        setUsers(transformedUsers)
+        return transformedUsers
+      } else {
+        const errorData = await response.json().catch(() => ({}))
+        setError(errorData.error || 'Erreur lors de la récupération des utilisateurs')
+        return []
+      }
+    } catch (err) {
+      setError('Erreur de connexion au serveur')
+      console.error('Fetch users error:', err)
+      return []
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  // Fetch users on mount
+  useEffect(() => {
+    fetchUsers()
+  }, [])
+
+  return { 
+    users, 
+    isLoading, 
+    error, 
+    refetch: fetchUsers 
   }
 } 
