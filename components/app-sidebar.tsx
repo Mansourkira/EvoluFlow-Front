@@ -42,18 +42,15 @@ import {
 import { useAuthStatus, useLogout } from "@/hooks/useAuth"
 import { useRouter } from "next/navigation"
 import { useEffect, useState } from "react"
-import { getCompanyConfig, isFeatureEnabled } from "@/config/company"
 
 // Types for user roles
 type UserRole = 'admin' | 'consultant' | 'prospect' | 'candidat' | 'professeur' | 'direction' | 'financier' | 'organisme' | 'administratif'
 
-// Navigation structure based on company configuration
+// Navigation structure
 const getNavigationByRole = (role: UserRole, user: any) => {
-  const config = getCompanyConfig()
-  
   const baseNavigation = {
     dashboard: {
-      title: config.dashboardTitle,
+      title: "Tableau de bord",
       url: "/dashboard",
       icon: Home,
       isActive: true,
@@ -63,49 +60,37 @@ const getNavigationByRole = (role: UserRole, user: any) => {
       url: "#",
       icon: FolderOpen,
       items: [
-        // Conditionally include features based on configuration
-        ...(isFeatureEnabled('candidatesManagement') ? [{
-          title: config.industry === 'Santé' ? 'Gestion des Patients' : 
-                config.industry === 'Ressources Humaines' ? 'Candidats Emploi' :
-                'Gestion des Candidats',
+        {
+          title: 'Gestion des Candidats',
           url: "/dashboard/candidats",
           icon: Users,
-        }] : []),
-        ...(isFeatureEnabled('prospectsManagement') ? [{
-          title: config.industry === 'Immobilier' ? 'Prospects Immobiliers' :
-                config.industry === 'Ressources Humaines' ? 'Entreprises Clientes' :
-                'Gestion des Prospects',
+        },
+        {
+          title: 'Gestion des Prospects',
           url: "/dashboard/prospects",
           icon: Eye,
-        }] : []),
-        ...(isFeatureEnabled('languageTools') ? [{
+        },
+        {
           title: "Outils Langue",
           url: "/dashboard/outils-langue",
           icon: Languages,
-        }] : []),
-        ...(isFeatureEnabled('fileProcessing') ? [{
-          title: config.industry === 'Santé' ? 'Dossiers Médicaux' :
-                config.industry === 'Immobilier' ? 'Documents Propriétés' :
-                config.industry === 'Ressources Humaines' ? 'Traitement CV' :
-                'Traitement Dossier',
+        },
+        {
+          title: 'Traitement Dossier',
           url: "/dashboard/traitement-dossier",
           icon: FileText,
-        }] : []),
-        ...(isFeatureEnabled('examinations') ? [{
-          title: config.industry === 'Santé' ? 'Examens Médicaux' :
-                config.industry === 'Ressources Humaines' ? 'Tests de Compétences' :
-                'Examens',
+        },
+        {
+          title: 'Examens',
           url: "/dashboard/examens",
           icon: PenTool,
-        }] : []),
-        ...(isFeatureEnabled('products') ? [{
-          title: config.industry === 'Immobilier' ? 'Propriétés' :
-                config.industry === 'Éducation et Formation' ? 'Formations' :
-                'Produits',
+        },
+        {
+          title: 'Produits',
           url: "/dashboard/produits",
           icon: Package,
-        }] : []),
-      ].filter(item => item), // Remove empty items
+        },
+      ],
     },
     parametrage: {
       title: "Paramétrage",
@@ -139,22 +124,22 @@ const getNavigationByRole = (role: UserRole, user: any) => {
       url: "#",
       icon: TrendingUp,
       items: [
-        ...(isFeatureEnabled('marketing') ? [{
+        {
           title: "Marketing",
           url: "/dashboard/marketing",
           icon: TrendingUp,
-        }] : []),
-        ...(isFeatureEnabled('complaints') ? [{
-          title: config.industry === 'Santé' ? 'Réclamations Patients' : 'Réclamations',
+        },
+        {
+          title: 'Réclamations',
           url: "/dashboard/reclamations",
           icon: MessageSquare,
-        }] : []),
-        ...(isFeatureEnabled('reports') ? [{
+        },
+        {
           title: "Rapports",
           url: "/dashboard/rapports",
           icon: BarChart3,
-        }] : []),
-      ].filter(item => item),
+        },
+      ],
     },
     profils: {
       title: "Gestion des Profils",
@@ -172,21 +157,17 @@ const getNavigationByRole = (role: UserRole, user: any) => {
           icon: UserCheck,
         },
         {
-          title: config.industry === 'Santé' ? 'Profil Patient' : 'Profil Prospect',
+          title: 'Profil Prospect',
           url: "/dashboard/profil/prospect",
           icon: Eye,
         },
         {
-          title: config.industry === 'Santé' ? 'Profil Médecin' :
-                config.industry === 'Ressources Humaines' ? 'Profil Candidat' :
-                'Profil Candidat',
+          title: 'Profil Candidat',
           url: "/dashboard/profil/candidat",
           icon: User,
         },
         {
-          title: config.industry === 'Éducation et Formation' ? 'Profil Professeur' :
-                config.industry === 'Santé' ? 'Profil Spécialiste' :
-                'Profil Expert',
+          title: 'Profil Expert',
           url: "/dashboard/profil/professeur",
           icon: GraduationCap,
         },
@@ -209,42 +190,28 @@ const getNavigationByRole = (role: UserRole, user: any) => {
     },
   }
 
-  // Filter navigation based on user role and enabled features
+  // Filter navigation based on user role
   const getNavItems = () => {
     const items = []
     
-    // Always include gestion if it has items
-    if (baseNavigation.gestion.items.length > 0) {
-      items.push(baseNavigation.gestion)
-    }
+    // Always include gestion
+    items.push(baseNavigation.gestion)
     
     switch (role) {
       case 'admin':
         items.push(baseNavigation.parametrage)
-        if (baseNavigation.communication.items.length > 0) {
-          items.push(baseNavigation.communication)
-        }
-        if (isFeatureEnabled('profileManagement')) {
-          items.push(baseNavigation.profils)
-        }
+        items.push(baseNavigation.communication)
+        items.push(baseNavigation.profils)
         break
       case 'direction':
-        if (baseNavigation.communication.items.length > 0) {
-          items.push(baseNavigation.communication)
-        }
-        if (isFeatureEnabled('profileManagement')) {
-          items.push(baseNavigation.profils)
-        }
+        items.push(baseNavigation.communication)
+        items.push(baseNavigation.profils)
         break
       case 'consultant':
-        if (baseNavigation.communication.items.length > 0) {
-          items.push(baseNavigation.communication)
-        }
+        items.push(baseNavigation.communication)
         break
       case 'financier':
-        if (isFeatureEnabled('profileManagement')) {
-          items.push(baseNavigation.profils)
-        }
+        items.push(baseNavigation.profils)
         break
     }
     
@@ -254,47 +221,39 @@ const getNavigationByRole = (role: UserRole, user: any) => {
   return getNavItems()
 }
 
-// Team/Organization data based on configuration
+// Team/Organization data
 const getTeamData = (user: any) => {
-  const config = getCompanyConfig()
-  
   return [{
-    name: config.name,
+    name: "EvoluFlow",
     logo: Building2,
     plan: user?.role === 'admin' ? 'Admin' : 'Utilisateur',
   }]
 }
 
-// Projects based on user role and configuration
+// Projects based on user role
 const getProjectsByRole = (role: UserRole) => {
-  const config = getCompanyConfig()
-  
   const allProjects = [
-    ...(isFeatureEnabled('candidatesManagement') ? [{
-      name: config.industry === 'Santé' ? 'Patients en traitement' :
-            config.industry === 'Ressources Humaines' ? 'Candidatures actives' :
-            'Candidatures en cours',
+    {
+      name: 'Candidatures en cours',
       url: "/dashboard/candidatures-cours",
       icon: Users,
-    }] : []),
-    ...(isFeatureEnabled('examinations') ? [{
-      name: config.industry === 'Santé' ? 'Examens programmés' :
-            config.industry === 'Ressources Humaines' ? 'Tests à venir' :
-            'Examens à venir',
+    },
+    {
+      name: 'Examens à venir',
       url: "/dashboard/examens-venir", 
       icon: Calendar,
-    }] : []),
-    ...(isFeatureEnabled('reports') ? [{
+    },
+    {
       name: "Rapports mensuels",
       url: "/dashboard/rapports-mensuels",
       icon: BarChart3,
-    }] : []),
+    },
     {
       name: "Documentation",
       url: "/dashboard/documentation",
       icon: BookOpen,
     },
-  ].filter(item => item)
+  ]
 
   // Filter projects based on role
   if (role === 'candidat' || role === 'prospect') {

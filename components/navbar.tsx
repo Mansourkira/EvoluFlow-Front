@@ -3,11 +3,9 @@
 import { Button } from "@/components/ui/button"
 import { Menu, X } from "lucide-react"
 import Link from "next/link"
-import { useState, useEffect } from "react"
+import { useState } from "react"
 import { useRouter } from "next/navigation"
-import Image from "next/image"
 import { useAuthStatus, useLogout } from "@/hooks/useAuth"
-import { getCompanyConfig } from "@/config/company"
 
 interface NavbarProps {
   activeLink?: string
@@ -16,7 +14,6 @@ interface NavbarProps {
 export default function Navbar({ activeLink }: NavbarProps) {
   const [isMenuOpen, setIsMenuOpen] = useState(false)
   const router = useRouter()
-  const config = getCompanyConfig()
   
   // Use auth hooks
   const { isAuthenticated, user } = useAuthStatus()
@@ -38,25 +35,20 @@ export default function Navbar({ activeLink }: NavbarProps) {
           {/* Logo */}
           <Link href="/" className="flex items-center">
             <div className="flex-shrink-0">
-              <Image
-                src={config.logo}
-                alt={`${config.name} Logo`}
-                width={60}
-                height={50}
-                className="rounded-lg"
-              />
+              <div className="w-12 h-12 bg-blue-600 rounded-lg flex items-center justify-center">
+                <span className="text-white font-bold text-xl">E</span>
+              </div>
             </div>
             <div className="ml-3">
-              <span className="text-xl font-bold text-gray-900">{config.name}</span>
-              <span className="block text-sm text-gray-500">{config.description}</span>
+              <span className="text-xl font-bold text-gray-900">EvoluFlow</span>
+              <span className="block text-sm text-gray-500">Plateforme de gestion</span>
             </div>
           </Link>
-          
 
           {/* Desktop Navigation */}
           <div className="hidden md:block">
             <div className="ml-10 flex items-baseline space-x-8">
-              <Link href="/" className="text-gray-700 hover:text-[var(--primary-color)] px-3 py-2 text-sm font-medium transition-colors">
+              <Link href="/" className="text-gray-700 hover:text-blue-600 px-3 py-2 text-sm font-medium transition-colors">
                 Accueil
               </Link>
             
@@ -64,34 +56,28 @@ export default function Navbar({ activeLink }: NavbarProps) {
                 href="#"
                 className={`px-3 py-2 text-sm font-medium transition-colors ${
                   isActive("services") 
-                    ? "text-[var(--primary-color)] bg-[var(--primary-color)]/10 rounded" 
-                    : "text-gray-700 hover:text-[var(--primary-color)]"
+                    ? "text-blue-600 bg-blue-50 rounded" 
+                    : "text-gray-700 hover:text-blue-600"
                 }`}
               >
-                {config.industry === 'Santé' ? 'Nos Services Médicaux' :
-                 config.industry === 'Immobilier' ? 'Nos Propriétés' :
-                 config.industry === 'Ressources Humaines' ? 'Nos Solutions RH' :
-                 'Nos Services'}
+                Nos Services
               </Link>
               <Link
                 href="#"
                 className={`px-3 py-2 text-sm font-medium transition-colors ${
                   isActive("solutions") 
-                    ? "text-[var(--primary-color)] bg-[var(--primary-color)]/10 rounded" 
-                    : "text-gray-700 hover:text-[var(--primary-color)]"
+                    ? "text-blue-600 bg-blue-50 rounded" 
+                    : "text-gray-700 hover:text-blue-600"
                 }`}
               >
-                {config.industry === 'Éducation et Formation' ? 'E-learning' :
-                 config.industry === 'Santé' ? 'Télémédecine' :
-                 config.industry === 'Immobilier' ? 'Visite Virtuelle' :
-                 'Solutions Digitales'}
+                Solutions Digitales
               </Link>
               <Link 
                 href="/about" 
                 className={`px-3 py-2 text-sm font-medium transition-colors ${
                   isActive("about") 
-                    ? "text-[var(--primary-color)] bg-[var(--primary-color)]/10 rounded" 
-                    : "text-gray-700 hover:text-[var(--primary-color)]"
+                    ? "text-blue-600 bg-blue-50 rounded" 
+                    : "text-gray-700 hover:text-blue-600"
                 }`}
               >
                 À Propos
@@ -100,8 +86,8 @@ export default function Navbar({ activeLink }: NavbarProps) {
                 href="#"
                 className={`px-3 py-2 text-sm font-medium transition-colors ${
                   isActive("contact") 
-                    ? "text-[var(--primary-color)] bg-[var(--primary-color)]/10 rounded" 
-                    : "text-gray-700 hover:text-[var(--primary-color)]"
+                    ? "text-blue-600 bg-blue-50 rounded" 
+                    : "text-gray-700 hover:text-blue-600"
                 }`}
               >
                Nous Contacter
@@ -126,25 +112,17 @@ export default function Navbar({ activeLink }: NavbarProps) {
                 <Button
                   variant="outline"
                   onClick={() => router.push("/login")}
-                  className="border-[var(--primary-color)] text-[var(--primary-color)] hover:bg-[var(--primary-color)] hover:text-white"
+                  className="border-blue-600 text-blue-600 hover:bg-blue-600 hover:text-white"
                 >
                   Connexion
                 </Button>
                 <Button
                   variant="outline"
                   onClick={() => router.push("/login/prospect")}
-                  className="border-[var(--primary-color)] text-[var(--primary-color)] hover:bg-[var(--primary-color)] hover:text-white"
-                  title={
-                    config.industry === 'Santé' ? 'Espace Patient' :
-                    config.industry === 'Ressources Humaines' ? 'Espace Candidat' :
-                    'Espace Prospect'
-                  }
+                  className="border-blue-600 text-blue-600 hover:bg-blue-600 hover:text-white"
+                  title="Espace Prospect"
                 >
-                  <span>
-                    {config.industry === 'Santé' ? 'Espace Patient' :
-                     config.industry === 'Ressources Humaines' ? 'Espace Candidat' :
-                     'Espace Prospect'}
-                  </span>
+                  <span>Espace Prospect</span>
                 </Button>
                 </div>
               )}
@@ -167,14 +145,11 @@ export default function Navbar({ activeLink }: NavbarProps) {
                 href="#" 
                 className={`block px-3 py-2 text-base font-medium ${
                   isActive("services") 
-                    ? "text-[var(--primary-color)] bg-[var(--primary-color)]/10 rounded" 
-                    : "text-gray-700 hover:text-[var(--primary-color)]"
+                    ? "text-blue-600 bg-blue-50 rounded" 
+                    : "text-gray-700 hover:text-blue-600"
                 }`}
               >
-                {config.industry === 'Santé' ? 'Services Médicaux' :
-                 config.industry === 'Immobilier' ? 'Gestion Immobilière' :
-                 config.industry === 'Ressources Humaines' ? 'Gestion RH' :
-                 'Nos Services'}
+                Nos Services
               </Link>
               
               {isAuthenticated && user ? (
@@ -193,7 +168,7 @@ export default function Navbar({ activeLink }: NavbarProps) {
                   <Button
                     variant="outline"
                     onClick={() => router.push("/login")}
-                    className="w-full border-[var(--primary-color)] text-[var(--primary-color)] hover:bg-[var(--primary-color)] hover:text-white"
+                    className="w-full border-blue-600 text-blue-600 hover:bg-blue-600 hover:text-white"
                   >
                     Connexion
                   </Button>
@@ -203,13 +178,6 @@ export default function Navbar({ activeLink }: NavbarProps) {
           </div>
         )}
       </div>
-      
-      <style jsx>{`
-        :root {
-          --primary-color: ${config.primaryColor};
-          --secondary-color: ${config.secondaryColor};
-        }
-      `}</style>
     </nav>
   )
 } 
