@@ -29,7 +29,6 @@ import {
 } from "lucide-react"
 
 import { NavMain } from "@/components/nav-main"
-import { NavProjects } from "@/components/nav-projects"
 import { NavUser } from "@/components/nav-user"
 import { TeamSwitcher } from "@/components/team-switcher"
 import {
@@ -55,6 +54,86 @@ const getNavigationByRole = (role: UserRole, user: any) => {
       icon: Home,
       isActive: true,
     },
+    fichierBase: {
+      title: "Fichier de base",
+      url: "#",
+      icon: Database,
+      items: [
+        // Direct items under Fichier de base
+        {
+          title: "Organisme concerné",
+          url: "/dashboard/organisme",
+          icon: Building,
+        },
+        {
+          title: "Professeur",
+          url: "/dashboard/professeur",
+          icon: GraduationCap,
+        },
+        {
+          title: "Client",
+          url: "/dashboard/client",
+          icon: User,
+        },
+        // Subcategories under Fichier de base
+        {
+          title: "Sécurité",
+          url: "/dashboard/users",
+          icon: Shield,
+        },
+        {
+          title: "Paramétrage Divers",
+          url: "#",
+          icon: Settings,
+          items: [
+            {
+              title: "Société",
+              url: "/dashboard/societe",
+              icon: Building2,
+            },
+            {
+              title: "Site",
+              url: "/dashboard/site",
+              icon: Building,
+            },
+            {
+              title: "Filière",
+              url: "/dashboard/filiere",
+              icon: FolderOpen,
+            },
+          ],
+        },
+        {
+          title: "Paramétrage Traitement Dossier",
+          url: "#",
+          icon: FileText,
+          items: [
+            {
+              title: "Liste des Documents",
+              url: "/dashboard/documents",
+              icon: FileText,
+            },
+          ],
+        },
+        {
+          title: "Paramétrage Cours-Examens",
+          url: "#",
+          icon: PenTool,
+          items: [
+            {
+              title: "Salle",
+              url: "/dashboard/salle",
+              icon: Building,
+            },
+            {
+              title: "Modules",
+              url: "/dashboard/modules",
+              icon: Package,
+            },
+          ],
+        },
+      ],
+    },
     gestion: {
       title: "Gestion",
       url: "#",
@@ -76,75 +155,17 @@ const getNavigationByRole = (role: UserRole, user: any) => {
           icon: Languages,
         },
         {
-          title: 'Traitement Dossier',
-          url: "/dashboard/traitement-dossier",
-          icon: FileText,
-        },
-        {
           title: 'Examens',
           url: "/dashboard/examens",
           icon: PenTool,
         },
-        {
-          title: 'Produits',
-          url: "/dashboard/produits",
-          icon: Package,
-        },
       ],
     },
-    parametrage: {
-      title: "Paramétrage",
-      url: "#",
-      icon: Settings,
-      items: [
-        {
-          title: "Configuration Générale",
-          url: "/dashboard/parametrage/general",
-          icon: Settings,
-        },
-        {
-          title: "Paramètres Système",
-          url: "/dashboard/parametrage/systeme",
-          icon: Database,
-        },
-        {
-          title: "Gestion des Rôles",
-          url: "/dashboard/parametrage/roles",
-          icon: Shield,
-        },
-        {
-          title: "Configuration Entreprise",
-          url: "/dashboard/parametrage/entreprise",
-          icon: Building2,
-        },
-      ],
-    },
-    communication: {
-      title: "Communication & Marketing",
-      url: "#",
-      icon: TrendingUp,
-      items: [
-        {
-          title: "Marketing",
-          url: "/dashboard/marketing",
-          icon: TrendingUp,
-        },
-        {
-          title: 'Réclamations',
-          url: "/dashboard/reclamations",
-          icon: MessageSquare,
-        },
-        {
-          title: "Rapports",
-          url: "/dashboard/rapports",
-          icon: BarChart3,
-        },
-      ],
-    },
+  
     profils: {
       title: "Gestion des Profils",
       url: "#",
-      icon: User,
+      icon: UserCog,
       items: [
         {
           title: "Profil Administratif",
@@ -194,21 +215,21 @@ const getNavigationByRole = (role: UserRole, user: any) => {
   const getNavItems = () => {
     const items = []
     
-    // Always include gestion
+    // Always include fichier de base as main category
+    items.push(baseNavigation.fichierBase)
     items.push(baseNavigation.gestion)
     
     switch (role) {
       case 'admin':
-        items.push(baseNavigation.parametrage)
-        items.push(baseNavigation.communication)
         items.push(baseNavigation.profils)
         break
       case 'direction':
-        items.push(baseNavigation.communication)
         items.push(baseNavigation.profils)
         break
       case 'consultant':
-        items.push(baseNavigation.communication)
+        break
+      case 'professeur':
+        // Professeur has access to specific parts of Fichier de base
         break
       case 'financier':
         items.push(baseNavigation.profils)
@@ -307,7 +328,6 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
       </SidebarHeader>
       <SidebarContent>
         <NavMain items={navigationData.navMain} />
-        <NavProjects projects={navigationData.projects} />
       </SidebarContent>
       <SidebarFooter>
         <NavUser 
@@ -318,3 +338,4 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
     </Sidebar>
   )
 }
+
