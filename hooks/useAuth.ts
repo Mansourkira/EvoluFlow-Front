@@ -28,6 +28,17 @@ interface User {
 }
 
 interface LoginApiResponse {
+  token: string
+  user: {
+    Nom_Prenom: string
+    E_mail: string
+    Type_Utilisateur: string
+    Profil: string
+    Profil_Libelle: string
+  }
+}
+
+interface UserApiResponse {
   Nom_Prenom: string
   E_mail: string
   Type_Utilisateur: string
@@ -68,19 +79,19 @@ export const useLogin = () => {
         
         // Transform API response to our User format
         const user: User = {
-          email: data.E_mail,
-          name: data.Nom_Prenom,
-          role: data.Type_Utilisateur,
-          profil: data.Profil,
-          profilLabel: PROFILE_MAPPING[data.Profil as keyof typeof PROFILE_MAPPING] || data.Profil,
-          typeUtilisateur: data.Type_Utilisateur
+          email: data.user.E_mail,
+          name: data.user.Nom_Prenom,
+          role: data.user.Type_Utilisateur,
+          profil: data.user.Profil,
+          profilLabel: data.user.Profil_Libelle || PROFILE_MAPPING[data.user.Profil as keyof typeof PROFILE_MAPPING] || data.user.Profil,
+          typeUtilisateur: data.user.Type_Utilisateur
         }
 
         const loginResponse: LoginResponse = {
           success: true,
           message: 'Connexion réussie',
           user: user,
-          token: `token_${Date.now()}` // Generate a simple token since API doesn't provide one
+          token: data.token // Use the actual token from API response
         }
 
         // Store user data in localStorage
@@ -255,7 +266,7 @@ export const useUsers = () => {
       })
 
       if (response.ok) {
-        const data: LoginApiResponse[] = await response.json()
+        const data: UserApiResponse[] = await response.json()
         
         // Transform API response to our User format
         const transformedUsers: User[] = data.map((apiUser, index) => ({

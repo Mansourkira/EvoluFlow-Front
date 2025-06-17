@@ -14,9 +14,20 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog"
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Badge } from "@/components/ui/badge"
+import { useToast } from "@/hooks/use-toast"
 import {
   Plus,
   Search,
@@ -37,11 +48,14 @@ import { useUsers } from "@/hooks/useAuth"
 export default function UsersPage() {
   // Use custom hook to fetch users from API
   const { users, isLoading, error, refetch } = useUsers()
+  const { toast } = useToast()
   const [searchTerm, setSearchTerm] = useState("")
   const [roleFilter, setRoleFilter] = useState("all")
-  const [statusFilter, setStatusFilter] = useState("all")
   const [currentPage, setCurrentPage] = useState(1)
   const [isAddUserOpen, setIsAddUserOpen] = useState(false)
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
+  const [userToDelete, setUserToDelete] = useState<string | null>(null)
+  const [isDeleting, setIsDeleting] = useState(false)
   const [newUser, setNewUser] = useState({
     name: "",
     email: "",
@@ -51,15 +65,14 @@ export default function UsersPage() {
 
   const itemsPerPage = 5
 
-  // Filter users based on search term, role, and status
+  // Filter users based on search term and role
   const filteredUsers = users.filter((user) => {
     const matchesSearch =
       user.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
       user.email.toLowerCase().includes(searchTerm.toLowerCase())
     const matchesRole = roleFilter === "all" || user.profilLabel === roleFilter
-    const matchesStatus = statusFilter === "all" || user.status === statusFilter
 
-    return matchesSearch && matchesRole && matchesStatus
+    return matchesSearch && matchesRole
   })
 
   // Pagination
@@ -78,11 +91,50 @@ export default function UsersPage() {
     }
   }
 
-  const handleDeleteUser = (id: number) => {
-    // TODO: Implement API call to delete user
-    console.log('Deleting user with id:', id)
-    // Refresh users list after deletion
-    refetch()
+  const handleDeleteClick = (email: string) => {
+    setUserToDelete(email)
+    setDeleteDialogOpen(true)
+  }
+
+  const handleDeleteConfirm = async () => {
+    if (!userToDelete) return
+
+    setIsDeleting(true)
+    try {
+      const response = await fetch('http://localhost:3000/api/v1/users/delete', {
+        method: 'DELETE',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ E_mail: userToDelete }),
+      })
+
+      if (response.ok) {
+        toast({
+          title: 'Succès',
+          description: 'Utilisateur supprimé avec succès'
+        })
+        refetch() // Refresh the users list
+      } else {
+        const errorData = await response.json().catch(() => ({}))
+        toast({
+          title: 'Erreur',
+          description: errorData.message || 'Erreur lors de la suppression',
+          variant: 'destructive'
+        })
+      }
+    } catch (error) {
+      console.error('Delete user error:', error)
+      toast({
+        title: 'Erreur',
+        description: 'Erreur de connexion au serveur',
+        variant: 'destructive'
+      })
+    } finally {
+      setIsDeleting(false)
+      setDeleteDialogOpen(false)
+      setUserToDelete(null)
+    }
   }
 
   const handleExport = (format: string) => {
@@ -96,15 +148,14 @@ export default function UsersPage() {
   }
 
   return (
-    <div className="min-h-screen bg-background">
-      <div className="container mx-auto py-8 px-4">
-        <div className="max-w-7xl mx-auto space-y-6">
-          {/* Header */}
-          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-            <div>
-              <h1 className="text-3xl font-bold tracking-tight text-foreground">User Management</h1>
-              <p className="text-muted-foreground">Manage your users and their permissions</p>
-            </div>
+    <div className="container mx-auto py-8 px-4">
+      <div className="max-w-7xl mx-auto">
+        {/* Header */}
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
+          <div>
+            <h1 className="text-3xl font-bold">User Management</h1>
+            <p className="text-muted-foreground">Manage your users and their permissions</p>
+          </div>
 
           <div className="flex flex-wrap gap-2">
             {/* Refresh Button */}
@@ -196,18 +247,6 @@ export default function UsersPage() {
                       </SelectContent>
                     </Select>
                   </div>
-                  <div className="grid gap-2">
-                    <Label htmlFor="status">Status</Label>
-                    <Select value={newUser.status} onValueChange={(value) => setNewUser({ ...newUser, status: value })}>
-                      <SelectTrigger>
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="Active">Active</SelectItem>
-                        <SelectItem value="Inactive">Inactive</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
                 </div>
                 <DialogFooter>
                   <Button variant="outline" onClick={() => setIsAddUserOpen(false)}>
@@ -236,7 +275,7 @@ export default function UsersPage() {
 
           <div className="flex gap-2">
             <Select value={roleFilter} onValueChange={setRoleFilter}>
-              <SelectTrigger className="w-[150px]">
+              <SelectTrigger className="w-[180px]">
                 <Filter className="h-4 w-4 mr-2" />
                 <SelectValue placeholder="All Roles" />
               </SelectTrigger>
@@ -251,18 +290,6 @@ export default function UsersPage() {
                 <SelectItem value="Financier">Financier</SelectItem>
                 <SelectItem value="Organisme">Organisme</SelectItem>
                 <SelectItem value="Admin">Admin</SelectItem>
-              </SelectContent>
-            </Select>
-
-            <Select value={statusFilter} onValueChange={setStatusFilter}>
-              <SelectTrigger className="w-[130px]">
-                <Filter className="h-4 w-4 mr-2" />
-                <SelectValue placeholder="All Status" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Status</SelectItem>
-                <SelectItem value="Active">Active</SelectItem>
-                <SelectItem value="Inactive">Inactive</SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -295,136 +322,173 @@ export default function UsersPage() {
 
         {/* Users Table */}
         {!isLoading && !error && (
-          <div className="rounded-lg border bg-card text-card-foreground shadow-sm">
+          <div className="border rounded-lg overflow-hidden bg-white shadow-sm">
             <Table>
-            <TableHeader>
-              <TableRow className="border-b bg-muted/50 hover:bg-muted/50">
-                <TableHead className="h-12 px-4 text-left align-middle font-medium text-muted-foreground">Name</TableHead>
-                <TableHead className="h-12 px-4 text-left align-middle font-medium text-muted-foreground">Email</TableHead>
-                <TableHead className="h-12 px-4 text-left align-middle font-medium text-muted-foreground">Role</TableHead>
-                <TableHead className="h-12 px-4 text-left align-middle font-medium text-muted-foreground">Status</TableHead>
-                <TableHead className="h-12 px-4 text-left align-middle font-medium text-muted-foreground">Join Date</TableHead>
-                <TableHead className="h-12 px-4 text-center align-middle font-medium text-muted-foreground">Actions</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {paginatedUsers.map((user) => (
-                <TableRow 
-                  key={user.id} 
-                  className="border-b transition-colors hover:bg-muted/50 data-[state=selected]:bg-muted"
-                >
-                  <TableCell className="p-4 align-middle font-medium">{user.name}</TableCell>
-                  <TableCell className="p-4 align-middle">
-                    <div className="flex items-center gap-2">
-                      <span className="text-muted-foreground">{user.email}</span>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => handleSendEmail(user.email)}
-                        className="h-6 w-6 p-0 hover:bg-blue-100 hover:text-blue-600"
-                      >
-                        <Mail className="h-3 w-3" />
-                      </Button>
-                    </div>
-                  </TableCell>
-                  <TableCell className="p-4 align-middle">
-                    <div className="flex flex-col gap-1">
+              <TableHeader>
+                <TableRow className="bg-gray-50">
+                  <TableHead className="font-semibold text-gray-900">Name</TableHead>
+                  <TableHead className="font-semibold text-gray-900">Email</TableHead>
+                  <TableHead className="font-semibold text-gray-900">Role</TableHead>
+                  <TableHead className="font-semibold text-gray-900">Join Date</TableHead>
+                  <TableHead className="text-center font-semibold text-gray-900">Actions</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {paginatedUsers.map((user) => (
+                  <TableRow key={user.id} className="hover:bg-gray-50 transition-colors">
+                    <TableCell className="font-medium py-4">{user.name}</TableCell>
+                    <TableCell className="py-4">
+                      <div className="flex items-center gap-2">
+                        <span className="text-gray-600">{user.email}</span>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => handleSendEmail(user.email)}
+                          className="h-7 w-7 p-0 hover:bg-blue-100 hover:text-blue-600 transition-colors"
+                          title="Send email"
+                        >
+                          <Mail className="h-3.5 w-3.5" />
+                        </Button>
+                      </div>
+                    </TableCell>
+                    <TableCell className="py-4">
                       <Badge
-                        variant={user.profilLabel === "Administratif" ? "default" : user.profilLabel === "Consultant" ? "secondary" : "outline"}
+                        variant={
+                          user.profilLabel === "Administratif" 
+                            ? "default" 
+                            : user.profilLabel === "Consultant" 
+                            ? "secondary" 
+                            : "outline"
+                        }
+                        className="font-medium"
                       >
                         {user.profilLabel}
                       </Badge>
-                      <span className="text-xs text-muted-foreground">Profil: {user.profil}</span>
-                    </div>
-                  </TableCell>
-                  <TableCell className="p-4 align-middle">
-                    <Badge 
-                      variant={user.status === "Active" ? "default" : "secondary"}
-                    >
-                      {user.status}
-                    </Badge>
-                  </TableCell>
-                  <TableCell className="p-4 align-middle text-muted-foreground">{user.joinDate}</TableCell>
-                  <TableCell className="p-4 align-middle">
-                    <div className="flex justify-center gap-1">
-                      <Button 
-                        variant="ghost" 
-                        size="sm" 
-                        className="h-8 w-8 p-0 hover:bg-blue-100 hover:text-blue-600 transition-colors"
-                      >
-                        <Eye className="h-4 w-4" />
-                      </Button>
-                      <Button 
-                        variant="ghost" 
-                        size="sm" 
-                        className="h-8 w-8 p-0 hover:bg-green-100 hover:text-green-600 transition-colors"
-                      >
-                        <Edit className="h-4 w-4" />
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className="h-8 w-8 p-0 hover:bg-red-100 hover:text-red-600 transition-colors"
-                        onClick={() => user.id && handleDeleteUser(user.id)}
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </div>
+                    </TableCell>
+                    <TableCell className="py-4 text-gray-600">{user.joinDate}</TableCell>
+                    <TableCell className="py-4">
+                      <div className="flex justify-center gap-1">
+                        <Button 
+                          variant="ghost" 
+                          size="sm" 
+                          className="h-8 w-8 p-0 hover:bg-blue-100 hover:text-blue-600 transition-colors"
+                          title="View user"
+                        >
+                          <Eye className="h-4 w-4" />
+                        </Button>
+                        <Button 
+                          variant="ghost" 
+                          size="sm" 
+                          className="h-8 w-8 p-0 hover:bg-green-100 hover:text-green-600 transition-colors"
+                          title="Edit user"
+                        >
+                          <Edit className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="h-8 w-8 p-0 hover:bg-red-100 hover:text-red-600 transition-colors"
+                          onClick={() => handleDeleteClick(user.email)}
+                          title="Delete user"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </div>
         )}
 
         {/* Pagination */}
         {!isLoading && !error && (
-        <div className="flex flex-col sm:flex-row justify-between items-center gap-4 mt-6">
-          <div className="text-sm text-muted-foreground">
-            Showing {startIndex + 1} to {Math.min(startIndex + itemsPerPage, filteredUsers.length)} of{" "}
-            {filteredUsers.length} users
-          </div>
-
-          <div className="flex items-center gap-2">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
-              disabled={currentPage === 1}
-            >
-              <ChevronLeft className="h-4 w-4" />
-              Previous
-            </Button>
-
-            <div className="flex items-center gap-1">
-              {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
-                <Button
-                  key={page}
-                  variant={currentPage === page ? "default" : "outline"}
-                  size="sm"
-                  onClick={() => setCurrentPage(page)}
-                  className="w-8 h-8 p-0"
-                >
-                  {page}
-                </Button>
-              ))}
+          <div className="flex flex-col sm:flex-row justify-between items-center gap-4 mt-6">
+            <div className="text-sm text-muted-foreground">
+              Showing {startIndex + 1} to {Math.min(startIndex + itemsPerPage, filteredUsers.length)} of{" "}
+              {filteredUsers.length} users
             </div>
 
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}
-              disabled={currentPage === totalPages}
-            >
-              Next
-              <ChevronRight className="h-4 w-4" />
-            </Button>
+            <div className="flex items-center gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
+                disabled={currentPage === 1}
+              >
+                <ChevronLeft className="h-4 w-4" />
+                Previous
+              </Button>
+
+              <div className="flex items-center gap-1">
+                {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
+                  <Button
+                    key={page}
+                    variant={currentPage === page ? "default" : "outline"}
+                    size="sm"
+                    onClick={() => setCurrentPage(page)}
+                    className="w-8 h-8 p-0"
+                  >
+                    {page}
+                  </Button>
+                ))}
+              </div>
+
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}
+                disabled={currentPage === totalPages}
+              >
+                Next
+                <ChevronRight className="h-4 w-4" />
+              </Button>
+            </div>
           </div>
-        </div>
         )}
+
+        {/* Delete Confirmation Dialog */}
+        <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Confirmer la suppression</AlertDialogTitle>
+              <AlertDialogDescription>
+                Êtes-vous sûr de vouloir supprimer cet utilisateur ? Cette action est irréversible.
+                <br />
+                <span className="font-medium text-gray-900 mt-2 block">
+                  Email: {userToDelete}
+                </span>
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel 
+                onClick={() => setDeleteDialogOpen(false)}
+                disabled={isDeleting}
+              >
+                Annuler
+              </AlertDialogCancel>
+              <AlertDialogAction
+                onClick={handleDeleteConfirm}
+                disabled={isDeleting}
+                className="bg-red-600 hover:bg-red-700 focus:ring-red-600"
+              >
+                {isDeleting ? (
+                  <>
+                    <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
+                    Suppression...
+                  </>
+                ) : (
+                  <>
+                    <Trash2 className="h-4 w-4 mr-2" />
+                    Supprimer
+                  </>
+                )}
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       </div>
-    </div>
     </div>
   )
 }

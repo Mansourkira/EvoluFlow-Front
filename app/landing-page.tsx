@@ -50,12 +50,14 @@ export default function Component() {
                 >
                   Cours de Langue
                 </Link>
-                <Link
-                  href="#"
-                  className="text-gray-700 hover:text-[#3A90DA] px-3 py-2 text-sm font-medium transition-colors"
+              
+                <Button
+                  variant="outline"
+                  className="border-[#3A90DA] text-[#3A90DA] hover:bg-[#3A90DA] hover:text-white"
                 >
-                  E-learning
-                </Link>
+                  Login Prospect
+                </Button>
+
                 <Button
                   variant="outline"
                   className="border-[#3A90DA] text-[#3A90DA] hover:bg-[#3A90DA] hover:text-white"
@@ -86,9 +88,14 @@ export default function Component() {
                 <Link href="#" className="text-gray-700 hover:text-[#3A90DA] block px-3 py-2 text-base font-medium">
                   Cours de Langue
                 </Link>
-                <Link href="#" className="text-gray-700 hover:text-[#3A90DA] block px-3 py-2 text-base font-medium">
-                  E-learning
-                </Link>
+                <div className="px-3 py-2">
+                  <Button
+                    variant="outline"
+                    className="w-full border-[#3A90DA] text-[#3A90DA] hover:bg-[#3A90DA] hover:text-white"
+                  >
+                    Login
+                  </Button>
+                </div>
                 <div className="px-3 py-2">
                   <Button
                     variant="outline"
