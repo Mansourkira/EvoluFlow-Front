@@ -3,8 +3,6 @@
 import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useSites } from "@/hooks/useSites";
-import type { Site } from "@/hooks/useSites";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -13,7 +11,6 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
 } from "@/components/ui/dialog";
 import {
   Form,
@@ -31,60 +28,154 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { addUserSchema, type AddUserFormData } from "@/schemas/userSchema";
+import { updateUserSchema, type UpdateUserFormData } from "@/schemas/userSchema";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, Plus, Shield, User, Eye, EyeOff, RefreshCw, Image as ImageIcon, X } from "lucide-react";
+import { Loader2, Save, Shield, User, Image as ImageIcon, X, Camera } from "lucide-react";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
 interface Profile {
   Reference: string;
   Libelle: string;
 }
 
-interface AddUserDialogProps {
-  onUserAdded?: () => void;
+interface UserData {
+  Reference: string;
+  Nom_Prenom: string;
+  E_mail: string;
+  Adresse?: string;
+  Complement_adresse?: string;
+  Code_Postal?: string;
+  Ville?: string;
+  Gouvernorat?: string;
+  Pays?: string;
+  Telephone?: string;
+  Type_Utilisateur?: string;
+  Site_Defaut?: string;
+  Profil: string;
+  Profil_Libelle?: string;
+  Image?: string | null;
 }
 
-// Function to generate a random password
-const generatePassword = () => {
-  const length = 12;
-  const charset = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*";
-  let password = "";
-  for (let i = 0; i < length; i++) {
-    const randomIndex = Math.floor(Math.random() * charset.length);
-    password += charset[randomIndex];
-  }
-  return password;
-};
+interface UpdateUserDialogProps {
+  user: UserData;
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  onUserUpdated?: () => void;
+}
 
-export function AddUserDialog({ onUserAdded }: AddUserDialogProps) {
-  const [open, setOpen] = useState(false);
+export function UpdateUserDialog({ user, open, onOpenChange, onUserUpdated }: UpdateUserDialogProps) {
   const [isLoading, setIsLoading] = useState(false);
   const [profiles, setProfiles] = useState<Profile[]>([]);
   const [loadingProfiles, setLoadingProfiles] = useState(false);
-  const [showPassword, setShowPassword] = useState(false);
+  const [fullUserData, setFullUserData] = useState<UserData | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
-  const { sites, isLoading: loadingSites } = useSites();
   const { toast } = useToast();
 
-  const form = useForm<AddUserFormData>({
-    resolver: zodResolver(addUserSchema),
+  const form = useForm<UpdateUserFormData>({
+    resolver: zodResolver(updateUserSchema),
     defaultValues: {
       Reference: "",
       E_mail: "",
       Nom_Prenom: "",
       Adresse: "",
+      Complement_adresse: "",
       Code_Postal: "",
       Ville: "",
       Gouvernorat: "",
       Pays: "Tunisie",
       Telephone: "",
       Type_Utilisateur: "",
-      Mot_de_passe: generatePassword(), 
+      Mot_de_passe: "", // Don't prefill password for security
       Site_Defaut: "",
       Profil: "",
       Image: null,
     },
   });
+
+  // Fetch complete user data when dialog opens
+  useEffect(() => {
+    const fetchUserData = async () => {
+      if (!open || !user?.E_mail) return;
+
+      try {
+        const token = localStorage.getItem('token');
+        const response = await fetch('/api/users/get', {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ E_mail: user.E_mail }),
+        });
+
+        if (response.ok) {
+          const userData = await response.json();
+          setFullUserData(userData);
+          setImagePreview(userData.Image || null);
+          
+          // Populate form with all available data
+          form.reset({
+            Reference: userData.Reference || "",
+            E_mail: userData.E_mail || "",
+            Nom_Prenom: userData.Nom_Prenom || "",
+            Adresse: userData.Adresse || "",
+            Complement_adresse: userData.Complement_adresse || "",
+            Code_Postal: userData.Code_Postal || "",
+            Ville: userData.Ville || "",
+            Gouvernorat: userData.Gouvernorat || "",
+            Pays: userData.Pays || "Tunisie",
+            Telephone: userData.Telephone || "",
+            Type_Utilisateur: userData.Type_Utilisateur || "",
+            Mot_de_passe: "", // Don't prefill password
+            Site_Defaut: userData.Site_Defaut || "",
+            Profil: userData.Profil || "",
+            Image: userData.Image || null,
+          });
+        } else {
+          // Fallback to user data passed as prop
+          form.reset({
+            Reference: user.Reference || "",
+            E_mail: user.E_mail || "",
+            Nom_Prenom: user.Nom_Prenom || "",
+            Adresse: user.Adresse || "",
+            Complement_adresse: user.Complement_adresse || "",
+            Code_Postal: user.Code_Postal || "",
+            Ville: user.Ville || "",
+            Gouvernorat: user.Gouvernorat || "",
+            Pays: user.Pays || "Tunisie",
+            Telephone: user.Telephone || "",
+            Type_Utilisateur: user.Type_Utilisateur || "",
+            Mot_de_passe: "", // Don't prefill password
+            Site_Defaut: user.Site_Defaut || "",
+            Profil: user.Profil || "",
+            Image: null,
+          });
+        }
+      } catch (error) {
+        console.error('Error fetching user data:', error);
+        // Fallback to user data passed as prop if fetch fails
+        form.reset({
+          Reference: user.Reference || "",
+          E_mail: user.E_mail || "",
+          Nom_Prenom: user.Nom_Prenom || "",
+          Adresse: user.Adresse || "",
+          Complement_adresse: user.Complement_adresse || "",
+          Code_Postal: user.Code_Postal || "",
+          Ville: user.Ville || "",
+          Gouvernorat: user.Gouvernorat || "",
+          Pays: user.Pays || "Tunisie",
+          Telephone: user.Telephone || "",
+          Type_Utilisateur: user.Type_Utilisateur || "",
+          Mot_de_passe: "", // Don't prefill password
+          Site_Defaut: user.Site_Defaut || "",
+          Profil: user.Profil || "",
+          Image: null,
+        });
+      }
+    };
+
+    fetchUserData();
+  }, [open, user, form]);
 
   // Fetch profiles when component mounts
   useEffect(() => {
@@ -126,75 +217,7 @@ export function AddUserDialog({ onUserAdded }: AddUserDialogProps) {
     }
   }, [open, toast]);
 
-  const onSubmit = async (data: AddUserFormData) => {
-    // Validate that profile is not a placeholder value
-    if (!data.Profil || data.Profil === "loading" || data.Profil === "no-profiles") {
-      toast({
-        title: "Erreur",
-        description: "Veuillez sélectionner un profil valide.",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    setIsLoading(true);
-    try {
-      // Generate auto-reference if not provided
-      const userData = {
-        ...data,
-        Reference: data.Reference || `U${String(Date.now()).slice(-3)}`,
-        Mot_de_passe: "123456", // Ensure fixed password
-      };
-
-      // Remove Image field if it's null to avoid backend issues
-      if (userData.Image === null || userData.Image === undefined) {
-        delete userData.Image;
-      }
-
-      // Get the authentication token from localStorage
-      const token = localStorage.getItem('token');
-      
-      const response = await fetch('/api/users/add', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`,
-        },
-        body: JSON.stringify(userData),
-      });
-
-      if (response.ok) {
-        const result = await response.json();
-        toast({
-          title: "✅ Utilisateur créé",
-          description: `${userData.Nom_Prenom} a été ajouté avec succès`,
-        });
-        
-        // Reset form and close dialog
-        form.reset();
-        setOpen(false);
-        onUserAdded?.();
-      } else {
-        const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData.error || 'Erreur lors de la création de l\'utilisateur');
-      }
-    } catch (error) {
-      console.error('Erreur création utilisateur:', error);
-      toast({
-        title: "❌ Erreur de création",
-        description: error instanceof Error ? error.message : "Impossible de créer l'utilisateur. Veuillez réessayer.",
-        variant: "destructive",
-      });
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const handleCancel = () => {
-    form.reset();
-    setOpen(false);
-  };
-
+  // Add image handling functions
   const handleImageChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (file) {
@@ -236,27 +259,146 @@ export function AddUserDialog({ onUserAdded }: AddUserDialogProps) {
     setImagePreview(null);
   };
 
+  const onSubmit = async (data: UpdateUserFormData) => {
+    // Validate that profile is not a placeholder value (only if a profile is selected)
+    if (data.Profil && (data.Profil === "loading" || data.Profil === "no-profiles")) {
+      toast({
+        title: "⚠️ Erreur de validation",
+        description: "Veuillez sélectionner un profil valide.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsLoading(true);
+    try {
+      const { E_mail, ...formData } = data;
+      const updateData: any = {
+        E_mail: user.E_mail, // Use original E_mail as identifier
+      };
+
+      // Only include fields that have actual values (not empty)
+      Object.keys(formData).forEach(key => {
+        const value = formData[key as keyof typeof formData];
+        if (value !== null && value !== undefined && value !== '') {
+          updateData[key] = value;
+        }
+      });
+
+      // Handle image separately - if imagePreview is null, explicitly set Image to null
+      if (imagePreview === null) {
+        updateData.Image = null;
+      } else if (data.Image) {
+        updateData.Image = data.Image;
+      }
+
+      // Only include password if it was actually provided and not empty
+      if (!data.Mot_de_passe || data.Mot_de_passe.trim() === '') {
+        delete updateData.Mot_de_passe;
+      }
+
+      // Get the authentication token from localStorage
+      const token = localStorage.getItem('token');
+      
+      const response = await fetch('/api/users/update', {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
+        body: JSON.stringify(updateData),
+      });
+
+      if (response.ok) {
+        const result = await response.json();
+        toast({
+          title: "✅ Utilisateur mis à jour",
+          description: `${updateData.Nom_Prenom || user.Nom_Prenom} a été mis à jour avec succès`,
+        });
+        
+        onOpenChange(false);
+        onUserUpdated?.();
+      } else {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error || 'Erreur lors de la mise à jour de l\'utilisateur');
+      }
+    } catch (error) {
+      console.error('Erreur mise à jour utilisateur:', error);
+      toast({
+        title: "❌ Erreur de mise à jour",
+        description: error instanceof Error ? error.message : "Impossible de mettre à jour l'utilisateur. Veuillez réessayer.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleCancel = () => {
+    form.reset();
+    onOpenChange(false);
+  };
+
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>
-        <Button size="sm">
-          <Plus className="h-4 w-4 mr-2" />
-          Ajouter Utilisateur
-        </Button>
-      </DialogTrigger>
+    <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <User className="h-5 w-5" />
-            Ajouter un Nouvel Utilisateur
+            Modifier l'Utilisateur
           </DialogTitle>
           <DialogDescription>
-            Remplissez les informations ci-dessous pour créer un nouveau compte utilisateur.
+            Modifier les informations de {user.Nom_Prenom}
           </DialogDescription>
         </DialogHeader>
 
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+            {/* Image Upload Section */}
+            <div className="space-y-4">
+              <h3 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
+                <Camera className="h-4 w-4" />
+                Photo de profil
+              </h3>
+              
+              <div className="flex items-start gap-6">
+                <Avatar className="h-24 w-24">
+                  <AvatarImage 
+                    src={imagePreview || undefined} 
+                    alt={user.Nom_Prenom}
+                    className="object-cover"
+                  />
+                  <AvatarFallback className="text-2xl font-semibold bg-blue-100 text-blue-700">
+                    {user.Nom_Prenom?.charAt(0)?.toUpperCase() || 'U'}
+                  </AvatarFallback>
+                </Avatar>
+
+                <div className="space-y-2">
+                  <Input
+                    type="file"
+                    accept="image/*"
+                    onChange={handleImageChange}
+                    className="max-w-sm"
+                  />
+                  {imagePreview && (
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={removeImage}
+                      className="flex items-center gap-2"
+                    >
+                      <X className="h-4 w-4" />
+                      Supprimer la photo
+                    </Button>
+                  )}
+                  <p className="text-sm text-gray-500">
+                    Format accepté: JPG, PNG. Taille max: 5MB
+                  </p>
+                </div>
+              </div>
+            </div>
+
             {/* Basic Information */}
             <div className="space-y-4">
               <h3 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
@@ -279,7 +421,7 @@ export function AddUserDialog({ onUserAdded }: AddUserDialogProps) {
                   )}
                 />
 
-                {/* Email */}
+                {/* Email - Read Only */}
                 <FormField
                   control={form.control}
                   name="E_mail"
@@ -287,9 +429,16 @@ export function AddUserDialog({ onUserAdded }: AddUserDialogProps) {
                     <FormItem>
                       <FormLabel>Email *</FormLabel>
                       <FormControl>
-                        <Input type="email" placeholder="Entrer l'adresse email" {...field} />
+                        <Input 
+                          type="email" 
+                          placeholder="Entrer l'adresse email" 
+                          {...field}
+                          disabled
+                          className="bg-gray-50 text-gray-500"
+                        />
                       </FormControl>
                       <FormMessage />
+                      <p className="text-xs text-gray-500">L'email ne peut pas être modifié</p>
                     </FormItem>
                   )}
                 />
@@ -300,61 +449,9 @@ export function AddUserDialog({ onUserAdded }: AddUserDialogProps) {
                   name="Telephone"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Téléphone *</FormLabel>
+                      <FormLabel>Téléphone</FormLabel>
                       <FormControl>
                         <Input placeholder="Entrer le numéro de téléphone" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                {/* Image Upload */}
-                <FormField
-                  control={form.control}
-                  name="Image"
-                  render={({ field: { value, onChange, ...field } }) => (
-                    <FormItem className="col-span-full">
-                      <FormLabel>Photo de profil</FormLabel>
-                      <FormControl>
-                        <div className="space-y-4">
-                          <div className="flex items-center gap-4">
-                            {imagePreview ? (
-                              <div className="relative w-24 h-24">
-                                <img
-                                  src={imagePreview}
-                                  alt="Preview"
-                                  className="w-24 h-24 object-cover rounded-lg border"
-                                />
-                                <Button
-                                  type="button"
-                                  variant="destructive"
-                                  size="icon"
-                                  className="absolute -top-2 -right-2 h-6 w-6"
-                                  onClick={removeImage}
-                                >
-                                  <X className="h-4 w-4" />
-                                </Button>
-                              </div>
-                            ) : (
-                              <div className="w-24 h-24 border-2 border-dashed rounded-lg flex items-center justify-center bg-gray-50">
-                                <ImageIcon className="h-8 w-8 text-gray-400" />
-                              </div>
-                            )}
-                            <div className="flex-1">
-                              <Input
-                                type="file"
-                                accept="image/*"
-                                onChange={handleImageChange}
-                                className="cursor-pointer"
-                                {...field}
-                              />
-                              <p className="text-sm text-gray-500 mt-2">
-                                Format accepté: JPG, PNG, GIF (max. 5MB)
-                              </p>
-                            </div>
-                          </div>
-                        </div>
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -373,9 +470,24 @@ export function AddUserDialog({ onUserAdded }: AddUserDialogProps) {
                   name="Adresse"
                   render={({ field }) => (
                     <FormItem className="md:col-span-2">
-                      <FormLabel>Adresse *</FormLabel>
+                      <FormLabel>Adresse</FormLabel>
                       <FormControl>
                         <Input placeholder="Entrer l'adresse complète" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                {/* Complement Address */}
+                <FormField
+                  control={form.control}
+                  name="Complement_adresse"
+                  render={({ field }) => (
+                    <FormItem className="md:col-span-2">
+                      <FormLabel>Complément d'adresse</FormLabel>
+                      <FormControl>
+                        <Input placeholder="Complément d'adresse (optionnel)" {...field} value={field.value || ""} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -388,7 +500,7 @@ export function AddUserDialog({ onUserAdded }: AddUserDialogProps) {
                   name="Code_Postal"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Code Postal *</FormLabel>
+                      <FormLabel>Code Postal</FormLabel>
                       <FormControl>
                         <Input placeholder="Ex: 2005" {...field} />
                       </FormControl>
@@ -403,7 +515,7 @@ export function AddUserDialog({ onUserAdded }: AddUserDialogProps) {
                   name="Ville"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Ville *</FormLabel>
+                      <FormLabel>Ville</FormLabel>
                       <FormControl>
                         <Input placeholder="Ex: Gafsa" {...field} />
                       </FormControl>
@@ -418,8 +530,8 @@ export function AddUserDialog({ onUserAdded }: AddUserDialogProps) {
                   name="Gouvernorat"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Gouvernorat *</FormLabel>
-                      <Select onValueChange={field.onChange} defaultValue={field.value}>
+                      <FormLabel>Gouvernorat</FormLabel>
+                      <Select onValueChange={field.onChange} value={field.value}>
                         <FormControl>
                           <SelectTrigger>
                             <SelectValue placeholder="Sélectionner le gouvernorat" />
@@ -463,7 +575,7 @@ export function AddUserDialog({ onUserAdded }: AddUserDialogProps) {
                   name="Pays"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Pays *</FormLabel>
+                      <FormLabel>Pays</FormLabel>
                       <FormControl>
                         <Input placeholder="Tunisie" {...field} />
                       </FormControl>
@@ -487,8 +599,8 @@ export function AddUserDialog({ onUserAdded }: AddUserDialogProps) {
                   name="Type_Utilisateur"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Type d'Utilisateur *</FormLabel>
-                      <Select onValueChange={field.onChange} defaultValue={field.value}>
+                      <FormLabel>Type d'Utilisateur</FormLabel>
+                      <Select onValueChange={field.onChange} value={field.value}>
                         <FormControl>
                           <SelectTrigger>
                             <SelectValue placeholder="Sélectionner le type" />
@@ -510,30 +622,19 @@ export function AddUserDialog({ onUserAdded }: AddUserDialogProps) {
                   name="Site_Defaut"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Site par Défaut *</FormLabel>
-                      <Select onValueChange={field.onChange} defaultValue={field.value}>
+                      <FormLabel>Site par Défaut</FormLabel>
+                      <Select onValueChange={field.onChange} value={field.value}>
                         <FormControl>
                           <SelectTrigger>
-                            <SelectValue placeholder={loadingSites ? "Chargement..." : "Sélectionner le site"} />
+                            <SelectValue placeholder="Sélectionner le site" />
                           </SelectTrigger>
                         </FormControl>
                         <SelectContent>
-                          {loadingSites ? (
-                            <SelectItem value="loading" disabled>
-                              <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                              Chargement des sites...
-                            </SelectItem>
-                          ) : sites.length > 0 ? (
-                            sites.map((site) => (
-                              <SelectItem key={site.Raison_Sociale} value={site.Raison_Sociale}>
-                                {site.Raison_Sociale}
-                              </SelectItem>
-                            ))
-                          ) : (
-                            <SelectItem value="no-sites" disabled>
-                              Aucun site disponible
-                            </SelectItem>
-                          )}
+                          <SelectItem value="Tunis">Tunis</SelectItem>
+                          <SelectItem value="Sfax">Sfax</SelectItem>
+                          <SelectItem value="Sousse">Sousse</SelectItem>
+                          <SelectItem value="Gafsa">Gafsa</SelectItem>
+                          <SelectItem value="Gabès">Gabès</SelectItem>
                         </SelectContent>
                       </Select>
                       <FormMessage />
@@ -547,8 +648,8 @@ export function AddUserDialog({ onUserAdded }: AddUserDialogProps) {
                   name="Profil"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Profil *</FormLabel>
-                      <Select onValueChange={field.onChange} defaultValue={field.value}>
+                      <FormLabel>Profil</FormLabel>
+                      <Select onValueChange={field.onChange} value={field.value}>
                         <FormControl>
                           <SelectTrigger>
                             <SelectValue placeholder={loadingProfiles ? "Chargement..." : "Sélectionner le profil"} />
@@ -582,68 +683,32 @@ export function AddUserDialog({ onUserAdded }: AddUserDialogProps) {
 
             {/* Password Information */}
             <div className="space-y-4">
-              <h3 className="text-lg font-semibold text-gray-900">Informations de Connexion</h3>
-              <div className="space-y-4">
+              <h3 className="text-lg font-semibold text-gray-900">Changer le Mot de Passe (Optionnel)</h3>
+              <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+                <div className="flex items-center gap-2 text-yellow-800 mb-2">
+                  <Shield className="h-4 w-4" />
+                  <span className="font-medium">Modification du mot de passe</span>
+                </div>
                 <FormField
                   control={form.control}
                   name="Mot_de_passe"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Mot de passe</FormLabel>
-                      <div className="flex gap-2">
-                        <div className="relative flex-1">
-                          <FormControl>
-                            <Input 
-                              type={showPassword ? "text" : "password"} 
-                              {...field}
-                            />
-                          </FormControl>
-                          <Button
-                            type="button"
-                            variant="ghost"
-                            size="sm"
-                            className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
-                            onClick={() => setShowPassword(!showPassword)}
-                          >
-                            {showPassword ? (
-                              <EyeOff className="h-4 w-4 text-gray-400" />
-                            ) : (
-                              <Eye className="h-4 w-4 text-gray-400" />
-                            )}
-                          </Button>
-                        </div>
-                        <Button
-                          type="button"
-                          variant="outline"
-                          size="sm"
-                          onClick={() => {
-                            const newPassword = generatePassword();
-                            form.setValue("Mot_de_passe", newPassword);
-                            toast({
-                              title: "🔑 Nouveau mot de passe",
-                              description: "Un nouveau mot de passe a été généré.",
-                            });
-                          }}
-                        >
-                          <RefreshCw className="h-4 w-4 mr-2" />
-                          Générer
-                        </Button>
-                      </div>
+                      <FormLabel>Nouveau mot de passe</FormLabel>
+                      <FormControl>
+                        <Input 
+                          type="password" 
+                          placeholder="Laissez vide pour conserver le mot de passe actuel" 
+                          {...field} 
+                        />
+                      </FormControl>
                       <FormMessage />
                     </FormItem>
                   )}
                 />
-                <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-                  <div className="flex items-center gap-2 text-blue-800">
-                    <Shield className="h-4 w-4" />
-                    <span className="font-medium">Sécurité du mot de passe</span>
-                  </div>
-                  <p className="text-blue-700 text-sm mt-1">
-                    Un mot de passe sécurisé a été généré automatiquement. 
-                    Vous pouvez le modifier ou en générer un nouveau. 
-                    L'utilisateur pourra le changer lors de sa première connexion.
-                  </p>
-                </div>
+                <p className="text-yellow-700 text-sm mt-2">
+                  Laissez ce champ vide si vous ne souhaitez pas changer le mot de passe.
+                </p>
               </div>
             </div>
 
@@ -660,12 +725,12 @@ export function AddUserDialog({ onUserAdded }: AddUserDialogProps) {
                 {isLoading ? (
                   <>
                     <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                    Création...
+                    Mise à jour...
                   </>
                 ) : (
                   <>
-                    <Plus className="h-4 w-4 mr-2" />
-                    Créer l'Utilisateur
+                    <Save className="h-4 w-4 mr-2" />
+                    Mettre à Jour
                   </>
                 )}
               </Button>
@@ -675,4 +740,4 @@ export function AddUserDialog({ onUserAdded }: AddUserDialogProps) {
       </DialogContent>
     </Dialog>
   );
-} 
+}
