@@ -19,14 +19,13 @@ export default function Component() {
             {/* Logo */}
             <div className="flex items-center">
               <div className="flex-shrink-0">
-                <div className="w-10 h-10 bg-[#3A90DA] rounded-lg flex items-center justify-center">
-                  <span className="text-white font-bold text-xl">CA</span>
-                </div>
+                <img 
+                  src="/Admission.jpg" 
+                  alt="Logo" 
+                  className="w-20 h-20 object-contain"
+                />
               </div>
-              <div className="ml-3">
-                <span className="text-xl font-bold text-gray-900">Admission</span>
-                <span className="block text-sm text-gray-500">Centre De Formation de langue allmenende</span>
-              </div>
+             
             </div>
 
             {/* Desktop Navigation */}
@@ -58,9 +57,17 @@ export default function Component() {
                 </Link>
                 <Button
                   variant="outline"
-                  className="border-[#3A90DA] text-[#3A90DA] hover:bg-[#3A90DA] hover:text-white"
+                  size="sm"
+                  className="border-[#3A90DA] text-[#3A90DA] hover:bg-[#3A90DA] hover:text-white px-3 py-1 text-sm"
                 >
-                  <Link href="/login">Login</Link>
+                  <Link href="/login">Connexion</Link>
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="border-[#3A90DA] text-[#3A90DA] hover:bg-[#3A90DA] hover:text-white px-3 py-1 text-sm"
+                >
+                  <Link href="/login/prospect">Espace Prospect</Link>
                 </Button>
               </div>
             </div>
@@ -367,10 +374,11 @@ export default function Component() {
           <div className="grid md:grid-cols-4 gap-8">
             <div>
               <div className="flex items-center mb-4">
-                <div className="w-8 h-8 bg-[#3A90DA] rounded-lg flex items-center justify-center mr-3">
-                  <span className="text-white font-bold">CA</span>
-                </div>
-                <span className="text-lg font-bold">Admission</span>
+                <img 
+                  src="/admission.jpg" 
+                  alt="Admission Logo" 
+                  className="w-20 h-20 object-contain mr-3"
+                />
               </div>
               <p className="text-gray-400">
                 La solution RH nouvelle génération pour optimiser vos processus de recrutement et de gestion des
