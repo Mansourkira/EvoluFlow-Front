@@ -3,16 +3,16 @@ import './globals.css'
 import { Toaster } from 'sonner'
 
 export const metadata: Metadata = {
-  title: 'EvoluFlow - Plateforme de Gestion',
+  title: 'EvoluFlow V1.0',
   description: 'Plateforme de gestion des utilisateurs et admissions EvoluFlow',
-  generator: 'EvoluFlow',
+  generator: 'EvoluFlow V1.0',
   icons: {
-    icon: '/logo1.png',
-    shortcut: '/logo1.png',
-    apple: '/logo1.png',
+    icon: '/sigle1.png',
+    shortcut: '/sigle1.png',
+    apple: '/sigle1.png',
     other: {
       rel: 'apple-touch-icon-precomposed',
-      url: '/logo1.png',
+      url: '/sigle1.png',
     },
   },
 }

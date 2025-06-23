@@ -38,11 +38,9 @@ export default function Navbar({ activeLink }: NavbarProps) {
               <img 
                 src="/Admission.jpg" 
                 alt="Logo" 
-                className="w-12 h-12 object-contain"
+                className="w-20 h-20 object-contain"
               />
-              <div className="ml-2">
-                <span className="text-lg font-bold text-gray-900">EvoluFlow</span>
-              </div>
+           
             </Link>
           </div>
 
@@ -58,6 +56,16 @@ export default function Navbar({ activeLink }: NavbarProps) {
                 }`}
               >
                 Accueil
+              </Link>
+              <Link
+                href="/services"
+                className={`px-4 py-2 text-sm font-medium transition-all duration-200 rounded-full ${
+                  isActive("services") 
+                    ? "bg-[#3A90DA] text-white shadow-md" 
+                    : "text-gray-700 hover:text-[#3A90DA] hover:bg-white hover:shadow-sm"
+                }`}
+              >
+                Nos Services
               </Link>
               <Link
                 href="/about"
@@ -79,16 +87,7 @@ export default function Navbar({ activeLink }: NavbarProps) {
               >
                 Nous Contacter
               </Link>
-              <Link
-                href="#"
-                className={`px-4 py-2 text-sm font-medium transition-all duration-200 rounded-full ${
-                  isActive("elearning") 
-                    ? "bg-[#3A90DA] text-white shadow-md" 
-                    : "text-gray-700 hover:text-[#3A90DA] hover:bg-white hover:shadow-sm"
-                }`}
-              >
-                E-learning
-              </Link>
+           
             </div>
           </div>
 
@@ -170,6 +169,17 @@ export default function Navbar({ activeLink }: NavbarProps) {
                 À Propos
               </Link>
               <Link 
+                href="#"
+                className={`block px-4 py-3 text-base font-medium rounded-lg transition-colors ${
+                  isActive("elearning") 
+                    ? "bg-[#3A90DA] text-white" 
+                    : "text-gray-700 hover:bg-gray-50 hover:text-[#3A90DA]"
+                }`}
+                onClick={() => setIsMenuOpen(false)}
+              >
+                Nos Services
+              </Link>
+              <Link 
                 href="/contactus"
                 className={`block px-4 py-3 text-base font-medium rounded-lg transition-colors ${
                   isActive("contact") || (typeof window !== 'undefined' && window.location.pathname === '/contactus')
@@ -180,17 +190,7 @@ export default function Navbar({ activeLink }: NavbarProps) {
               >
                 Nous Contacter
               </Link>
-              <Link 
-                href="#"
-                className={`block px-4 py-3 text-base font-medium rounded-lg transition-colors ${
-                  isActive("elearning") 
-                    ? "bg-[#3A90DA] text-white" 
-                    : "text-gray-700 hover:bg-gray-50 hover:text-[#3A90DA]"
-                }`}
-                onClick={() => setIsMenuOpen(false)}
-              >
-                E-learning
-              </Link>
+           
               
               {/* Mobile Auth Section */}
               <div className="pt-4 border-t border-gray-200 space-y-2">
