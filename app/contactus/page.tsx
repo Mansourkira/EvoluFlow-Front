@@ -7,15 +7,14 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { MapPin, Phone, Mail, Clock, Send, MessageSquare, Users, Headphones, Menu, X } from "lucide-react"
+import { MapPin, Phone, Mail, Clock, Send, MessageSquare, Users, Headphones } from "lucide-react"
 import { useRouter } from "next/navigation"
 import { useState } from "react"
-import Link from "next/link"
+import Navbar from "@/components/navbar"
 import Footer from "@/components/footer"
 
 export default function ContactUsPage() {
   const router = useRouter()
-  const [isMenuOpen, setIsMenuOpen] = useState(false)
   const [formData, setFormData] = useState({
     name: "",
     email: "",
@@ -44,102 +43,7 @@ export default function ContactUsPage() {
   return (
     <div className="min-h-screen bg-[#F6F6F6]" style={{ fontFamily: "Cairo, sans-serif" }}>
       {/* Navigation */}
-      <nav className="bg-white shadow-sm border-b">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center h-16">
-            {/* Logo */}
-            <div className="flex items-center">
-              <div className="flex-shrink-0">
-                <img 
-                  src="/Admission.jpg" 
-                  alt="Logo" 
-                  className="w-20 h-20 object-contain"
-                />
-              </div>
-             
-            </div>
-
-            {/* Desktop Navigation */}
-            <div className="hidden md:block">
-              <div className="ml-10 flex items-baseline space-x-8">
-                <Link
-                  href="/"
-                  className="text-gray-700 hover:text-[#3A90DA] px-3 py-2 text-sm font-medium transition-colors"
-                >
-                  Accueil
-                </Link>
-                <Link
-                  href="/about"
-                  className="text-gray-700 hover:text-[#3A90DA] px-3 py-2 text-sm font-medium transition-colors"
-                >
-                  À Propos
-                </Link>
-                <Link
-                  href="/contactus"
-                  className="text-gray-700 hover:text-[#3A90DA] px-3 py-2 text-sm font-medium transition-colors"
-                >
-                  Nous Contacter
-                </Link>
-                <Link
-                  href="#"
-                  className="text-gray-700 hover:text-[#3A90DA] px-3 py-2 text-sm font-medium transition-colors"
-                >
-                  E-learning
-                </Link>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="border-[#3A90DA] text-[#3A90DA] hover:bg-[#3A90DA] hover:text-white px-3 py-1 text-sm"
-                >
-                  <Link href="/login">Connexion</Link>
-                </Button>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="border-[#3A90DA] text-[#3A90DA] hover:bg-[#3A90DA] hover:text-white px-3 py-1 text-sm"
-                >
-                  <Link href="/login/prospect">Espace Prospect</Link>
-                </Button>
-              </div>
-            </div>
-
-            {/* Mobile menu button */}
-            <div className="md:hidden">
-              <Button variant="ghost" size="sm" onClick={() => setIsMenuOpen(!isMenuOpen)}>
-                {isMenuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
-              </Button>
-            </div>
-          </div>
-
-          {/* Mobile Navigation */}
-          {isMenuOpen && (
-            <div className="md:hidden">
-              <div className="px-2 pt-2 pb-3 space-y-1 sm:px-3 bg-white border-t">
-                <Link href="/" className="text-gray-700 hover:text-[#3A90DA] block px-3 py-2 text-base font-medium">
-                  Accueil
-                </Link>
-                <Link href="/about" className="text-gray-700 hover:text-[#3A90DA] block px-3 py-2 text-base font-medium">
-                  À Propos
-                </Link>
-                <Link href="/contactus" className="text-gray-700 hover:text-[#3A90DA] block px-3 py-2 text-base font-medium">
-                  Nous Contacter
-                </Link>
-                <Link href="#" className="text-gray-700 hover:text-[#3A90DA] block px-3 py-2 text-base font-medium">
-                  E-learning
-                </Link>
-                <div className="px-3 py-2">
-                  <Button
-                    variant="outline"
-                    className="w-full border-[#3A90DA] text-[#3A90DA] hover:bg-[#3A90DA] hover:text-white"
-                  >
-                    <Link href="/login">Login</Link>
-                  </Button>
-                </div>
-              </div>
-            </div>
-          )}
-        </div>
-      </nav>
+      <Navbar activeLink="contact" />
 
       {/* Hero Section */}
       <section className="relative bg-gradient-to-br from-[#3A90DA] to-[#62ace1] text-white">
