@@ -25,13 +25,41 @@ interface User {
   typeUtilisateur: string
   status?: string
   joinDate?: string
+  telephone?: string
+  adresse?: string
+  image?: string | null
 }
 
 interface LoginApiResponse {
+  token: string
+  user: {
+    Nom_Prenom: string
+    E_mail: string
+    Type_Utilisateur: string
+    Profil: string
+    Profil_Libelle: string
+  }
+}
+
+interface UserApiResponse {
+  Reference: string
   Nom_Prenom: string
   E_mail: string
   Type_Utilisateur: string
   Profil: string
+  Profil_Libelle?: string
+  Telephone?: string
+  Adresse?: string
+  Complement_adresse?: string
+  Code_Postal?: string
+  Ville?: string
+  Gouvernorat?: string
+  Pays?: string
+  Site_Defaut?: string
+  Heure?: string
+  Temp_Raffraichissement?: string
+  Couleur?: string
+  Image?: string | null
 }
 
 interface LoginResponse {
@@ -68,19 +96,20 @@ export const useLogin = () => {
         
         // Transform API response to our User format
         const user: User = {
-          email: data.E_mail,
-          name: data.Nom_Prenom,
-          role: data.Type_Utilisateur,
-          profil: data.Profil,
-          profilLabel: PROFILE_MAPPING[data.Profil as keyof typeof PROFILE_MAPPING] || data.Profil,
-          typeUtilisateur: data.Type_Utilisateur
+          email: data.user.E_mail,
+          name: data.user.Nom_Prenom,
+          role: data.user.Type_Utilisateur,
+          profil: data.user.Profil,
+          profilLabel: data.user.Profil_Libelle || PROFILE_MAPPING[data.user.Profil as keyof typeof PROFILE_MAPPING] || data.user.Profil,
+          typeUtilisateur: data.user.Type_Utilisateur
+          
         }
 
         const loginResponse: LoginResponse = {
           success: true,
           message: 'Connexion réussie',
           user: user,
-          token: `token_${Date.now()}` // Generate a simple token since API doesn't provide one
+          token: data.token // Use the actual token from API response
         }
 
         // Store user data in localStorage
@@ -215,6 +244,7 @@ export const useAuthStatus = () => {
       if (token && userData) {
         const parsedUser = JSON.parse(userData)
         setUser(parsedUser)
+        console.log('User data:', parsedUser)
         setIsAuthenticated(true)
       } else {
         setUser(null)
@@ -245,17 +275,28 @@ export const useUsers = () => {
   const fetchUsers = async (): Promise<User[]> => {
     setIsLoading(true)
     setError(null)
-
+    const token = localStorage.getItem('token')
+    console.log('Fetching users with token:', token)  
+    
+    if (!token) {
+      setError('Token d\'authentification manquant')
+      setIsLoading(false)
+      return []
+    }
+    
     try {
       const response = await fetch('http://localhost:3000/api/v1/UsersList', {
         method: 'GET',
         headers: {
+          'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json',
         },
       })
 
+      console.log('Users API response status:', response.status)
+
       if (response.ok) {
-        const data: LoginApiResponse[] = await response.json()
+        const data: UserApiResponse[] = await response.json()
         
         // Transform API response to our User format
         const transformedUsers: User[] = data.map((apiUser, index) => ({
@@ -267,11 +308,20 @@ export const useUsers = () => {
           profilLabel: PROFILE_MAPPING[apiUser.Profil as keyof typeof PROFILE_MAPPING] || apiUser.Profil,
           typeUtilisateur: apiUser.Type_Utilisateur || 'User',
           status: 'Active', // Default status since API doesn't provide this
-          joinDate: new Date().toISOString().split('T')[0] // Default to today
+          joinDate: new Date().toISOString().split('T')[0], // Default to today
+          telephone: apiUser.Telephone,
+          adresse: apiUser.Adresse,
+          image: apiUser.Image
         }))
 
         setUsers(transformedUsers)
         return transformedUsers
+      } else if (response.status === 401 || response.status === 403) {
+        // Token is invalid, clear storage and redirect to login
+        localStorage.removeItem('user')
+        localStorage.removeItem('token')
+        setError('Session expirée. Veuillez vous reconnecter.')
+        return []
       } else {
         const errorData = await response.json().catch(() => ({}))
         setError(errorData.error || 'Erreur lors de la récupération des utilisateurs')
@@ -296,5 +346,66 @@ export const useUsers = () => {
     isLoading, 
     error, 
     refetch: fetchUsers 
+  }
+}
+
+// Custom hook for fetching societe data
+export const useSociete = () => {
+  const [societe, setSociete] = useState<any>(null)
+  const [isLoading, setIsLoading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+
+  const fetchSociete = async (utilisateur: string): Promise<any> => {
+    setIsLoading(true)
+    setError(null)
+    const token = localStorage.getItem('token')
+    
+    if (!token) {
+      setError('Token d\'authentification manquant')
+      setIsLoading(false)
+      return null
+    }
+    
+    try {
+      const response = await fetch('http://localhost:3000/api/v1/societe/by-utilisateur', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ Utilisateur: utilisateur }),
+      })
+
+      console.log('Societe API response status:', response.status)
+
+      if (response.ok) {
+        const data = await response.json()
+        setSociete(data.societe)
+        return data.societe
+      } else if (response.status === 401 || response.status === 403) {
+        // Token is invalid, clear storage and redirect to login
+        localStorage.removeItem('user')
+        localStorage.removeItem('token')
+        setError('Session expirée. Veuillez vous reconnecter.')
+        return null
+      } else {
+        const errorData = await response.json().catch(() => ({}))
+        setError(errorData.error || 'Erreur lors de la récupération de la société')
+        return null
+      }
+    } catch (err) {
+      setError('Erreur de connexion au serveur')
+      console.error('Fetch societe error:', err)
+      return null
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  return { 
+    societe, 
+    isLoading, 
+    error, 
+    fetchSociete 
   }
 } 

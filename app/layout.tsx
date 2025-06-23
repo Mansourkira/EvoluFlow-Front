@@ -1,28 +1,38 @@
-import type React from "react"
-import type { Metadata } from "next"
-import "./globals.css"
+import type { Metadata } from 'next'
+import './globals.css'
+import { Toaster } from 'sonner'
 
 export const metadata: Metadata = {
-  title: "Admission",
-  description: "Révolutionnez votre gestion Admission avec notre plateforme technologique avancée",
+  title: 'EvoluFlow - Plateforme de Gestion',
+  description: 'Plateforme de gestion des utilisateurs et admissions EvoluFlow',
+  generator: 'EvoluFlow',
+  icons: {
+    icon: '/logo1.png',
+    shortcut: '/logo1.png',
+    apple: '/logo1.png',
+    other: {
+      rel: 'apple-touch-icon-precomposed',
+      url: '/logo1.png',
+    },
+  },
 }
 
 export default function RootLayout({
   children,
-}: {
+}: Readonly<{
   children: React.ReactNode
-}) {
+}>) {
   return (
     <html lang="fr">
       <head>
-        <link rel="preconnect" href="https://fonts.googleapis.com" />
-        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
-        <link
-          href="https://fonts.googleapis.com/css2?family=Cairo:wght@200;300;400;500;600;700;800;900&display=swap"
-          rel="stylesheet"
-        />
+        <link rel="icon" href="/logo1.png" type="image/png" />
+        <link rel="apple-touch-icon" href="/logo1.png" />
+        <meta name="theme-color" content="#3A90DA" />
       </head>
-      <body style={{ fontFamily: "Cairo, sans-serif" }}>{children}</body>
+      <body>
+        {children}
+        <Toaster />
+      </body>
     </html>
   )
-} 
+}

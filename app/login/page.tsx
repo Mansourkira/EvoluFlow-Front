@@ -73,18 +73,18 @@ export default function LoginPage() {
                       {/* Login Card */}
             <Card className="border-2 shadow-2xl bg-white backdrop-blur-sm">
               <CardHeader className="text-center pb-6">
-                <div className="flex justify-center items-center mb-6 pt-4">
+                <div className="flex justify-center items-center  pt-4">
                   <Image 
-                    src="/admission.png" 
-                    alt="Admission Logo" 
-                    width={80} 
-                    height={80} 
-                    className="rounded-lg shadow-sm"
+                    src="/logo1.png" 
+                    alt="EvoluFlow Logo" 
+                    width={150} 
+                    height={150} 
+                    className="rounded-lg"
                   />
                 </div>
                 <CardTitle className="text-2xl font-bold text-gray-900">Connexion</CardTitle>
                 <CardDescription className="text-gray-600">
-                  Accédez à votre espace Admission
+                  Accédez à votre espace EvoluFlow
                 </CardDescription>
               </CardHeader>
 
