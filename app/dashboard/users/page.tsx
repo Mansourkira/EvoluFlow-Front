@@ -74,6 +74,16 @@ interface ColumnVisibility {
   adresse: boolean
 }
 
+// Types pour les filtres par champ
+interface FieldFilters {
+  name: string
+  email: string
+  telephone: string
+  adresse: string
+  role: string
+  joinDate: string
+}
+
 export default function UsersPage() {
   // Utilisation du hook personnalisé pour récupérer les utilisateurs depuis l'API
   const { users, isLoading, error, refetch } = useUsers()
@@ -109,7 +119,59 @@ export default function UsersPage() {
     adresse: true,
   })
   
+  // État des filtres par champ
+  const [fieldFilters, setFieldFilters] = useState<FieldFilters>({
+    name: '',
+    email: '',
+    telephone: '',
+    adresse: '',
+    role: 'all',
+    joinDate: ''
+  })
+  
+  // État pour afficher/masquer les filtres avancés
+  const [showAdvancedFilters, setShowAdvancedFilters] = useState(false)
+  
   const [itemsPerPage, setItemsPerPage] = useState(5)
+
+  // Fonction pour mettre à jour un filtre de champ spécifique
+  const updateFieldFilter = (field: keyof FieldFilters, value: string) => {
+    setFieldFilters(prev => ({
+      ...prev,
+      [field]: value
+    }))
+    // Reset to page 1 when filter changes
+    setCurrentPage(1)
+  }
+
+  // Fonction pour effacer tous les filtres
+  const clearAllFilters = () => {
+    setSearchTerm('')
+    setRoleFilter('all')
+    setFieldFilters({
+      name: '',
+      email: '',
+      telephone: '',
+      adresse: '',
+      role: 'all',
+      joinDate: ''
+    })
+    setCurrentPage(1)
+  }
+
+  // Fonction pour compter les filtres actifs
+  const getActiveFiltersCount = () => {
+    let count = 0
+    if (searchTerm) count++
+    if (roleFilter !== 'all') count++
+    if (fieldFilters.name) count++
+    if (fieldFilters.email) count++
+    if (fieldFilters.telephone) count++
+    if (fieldFilters.adresse) count++
+    if (fieldFilters.role !== 'all' && fieldFilters.role !== roleFilter) count++
+    if (fieldFilters.joinDate) count++
+    return count
+  }
 
   // Fonction pour basculer la visibilité d'une colonne
   const toggleColumnVisibility = (column: keyof ColumnVisibility) => {
@@ -188,16 +250,41 @@ export default function UsersPage() {
     }
   })
 
-  // Filtrer les utilisateurs triés selon le terme de recherche et le rôle
+  // Filtrer les utilisateurs triés selon le terme de recherche, le rôle et les filtres de champs
   const filteredUsers = sortedUsers.filter((user) => {
-    const matchesSearch =
+    // Filtre de recherche global
+    const matchesSearch = !searchTerm || (
       user.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
       user.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
       (user.telephone || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
       (user.adresse || '').toLowerCase().includes(searchTerm.toLowerCase())
+    )
+    
+    // Filtre de rôle global
     const matchesRole = roleFilter === "all" || user.profilLabel === roleFilter
 
-    return matchesSearch && matchesRole
+    // Filtres par champs spécifiques
+    const matchesNameFilter = !fieldFilters.name || 
+      user.name.toLowerCase().includes(fieldFilters.name.toLowerCase())
+    
+    const matchesEmailFilter = !fieldFilters.email || 
+      user.email.toLowerCase().includes(fieldFilters.email.toLowerCase())
+    
+    const matchesTelephoneFilter = !fieldFilters.telephone || 
+      (user.telephone || '').toLowerCase().includes(fieldFilters.telephone.toLowerCase())
+    
+    const matchesAdresseFilter = !fieldFilters.adresse || 
+      (user.adresse || '').toLowerCase().includes(fieldFilters.adresse.toLowerCase())
+    
+    const matchesRoleFieldFilter = fieldFilters.role === 'all' || 
+      user.profilLabel === fieldFilters.role
+    
+    const matchesJoinDateFilter = !fieldFilters.joinDate || 
+      (user.joinDate || '').includes(fieldFilters.joinDate)
+
+    return matchesSearch && matchesRole && matchesNameFilter && 
+           matchesEmailFilter && matchesTelephoneFilter && matchesAdresseFilter && 
+           matchesRoleFieldFilter && matchesJoinDateFilter
   })
 
   // Pagination
@@ -585,126 +672,286 @@ export default function UsersPage() {
         )}
 
         {/* Filtres */}
-        <div className="flex flex-col sm:flex-row gap-4 mb-6 p-4 bg-muted/50 rounded-lg">
-          <div className="flex-1">
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-              <Input
-                placeholder="Rechercher des utilisateurs par nom, email, téléphone ou adresse..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-10"
-              />
+        <div className="space-y-4 mb-6 p-4 bg-muted/50 rounded-lg">
+          {/* Filtres de base */}
+          <div className="flex flex-col sm:flex-row gap-4">
+            <div className="flex-1">
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Input
+                  placeholder="Recherche globale (nom, email, téléphone, adresse)..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="pl-10"
+                />
+              </div>
+            </div>
+
+            <div className="flex gap-2">
+              {/* Filtre par rôle global */}
+              <Select value={roleFilter} onValueChange={setRoleFilter}>
+                <SelectTrigger className="w-[180px]">
+                  <Filter className="h-4 w-4 mr-2" />
+                  <SelectValue placeholder="Tous les Rôles" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Tous les Rôles</SelectItem>
+                  <SelectItem value="Administratif">Administratif</SelectItem>
+                  <SelectItem value="Consultant">Consultant</SelectItem>
+                  <SelectItem value="Prospect ou visiteur">Prospect ou visiteur</SelectItem>
+                  <SelectItem value="Candidat">Candidat</SelectItem>
+                  <SelectItem value="Professeur">Professeur</SelectItem>
+                  <SelectItem value="Direction">Direction</SelectItem>
+                  <SelectItem value="Financier">Financier</SelectItem>
+                  <SelectItem value="Organisme">Organisme</SelectItem>
+                  <SelectItem value="Admin">Admin</SelectItem>
+                </SelectContent>
+              </Select>
+
+              {/* Bouton pour filtres avancés */}
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setShowAdvancedFilters(!showAdvancedFilters)}
+                className={`${showAdvancedFilters ? 'bg-blue-50 border-blue-200' : ''}`}
+              >
+                <Filter className="h-4 w-4 mr-2" />
+                Filtres avancés
+                {getActiveFiltersCount() > 0 && (
+                  <Badge variant="secondary" className="ml-2 h-5 w-5 rounded-full p-0 flex items-center justify-center text-xs">
+                    {getActiveFiltersCount()}
+                  </Badge>
+                )}
+              </Button>
+
+              {/* Bouton pour effacer tous les filtres */}
+              {getActiveFiltersCount() > 0 && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={clearAllFilters}
+                  className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                >
+                  <X className="h-4 w-4 mr-2" />
+                  Effacer filtres
+                </Button>
+              )}
+
+              {/* Sélecteur de colonnes */}
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="outline" size="sm">
+                    <Columns className="h-4 w-4 mr-2" />
+                    Colonnes
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent className="w-48">
+                  <div className="p-2">
+                    <div className="text-sm font-medium mb-2 text-gray-700">Afficher les colonnes</div>
+                    
+                    <div className="space-y-2">
+                      <div className="flex items-center space-x-2">
+                        <Checkbox
+                          id="col-avatar"
+                          checked={columnVisibility.avatar}
+                          onCheckedChange={() => toggleColumnVisibility('avatar')}
+                        />
+                        <label htmlFor="col-avatar" className="text-sm">Avatar</label>
+                      </div>
+                      
+                      <div className="flex items-center space-x-2">
+                        <Checkbox
+                          id="col-name"
+                          checked={columnVisibility.name}
+                          onCheckedChange={() => toggleColumnVisibility('name')}
+                        />
+                        <label htmlFor="col-name" className="text-sm">Nom</label>
+                      </div>
+                      
+                      <div className="flex items-center space-x-2">
+                        <Checkbox
+                          id="col-email"
+                          checked={columnVisibility.email}
+                          onCheckedChange={() => toggleColumnVisibility('email')}
+                        />
+                        <label htmlFor="col-email" className="text-sm">Email</label>
+                      </div>
+                      
+                      <div className="flex items-center space-x-2">
+                        <Checkbox
+                          id="col-telephone"
+                          checked={columnVisibility.telephone}
+                          onCheckedChange={() => toggleColumnVisibility('telephone')}
+                        />
+                        <label htmlFor="col-telephone" className="text-sm flex items-center gap-1">
+                          <Phone className="h-3 w-3" />
+                          Téléphone
+                        </label>
+                      </div>
+                      
+                      <div className="flex items-center space-x-2">
+                        <Checkbox
+                          id="col-adresse"
+                          checked={columnVisibility.adresse}
+                          onCheckedChange={() => toggleColumnVisibility('adresse')}
+                        />
+                        <label htmlFor="col-adresse" className="text-sm flex items-center gap-1">
+                          <MapPin className="h-3 w-3" />
+                          Adresse
+                        </label>
+                      </div>
+                      
+                      <div className="flex items-center space-x-2">
+                        <Checkbox
+                          id="col-role"
+                          checked={columnVisibility.role}
+                          onCheckedChange={() => toggleColumnVisibility('role')}
+                        />
+                        <label htmlFor="col-role" className="text-sm">Rôle</label>
+                      </div>
+                      
+                      <div className="flex items-center space-x-2">
+                        <Checkbox
+                          id="col-joinDate"
+                          checked={columnVisibility.joinDate}
+                          onCheckedChange={() => toggleColumnVisibility('joinDate')}
+                        />
+                        <label htmlFor="col-joinDate" className="text-sm">Date d'Inscription</label>
+                      </div>
+                    </div>
+                  </div>
+                </DropdownMenuContent>
+              </DropdownMenu>
             </div>
           </div>
 
-          <div className="flex gap-2">
-            {/* Filtre par rôle */}
-            <Select value={roleFilter} onValueChange={setRoleFilter}>
-              <SelectTrigger className="w-[180px]">
-                <Filter className="h-4 w-4 mr-2" />
-                <SelectValue placeholder="Tous les Rôles" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">Tous les Rôles</SelectItem>
-                <SelectItem value="Administratif">Administratif</SelectItem>
-                <SelectItem value="Consultant">Consultant</SelectItem>
-                <SelectItem value="Prospect ou visiteur">Prospect ou visiteur</SelectItem>
-                <SelectItem value="Candidat">Candidat</SelectItem>
-                <SelectItem value="Professeur">Professeur</SelectItem>
-                <SelectItem value="Direction">Direction</SelectItem>
-                <SelectItem value="Financier">Financier</SelectItem>
-                <SelectItem value="Organisme">Organisme</SelectItem>
-                <SelectItem value="Admin">Admin</SelectItem>
-              </SelectContent>
-            </Select>
+          {/* Filtres avancés */}
+          {showAdvancedFilters && (
+            <div className="border-t pt-4 space-y-4">
+              <div className="flex items-center gap-2 mb-3">
+                <Filter className="h-4 w-4 text-blue-600" />
+                <span className="text-sm font-medium text-blue-900">Filtres par champ</span>
+              </div>
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {/* Filtre Nom */}
+                <div>
+                  <Label htmlFor="filter-name" className="text-xs font-medium text-gray-700 mb-1 block">
+                    Nom
+                  </Label>
+                  <Input
+                    id="filter-name"
+                    placeholder="Filtrer par nom..."
+                    value={fieldFilters.name}
+                    onChange={(e) => updateFieldFilter('name', e.target.value)}
+                    className="h-8"
+                  />
+                </div>
 
-            {/* Sélecteur de colonnes */}
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="outline" size="sm">
-                  <Columns className="h-4 w-4 mr-2" />
-                  Colonnes
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent className="w-48">
-                <div className="p-2">
-                  <div className="text-sm font-medium mb-2 text-gray-700">Afficher les colonnes</div>
-                  
-                  <div className="space-y-2">
-                    <div className="flex items-center space-x-2">
-                      <Checkbox
-                        id="col-avatar"
-                        checked={columnVisibility.avatar}
-                        onCheckedChange={() => toggleColumnVisibility('avatar')}
-                      />
-                      <label htmlFor="col-avatar" className="text-sm">Avatar</label>
+                {/* Filtre Email */}
+                <div>
+                  <Label htmlFor="filter-email" className="text-xs font-medium text-gray-700 mb-1 block">
+                    Email
+                  </Label>
+                  <Input
+                    id="filter-email"
+                    placeholder="Filtrer par email..."
+                    value={fieldFilters.email}
+                    onChange={(e) => updateFieldFilter('email', e.target.value)}
+                    className="h-8"
+                  />
+                </div>
+
+                {/* Filtre Téléphone */}
+                <div>
+                  <Label htmlFor="filter-telephone" className="text-xs font-medium text-gray-700 mb-1 block">
+                    Téléphone
+                  </Label>
+                  <Input
+                    id="filter-telephone"
+                    placeholder="Filtrer par téléphone..."
+                    value={fieldFilters.telephone}
+                    onChange={(e) => updateFieldFilter('telephone', e.target.value)}
+                    className="h-8"
+                  />
+                </div>
+
+                {/* Filtre Adresse */}
+                <div>
+                  <Label htmlFor="filter-adresse" className="text-xs font-medium text-gray-700 mb-1 block">
+                    Adresse
+                  </Label>
+                  <Input
+                    id="filter-adresse"
+                    placeholder="Filtrer par adresse..."
+                    value={fieldFilters.adresse}
+                    onChange={(e) => updateFieldFilter('adresse', e.target.value)}
+                    className="h-8"
+                  />
+                </div>
+
+                {/* Filtre Rôle spécifique */}
+                <div>
+                  <Label htmlFor="filter-role-field" className="text-xs font-medium text-gray-700 mb-1 block">
+                    Rôle (spécifique)
+                  </Label>
+                  <Select value={fieldFilters.role} onValueChange={(value) => updateFieldFilter('role', value)}>
+                    <SelectTrigger className="h-8">
+                      <SelectValue placeholder="Tous les rôles" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">Tous les rôles</SelectItem>
+                      <SelectItem value="Administratif">Administratif</SelectItem>
+                      <SelectItem value="Consultant">Consultant</SelectItem>
+                      <SelectItem value="Prospect ou visiteur">Prospect ou visiteur</SelectItem>
+                      <SelectItem value="Candidat">Candidat</SelectItem>
+                      <SelectItem value="Professeur">Professeur</SelectItem>
+                      <SelectItem value="Direction">Direction</SelectItem>
+                      <SelectItem value="Financier">Financier</SelectItem>
+                      <SelectItem value="Organisme">Organisme</SelectItem>
+                      <SelectItem value="Admin">Admin</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                {/* Filtre Date d'inscription */}
+                <div>
+                  <Label htmlFor="filter-joindate" className="text-xs font-medium text-gray-700 mb-1 block">
+                    Date d'inscription
+                  </Label>
+                  <Input
+                    id="filter-joindate"
+                    placeholder="YYYY-MM-DD"
+                    value={fieldFilters.joinDate}
+                    onChange={(e) => updateFieldFilter('joinDate', e.target.value)}
+                    className="h-8"
+                  />
+                </div>
+              </div>
+
+              {/* Résumé des filtres actifs */}
+              {getActiveFiltersCount() > 0 && (
+                <div className="bg-blue-50 border border-blue-200 rounded p-3">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <Filter className="h-4 w-4 text-blue-600" />
+                      <span className="text-sm font-medium text-blue-900">
+                        {getActiveFiltersCount()} filtre{getActiveFiltersCount() > 1 ? 's' : ''} actif{getActiveFiltersCount() > 1 ? 's' : ''}
+                      </span>
                     </div>
-                    
-                    <div className="flex items-center space-x-2">
-                      <Checkbox
-                        id="col-name"
-                        checked={columnVisibility.name}
-                        onCheckedChange={() => toggleColumnVisibility('name')}
-                      />
-                      <label htmlFor="col-name" className="text-sm">Nom</label>
-                    </div>
-                    
-                    <div className="flex items-center space-x-2">
-                      <Checkbox
-                        id="col-email"
-                        checked={columnVisibility.email}
-                        onCheckedChange={() => toggleColumnVisibility('email')}
-                      />
-                      <label htmlFor="col-email" className="text-sm">Email</label>
-                    </div>
-                    
-                    <div className="flex items-center space-x-2">
-                      <Checkbox
-                        id="col-telephone"
-                        checked={columnVisibility.telephone}
-                        onCheckedChange={() => toggleColumnVisibility('telephone')}
-                      />
-                      <label htmlFor="col-telephone" className="text-sm flex items-center gap-1">
-                        <Phone className="h-3 w-3" />
-                        Téléphone
-                      </label>
-                    </div>
-                    
-                    <div className="flex items-center space-x-2">
-                      <Checkbox
-                        id="col-adresse"
-                        checked={columnVisibility.adresse}
-                        onCheckedChange={() => toggleColumnVisibility('adresse')}
-                      />
-                      <label htmlFor="col-adresse" className="text-sm flex items-center gap-1">
-                        <MapPin className="h-3 w-3" />
-                        Adresse
-                      </label>
-                    </div>
-                    
-                    <div className="flex items-center space-x-2">
-                      <Checkbox
-                        id="col-role"
-                        checked={columnVisibility.role}
-                        onCheckedChange={() => toggleColumnVisibility('role')}
-                      />
-                      <label htmlFor="col-role" className="text-sm">Rôle</label>
-                    </div>
-                    
-                    <div className="flex items-center space-x-2">
-                      <Checkbox
-                        id="col-joinDate"
-                        checked={columnVisibility.joinDate}
-                        onCheckedChange={() => toggleColumnVisibility('joinDate')}
-                      />
-                      <label htmlFor="col-joinDate" className="text-sm">Date d'Inscription</label>
-                    </div>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={clearAllFilters}
+                      className="text-blue-600 hover:text-blue-800 hover:bg-blue-100 h-7"
+                    >
+                      Tout effacer
+                    </Button>
                   </div>
                 </div>
-              </DropdownMenuContent>
-            </DropdownMenu>
-          </div>
+              )}
+            </div>
+          )}
         </div>
 
         {/* État d'Erreur */}

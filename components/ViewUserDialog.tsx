@@ -442,7 +442,7 @@ export function ViewUserDialog({ user, trigger }: ViewUserDialogProps) {
               </div>
               <p className="text-yellow-700 text-sm mt-1">
                 Mot de passe: <span className="font-mono bg-yellow-100 px-2 py-1 rounded">
-                  {user.Mot_de_passe || '•••••••'}
+                  {'•••••••'}
                 </span>
               </p>
               <p className="text-yellow-600 text-xs mt-2">
