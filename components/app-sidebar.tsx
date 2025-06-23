@@ -21,9 +21,6 @@ import {
   Building,
   User,
   LogOut,
-  BarChart3,
-  BookOpen,
-  Calendar,
   Database,
   Home
 } from "lucide-react"
@@ -104,7 +101,7 @@ const getNavigationByRole = (role: UserRole, user: any) => {
           ],
         },
         {
-          title: "Paramétrage Traitement Dossier",
+          title: "Traitement Dossier",
           url: "#",
           icon: FileText,
           items: [
@@ -116,7 +113,7 @@ const getNavigationByRole = (role: UserRole, user: any) => {
           ],
         },
         {
-          title: "Paramétrage Cours-Examens",
+          title: "Cours-Examens",
           url: "#",
           icon: PenTool,
           items: [
@@ -133,98 +130,23 @@ const getNavigationByRole = (role: UserRole, user: any) => {
           ],
         },
       ],
-    },
-    gestion: {
-      title: "Gestion",
-      url: "#",
-      icon: FolderOpen,
-      items: [
-        {
-          title: 'Gestion des Candidats',
-          url: "/dashboard/candidats",
-          icon: Users,
-        },
-        {
-          title: 'Gestion des Prospects',
-          url: "/dashboard/prospects",
-          icon: Eye,
-        },
-        {
-          title: "Outils Langue",
-          url: "/dashboard/outils-langue",
-          icon: Languages,
-        },
-        {
-          title: 'Examens',
-          url: "/dashboard/examens",
-          icon: PenTool,
-        },
-      ],
-    },
-  
-    profils: {
-      title: "Gestion des Profils",
-      url: "#",
-      icon: UserCog,
-      items: [
-        {
-          title: "Profil Administratif",
-          url: "/dashboard/profil/administratif",
-          icon: Shield,
-        },
-        {
-          title: "Profil Consultant",
-          url: "/dashboard/profil/consultant",
-          icon: UserCheck,
-        },
-        {
-          title: 'Profil Prospect',
-          url: "/dashboard/profil/prospect",
-          icon: Eye,
-        },
-        {
-          title: 'Profil Candidat',
-          url: "/dashboard/profil/candidat",
-          icon: User,
-        },
-        {
-          title: 'Profil Expert',
-          url: "/dashboard/profil/professeur",
-          icon: GraduationCap,
-        },
-        {
-          title: "Profil Direction",
-          url: "/dashboard/profil/direction",
-          icon: Building2,
-        },
-        {
-          title: "Profil Financier",
-          url: "/dashboard/profil/financier",
-          icon: CreditCard,
-        },
-        {
-          title: "Profil Organisme",
-          url: "/dashboard/profil/organisme",
-          icon: Building,
-        },
-      ],
-    },
+    }
   }
 
   // Filter navigation based on user role
   const getNavItems = () => {
     const items = []
     
+    // Always include dashboard as the first item
+    items.push(baseNavigation.dashboard)
+    
     // Always include fichier de base as main category
     items.push(baseNavigation.fichierBase)
-    items.push(baseNavigation.gestion)
     
     switch (role) {
       case 'admin':
-        items.push(baseNavigation.profils)
         break
       case 'direction':
-        items.push(baseNavigation.profils)
         break
       case 'consultant':
         break
@@ -232,7 +154,6 @@ const getNavigationByRole = (role: UserRole, user: any) => {
         // Professeur has access to specific parts of Fichier de base
         break
       case 'financier':
-        items.push(baseNavigation.profils)
         break
     }
     
@@ -251,38 +172,7 @@ const getTeamData = (user: any) => {
   }]
 }
 
-// Projects based on user role
-const getProjectsByRole = (role: UserRole) => {
-  const allProjects = [
-    {
-      name: 'Candidatures en cours',
-      url: "/dashboard/candidatures-cours",
-      icon: Users,
-    },
-    {
-      name: 'Examens à venir',
-      url: "/dashboard/examens-venir", 
-      icon: Calendar,
-    },
-    {
-      name: "Rapports mensuels",
-      url: "/dashboard/rapports-mensuels",
-      icon: BarChart3,
-    },
-    {
-      name: "Documentation",
-      url: "/dashboard/documentation",
-      icon: BookOpen,
-    },
-  ]
 
-  // Filter projects based on role
-  if (role === 'candidat' || role === 'prospect') {
-    return allProjects.filter(p => p.name.includes('Candidatures') || p.name.includes('Documentation'))
-  }
-  
-  return allProjects
-}
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const { user, isAuthenticated } = useAuthStatus()
@@ -295,7 +185,6 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
       const userRole = user.role as UserRole
       const navItems = getNavigationByRole(userRole, user)
       const teams = getTeamData(user)
-      const projects = getProjectsByRole(userRole)
 
       setNavigationData({
         user: {
@@ -305,7 +194,6 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         },
         teams,
         navMain: navItems,
-        projects,
       })
     }
   }, [user, isAuthenticated])

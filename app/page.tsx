@@ -32,22 +32,22 @@ export default function Component() {
             <div className="hidden md:block">
               <div className="ml-10 flex items-baseline space-x-8">
                 <Link
-                  href="#"
+                  href="/"
                   className="text-gray-700 hover:text-[#3A90DA] px-3 py-2 text-sm font-medium transition-colors"
                 >
-                  Gestion des Candidats
+                  Accueil
                 </Link>
                 <Link
-                  href="#"
+                  href="/about"
                   className="text-gray-700 hover:text-[#3A90DA] px-3 py-2 text-sm font-medium transition-colors"
                 >
-                  Gestion des Prospects
+                  À Propos
                 </Link>
                 <Link
-                  href="#"
+                  href="/contactus"
                   className="text-gray-700 hover:text-[#3A90DA] px-3 py-2 text-sm font-medium transition-colors"
                 >
-                  Cours de Langue
+                  Nous Contacter
                 </Link>
                 <Link
                   href="#"
@@ -84,14 +84,14 @@ export default function Component() {
           {isMenuOpen && (
             <div className="md:hidden">
               <div className="px-2 pt-2 pb-3 space-y-1 sm:px-3 bg-white border-t">
-                <Link href="#" className="text-gray-700 hover:text-[#3A90DA] block px-3 py-2 text-base font-medium">
-                  Gestion des Candidats
+                <Link href="/" className="text-gray-700 hover:text-[#3A90DA] block px-3 py-2 text-base font-medium">
+                  Accueil
                 </Link>
-                <Link href="#" className="text-gray-700 hover:text-[#3A90DA] block px-3 py-2 text-base font-medium">
-                  Gestion des Prospects
+                <Link href="/about" className="text-gray-700 hover:text-[#3A90DA] block px-3 py-2 text-base font-medium">
+                  À Propos
                 </Link>
-                <Link href="#" className="text-gray-700 hover:text-[#3A90DA] block px-3 py-2 text-base font-medium">
-                  Cours de Langue
+                <Link href="/contactus" className="text-gray-700 hover:text-[#3A90DA] block px-3 py-2 text-base font-medium">
+                  Nous Contacter
                 </Link>
                 <Link href="#" className="text-gray-700 hover:text-[#3A90DA] block px-3 py-2 text-base font-medium">
                   E-learning

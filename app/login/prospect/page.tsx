@@ -42,7 +42,7 @@ export default function LoginPage() {
   return (
     <div className="min-h-screen bg-[#F6F6F6]" style={{ fontFamily: "Cairo, sans-serif" }}>
       {/* Navigation */}
-      <Navbar activeLink="login" />
+      <Navbar activeLink="/" />
 
       {/* Main Content */}
       <main className="flex items-center justify-center min-h-[calc(100vh-4rem)] p-4">
