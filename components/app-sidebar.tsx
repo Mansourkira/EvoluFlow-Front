@@ -90,7 +90,7 @@ const getNavigationByRole = (role: UserRole, user: any) => {
             },
             {
               title: "Site",
-              url: "/dashboard/site",
+              url: "/dashboard/sites",
               icon: Building,
             },
             {

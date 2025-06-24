@@ -54,9 +54,9 @@ import {
   MapPin,
 } from "lucide-react"
 import { useUsers } from "@/hooks/useAuth"
-import { AddUserDialog } from "@/components/AddUserDialog"
+import { AddUserDialog } from "@/components/users/AddUserDialog"
 import { ViewUserDialog } from "@/components/ViewUserDialog"
-import { UpdateUserDialog } from "@/components/UpdateUserDialog"
+import { UpdateUserDialog } from "@/components/users/UpdateUserDialog"
 import { ViewUserData } from "@/schemas/userSchema"
 
 // Types de tri

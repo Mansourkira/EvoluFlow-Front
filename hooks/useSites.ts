@@ -2,7 +2,31 @@ import { useState, useEffect } from 'react';
 import { useToast } from '@/hooks/use-toast';
 
 export interface Site {
+  Reference: string;
   Raison_Sociale: string;
+  Adresse?: string;
+  Complement_adresse?: string;
+  Code_Postal?: string;
+  Ville?: string;
+  Gouvernorat?: string;
+  Pays?: string;
+  Telephone?: string;
+  Fax?: string;
+  E_Mail_Commercial?: string;
+  E_Mail_Marketing?: string;
+  E_Mail_Administration?: string;
+  E_Mail_Financier?: string;
+  Site_Web?: string;
+  Activite?: string;
+  Matricule_Fiscal?: string;
+  Capital?: string;
+  Sigle?: string;
+  Nombre_Max_Relance_Entretien?: number;
+  Nombre_Max_Relance_Inscription?: number;
+  Nombre_Max_Relance_Preparation?: number;
+  Nombre_Max_Relance_Propect?: number;
+  Utilisateur?: string;
+  Heure?: string;
 }
 
 interface UseSitesReturn {
@@ -30,9 +54,10 @@ export function useSites(): UseSitesReturn {
         },
       });
       if (response.ok) {
-        const sitesData = await response.json();
-        console.log("sitesData", sitesData);
-        // Ensure we have an array of Site objects
+        const result = await response.json();
+        console.log("sitesData", result);
+        // The backend returns { sites: [...] }
+        const sitesData = result.sites || result;
         setSites(Array.isArray(sitesData) ? sitesData : []);
       } else {
         const errorData = await response.json().catch(() => ({}));
