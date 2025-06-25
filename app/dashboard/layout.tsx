@@ -1,6 +1,7 @@
 "use client"
 
 import { AppSidebar } from "@/components/app-sidebar"
+import { useTheme } from "@/hooks/useTheme"
 import {
   Breadcrumb,
   BreadcrumbItem,
@@ -62,6 +63,7 @@ interface DashboardLayoutProps {
 const getSearchOptions = (userRole: string) => {
   const baseOptions = [
     { title: "Tableau de bord", url: "/dashboard", icon: Home, category: "Navigation" },
+    { title: "Mon Profil", url: "/dashboard/profile", icon: User, category: "Navigation" },
     { title: "Utilisateurs", url: "/dashboard/users", icon: Users, category: "Sécurité" },
     { title: "Prospect", url: "/dashboard/prospect", icon: Eye, category: "Fichier de base" },
     { title: "Candidat", url: "/dashboard/candidat", icon: User, category: "Fichier de base" },
@@ -96,6 +98,7 @@ const getSearchOptions = (userRole: string) => {
 export default function DashboardLayout({ children }: DashboardLayoutProps) {
   const { user, isAuthenticated, isLoading } = useAuthStatus()
   const { logout } = useLogout()
+  const { colors } = useTheme()
   const router = useRouter()
   const pathname = usePathname()
   const [searchQuery, setSearchQuery] = useState("")
@@ -227,9 +230,9 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
             <SidebarTrigger className="-ml-1 h-8 w-8 hover:bg-gray-100 rounded-md transition-colors" />
             <Separator orientation="vertical" className="h-6 bg-gray-300" />
             <img 
-              src="/admission.jpg" 
+              src="/admission1.png" 
               alt="Logo" 
-              className="w-16 h-16 object-contain"
+              className="w-48 h-16 object-contain"
             />
           </div>
           
@@ -246,7 +249,11 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
                     onChange={(e) => setSearchQuery(e.target.value)}
                     onFocus={() => searchQuery.length > 0 && setShowSearchResults(true)}
                     onKeyDown={handleKeyDown}
-                    className="w-full pl-10 pr-4 py-2 bg-gray-50 border-gray-200 focus:bg-white focus:border-[#3A90DA] focus:ring-[#3A90DA]/20 rounded-lg"
+                    className="w-full pl-10 pr-4 py-2 bg-gray-50 border-gray-200 focus:bg-white rounded-lg"
+                    style={{
+                      '--tw-ring-color': `${colors.primary}20`,
+                      borderColor: searchQuery ? colors.form.borderFocus : colors.form.border
+                    } as React.CSSProperties}
                   />
                 </form>
                 
@@ -259,32 +266,42 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
                         onClick={() => handleOptionClick(option.url)}
                         className={`flex items-center gap-3 px-4 py-3 cursor-pointer border-b border-gray-100 last:border-b-0 transition-colors ${
                           index === highlightedIndex 
-                            ? 'bg-[#3A90DA]/10 border-[#3A90DA]/20' 
+                            ? 'hover:bg-gray-50' 
                             : 'hover:bg-gray-50'
                         }`}
+                        style={{
+                          backgroundColor: index === highlightedIndex ? `${colors.primary}10` : undefined,
+                          borderColor: index === highlightedIndex ? `${colors.primary}20` : undefined
+                        }}
                       >
-                        <div className={`h-8 w-8 rounded-lg flex items-center justify-center flex-shrink-0 ${
-                          index === highlightedIndex 
-                            ? 'bg-[#3A90DA]/20' 
-                            : 'bg-[#3A90DA]/10'
-                        }`}>
-                          <option.icon className={`h-4 w-4 ${
-                            index === highlightedIndex 
-                              ? 'text-[#3A90DA]' 
-                              : 'text-[#3A90DA]'
-                          }`} />
+                        <div 
+                          className={`h-8 w-8 rounded-lg flex items-center justify-center flex-shrink-0`}
+                          style={{
+                            backgroundColor: index === highlightedIndex ? `${colors.primary}20` : `${colors.primary}10`
+                          }}
+                        >
+                          <option.icon 
+                            className="h-4 w-4"
+                            style={{ color: colors.primary }}
+                          />
                         </div>
                         <div className="flex-1 min-w-0">
-                          <p className={`text-sm font-medium ${
-                            index === highlightedIndex 
-                              ? 'text-[#3A90DA]' 
-                              : 'text-gray-900'
-                          }`}>{option.title}</p>
-                          <p className={`text-xs ${
-                            index === highlightedIndex 
-                              ? 'text-[#3A90DA]/70' 
-                              : 'text-gray-500'
-                          }`}>{option.category}</p>
+                          <p 
+                            className="text-sm font-medium"
+                            style={{
+                              color: index === highlightedIndex ? colors.primary : colors.text.primary
+                            }}
+                          >
+                            {option.title}
+                          </p>
+                          <p 
+                            className="text-xs"
+                            style={{
+                              color: index === highlightedIndex ? `${colors.primary}70` : colors.text.secondary
+                            }}
+                          >
+                            {option.category}
+                          </p>
                         </div>
                       </div>
                     ))}
@@ -322,7 +339,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
                   <div className="flex items-center gap-3">
                     <Avatar className="h-8 w-8 border-2 border-white shadow-sm">
                       <AvatarImage 
-                        src={user.avatar || '/placeholder-user.jpg'} 
+                        src={user.image || '/placeholder-user.jpg'} 
                         alt={user.name} 
                       />
                       <AvatarFallback className="bg-gradient-to-br from-[#3A90DA] to-[#2B75BD] text-white font-semibold">
@@ -365,7 +382,10 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
                 </DropdownMenuLabel>
                 <DropdownMenuSeparator />
                 <DropdownMenuGroup>
-                  <DropdownMenuItem className="p-3 cursor-pointer hover:bg-gray-50">
+                  <DropdownMenuItem 
+                    className="p-3 cursor-pointer hover:bg-gray-50"
+                    onClick={() => router.push('/dashboard/profile')}
+                  >
                     <User className="mr-3 h-4 w-4" />
                     <span>Mon profil</span>
                   </DropdownMenuItem>
