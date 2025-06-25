@@ -2,11 +2,6 @@ import { NextRequest, NextResponse } from 'next/server'
 
 export async function GET(request: NextRequest) {
   try {
-    // In a real app, you would:
-    // 1. Extract JWT token from Authorization header or cookies
-    // 2. Verify the token
-    // 3. Get user data from database
-    
     const authHeader = request.headers.get('authorization')
     
     if (!authHeader || !authHeader.startsWith('Bearer ')) {
@@ -18,36 +13,52 @@ export async function GET(request: NextRequest) {
 
     const token = authHeader.substring(7) // Remove 'Bearer ' prefix
     
-    // Mock token validation (in real app, verify JWT)
-    if (!token.startsWith('mock-jwt-token-')) {
+    // Call the actual backend API
+    const backendResponse = await fetch('http://localhost:3000/api/v1/users/me', {
+      method: 'GET',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json',
+      },
+    })
+
+    if (!backendResponse.ok) {
+      const errorData = await backendResponse.json().catch(() => ({}))
       return NextResponse.json(
-        { error: 'Token invalide' },
-        { status: 401 }
+        { error: errorData.error || 'Erreur lors de la récupération des données utilisateur' },
+        { status: backendResponse.status }
       )
     }
 
-    // Extract user ID from mock token
-    const userId = token.replace('mock-jwt-token-', '')
+    const data = await backendResponse.json()
     
-    // Mock user data (in real app, fetch from database)
-    const mockUsers = {
-      '1': { id: 1, email: 'admin@allmeng.com', role: 'admin', name: 'Administrateur' },
-      '2': { id: 2, email: 'candidat@allmeng.com', role: 'candidat', name: 'Jean Dupont' },
-      '3': { id: 3, email: 'professeur@allmeng.com', role: 'professeur', name: 'Marie Martin' }
-    }
-
-    const user = mockUsers[userId as keyof typeof mockUsers]
-    
-    if (!user) {
-      return NextResponse.json(
-        { error: 'Utilisateur non trouvé' },
-        { status: 404 }
-      )
+    // Transform the backend response to match our frontend format
+    const transformedUser = {
+      id: data.user.Reference,
+      email: data.user.E_mail,
+      name: data.user.Nom_Prenom,
+      role: data.user.Type_Utilisateur,
+      profil: data.user.Profil,
+      profilLabel: data.user.Profil_Libelle,
+      typeUtilisateur: data.user.Type_Utilisateur,
+      telephone: data.user.Telephone,
+      adresse: data.user.Adresse,
+      complementAdresse: data.user.Complement_adresse,
+      codePostal: data.user.Code_Postal,
+      ville: data.user.Ville,
+      gouvernorat: data.user.Gouvernorat,
+      pays: data.user.Pays,
+      siteDefaut: data.user.Site_Defaut,
+      heure: data.user.Heure,
+      tempRaffraichissement: data.user.Temp_Raffraichissement,
+      couleur: data.user.Couleur,
+      image: data.user.Image,
+      reinitialisation: data.user.Reinitialisation_mot_de_passe
     }
 
     return NextResponse.json({
       success: true,
-      user
+      user: transformedUser
     })
 
   } catch (error) {

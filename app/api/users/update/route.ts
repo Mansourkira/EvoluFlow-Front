@@ -1,34 +1,50 @@
-import { NextRequest } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server'
 
 export async function PUT(request: NextRequest) {
   try {
-    const body = await request.json();
+    const authHeader = request.headers.get('authorization')
     
-    // Get the token from cookies or headers
-    const token = request.cookies.get('token')?.value || request.headers.get('authorization')?.replace('Bearer ', '');
-    
-    if (!token) {
-      return Response.json({ error: 'No authentication token provided' }, { status: 401 });
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      return NextResponse.json(
+        { error: 'Token d\'authentification requis' },
+        { status: 401 }
+      )
     }
 
-    const response = await fetch('http://localhost:3000/api/v1/users/update', {
+    const token = authHeader.substring(7) // Remove 'Bearer ' prefix
+    const body = await request.json()
+
+    // Call the backend API to update user data
+    const backendResponse = await fetch('http://localhost:3000/api/v1/users/update', {
       method: 'PUT',
       headers: {
         'Authorization': `Bearer ${token}`,
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify(body),
-    });
+      body: JSON.stringify(body)
+    })
 
-    if (!response.ok) {
-      const errorData = await response.json();
-      return Response.json(errorData, { status: response.status });
+    if (!backendResponse.ok) {
+      const errorData = await backendResponse.json().catch(() => ({}))
+      return NextResponse.json(
+        { error: errorData.error || 'Erreur lors de la mise à jour' },
+        { status: backendResponse.status }
+      )
     }
 
-    const result = await response.json();
-    return Response.json(result);
+    const data = await backendResponse.json()
+
+    return NextResponse.json({
+      success: true,
+      message: data.message || 'Profil mis à jour avec succès',
+      user: data.user
+    })
+
   } catch (error) {
-    console.error('Error updating user:', error);
-    return Response.json({ error: 'Failed to update user' }, { status: 500 });
+    console.error('Profile update error:', error)
+    return NextResponse.json(
+      { error: 'Erreur serveur interne' },
+      { status: 500 }
+    )
   }
 } 
