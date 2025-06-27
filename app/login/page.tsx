@@ -38,9 +38,18 @@ export default function LoginPage() {
     const result = await login(email, password)
     
     if (result) {
-      // Login successful
+      // Check if password reset is required
+      if (result.requiresPasswordReset) {
+        // Redirect to password reset page with user email and message
+        const params = new URLSearchParams({
+          email: email,
+          message: result.message || 'Veuillez changer votre mot de passe'
+        })
+        router.push(`/reset-password?${params.toString()}`)
+        return
+      }
       
-      // Show success message      
+      // Login successful - redirect to dashboard
       // Force a small delay to ensure localStorage is updated
       setTimeout(() => {
         router.push('/dashboard')
