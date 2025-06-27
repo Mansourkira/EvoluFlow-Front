@@ -36,17 +36,16 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Call the backend API to change password
-    const backendResponse = await fetch('http://localhost:3000/api/v1/users/change-password', {
-      method: 'POST',
+    // Call the backend API to change password - using the correct endpoint and field names
+    const backendResponse = await fetch('http://localhost:3000/api/v1/user/password', {
+      method: 'PUT',
       headers: {
         'Authorization': `Bearer ${token}`,
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        currentPassword: currentPassword,
-        newPassword: newPassword,
-        confirmPassword: confirmPassword
+        ancien_mot_de_passe: currentPassword,
+        nouveau_mot_de_passe: newPassword
       })
     })
 
