@@ -71,7 +71,7 @@ const getSearchOptions = (userRole: string) => {
     { title: "Client", url: "/dashboard/client", icon: User, category: "Fichier de base" },
     { title: "Organisme concerné", url: "/dashboard/organisme", icon: Building, category: "Fichier de base" },
     { title: "Société", url: "/dashboard/societe", icon: Building2, category: "Paramétrage" },
-    { title: "Site", url: "/dashboard/site", icon: Building, category: "Paramétrage" },
+    { title: "Site", url: "/dashboard/sites", icon: Building, category: "Paramétrage" },
     { title: "Filière", url: "/dashboard/filiere", icon: FolderOpen, category: "Paramétrage" },
     { title: "Salle", url: "/dashboard/salle", icon: Building, category: "Cours-Examens" },
     { title: "Modules", url: "/dashboard/modules", icon: Package, category: "Cours-Examens" },
