@@ -15,7 +15,7 @@ const PROFILE_MAPPING = {
 
 // Types
 interface User {
-  id?: number
+  id?: number | string
   email: string
   role: string
   name: string
@@ -27,7 +27,17 @@ interface User {
   joinDate?: string
   telephone?: string
   adresse?: string
+  complementAdresse?: string
+  codePostal?: string
+  ville?: string
+  gouvernorat?: string
+  pays?: string
+  siteDefaut?: string
+  heure?: string
+  tempRaffraichissement?: string
+  couleur?: string
   image?: string | null
+  reinitialisation?: boolean
 }
 
 interface LoginApiResponse {
@@ -38,7 +48,9 @@ interface LoginApiResponse {
     Type_Utilisateur: string
     Profil: string
     Profil_Libelle: string
+    Reinitialisation_mot_de_passe?: boolean
   }
+  message?: string
 }
 
 interface UserApiResponse {
@@ -67,6 +79,7 @@ interface LoginResponse {
   message: string
   user: User
   token?: string
+  requiresPasswordReset?: boolean
 }
 
 interface ApiError {
@@ -94,6 +107,34 @@ export const useLogin = () => {
       if (response.ok) {
         const data: LoginApiResponse = await response.json()
         
+        console.log('Login response:', data)
+        
+        // Check if password reset is required
+        if (data.user.Reinitialisation_mot_de_passe === true) {
+          // Store temporary user data and token for password reset
+          const tempUser = {
+            email: data.user.E_mail,
+            name: data.user.Nom_Prenom,
+            role: data.user.Type_Utilisateur,
+            profil: data.user.Profil,
+            profilLabel: data.user.Profil_Libelle || PROFILE_MAPPING[data.user.Profil as keyof typeof PROFILE_MAPPING] || data.user.Profil,
+            typeUtilisateur: data.user.Type_Utilisateur,
+            reinitialisation: true
+          }
+          
+          // Store token for password reset process
+          localStorage.setItem('token', data.token)
+          localStorage.setItem('tempUser', JSON.stringify(tempUser))
+          
+          return {
+            success: true,
+            message: data.message || 'Réinitialisation du mot de passe requise',
+            user: tempUser,
+            token: data.token,
+            requiresPasswordReset: true
+          }
+        }
+        
         // Transform API response to our User format
         const user: User = {
           email: data.user.E_mail,
@@ -101,8 +142,8 @@ export const useLogin = () => {
           role: data.user.Type_Utilisateur,
           profil: data.user.Profil,
           profilLabel: data.user.Profil_Libelle || PROFILE_MAPPING[data.user.Profil as keyof typeof PROFILE_MAPPING] || data.user.Profil,
-          typeUtilisateur: data.user.Type_Utilisateur
-          
+          typeUtilisateur: data.user.Type_Utilisateur,
+          reinitialisation: data.user.Reinitialisation_mot_de_passe || false
         }
 
         const loginResponse: LoginResponse = {
@@ -408,4 +449,158 @@ export const useSociete = () => {
     error, 
     fetchSociete 
   }
+}
+
+// Custom hook for password reset
+export const usePasswordReset = () => {
+  const [isLoading, setIsLoading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+
+  const resetPassword = async (newPassword: string, confirmPassword: string): Promise<boolean> => {
+    setIsLoading(true)
+    setError(null)
+
+    try {
+      if (newPassword !== confirmPassword) {
+        setError('Les mots de passe ne correspondent pas')
+        return false
+      }
+
+      if (newPassword.length < 6) {
+        setError('Le mot de passe doit contenir au moins 6 caractères')
+        return false
+      }
+
+      // Get user email from temporary user data or URL params
+      let userEmail = ''
+      const tempUser = localStorage.getItem('tempUser')
+      if (tempUser) {
+        const parsedTempUser = JSON.parse(tempUser)
+        userEmail = parsedTempUser.email
+      } else {
+        // Fallback to URL params if tempUser is not available
+        const urlParams = new URLSearchParams(window.location.search)
+        userEmail = urlParams.get('email') || ''
+      }
+
+      if (!userEmail) {
+        setError('Email utilisateur non trouvé')
+        return false
+      }
+
+      // Call the backend reset-and-login endpoint
+      const response = await fetch('http://localhost:3000/api/v1/users/reset-and-login', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ 
+          E_mail: userEmail,
+          New_Password: newPassword
+        }),
+      })
+
+      const data = await response.json()
+
+      if (response.ok) {
+        // The backend returns token and user info for auto-login
+        console.log('Password reset and login response:', data)
+        
+        // Transform API response to our User format
+        const user: User = {
+          email: data.user.E_mail,
+          name: data.user.Nom_Prenom,
+          role: data.user.Type_Utilisateur,
+          profil: data.user.Profil,
+          profilLabel: data.user.Profil_Libelle || PROFILE_MAPPING[data.user.Profil as keyof typeof PROFILE_MAPPING] || data.user.Profil,
+          typeUtilisateur: data.user.Type_Utilisateur,
+          reinitialisation: false // Password has been reset
+        }
+
+        // Store user data and token for successful login
+        localStorage.setItem('user', JSON.stringify(user))
+        localStorage.setItem('token', data.token)
+        
+        // Clean up temporary data
+        localStorage.removeItem('tempUser')
+        
+        return true
+      } else {
+        setError(data.error || 'Erreur lors de la réinitialisation du mot de passe')
+        return false
+      }
+    } catch (err) {
+      setError('Erreur de connexion au serveur')
+      console.error('Password reset error:', err)
+      return false
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  return { resetPassword, isLoading, error }
+}
+
+// Custom hook for changing password (with current password validation)
+export const usePasswordChange = () => {
+  const [isLoading, setIsLoading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+
+  const changePassword = async (currentPassword: string, newPassword: string, confirmPassword: string): Promise<boolean> => {
+    setIsLoading(true)
+    setError(null)
+
+    try {
+      if (!currentPassword || !newPassword || !confirmPassword) {
+        setError('Tous les champs sont requis')
+        return false
+      }
+
+      if (newPassword !== confirmPassword) {
+        setError('Les nouveaux mots de passe ne correspondent pas')
+        return false
+      }
+
+      if (newPassword.length < 8) {
+        setError('Le nouveau mot de passe doit contenir au moins 8 caractères')
+        return false
+      }
+
+      const token = localStorage.getItem('token')
+      if (!token) {
+        setError('Token d\'authentification manquant')
+        return false
+      }
+
+      const response = await fetch('/api/auth/change-password', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ 
+          currentPassword: currentPassword,
+          newPassword: newPassword,
+          confirmPassword: confirmPassword
+        }),
+      })
+
+      const data = await response.json()
+
+      if (response.ok && data.success) {
+        return true
+      } else {
+        setError(data.error || 'Erreur lors du changement de mot de passe')
+        return false
+      }
+    } catch (err) {
+      setError('Erreur de connexion au serveur')
+      console.error('Password change error:', err)
+      return false
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  return { changePassword, isLoading, error }
 } 

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 
 export interface CreateUserData {
   reference: string;
@@ -27,13 +27,56 @@ export interface User extends CreateUserData {
 
 interface UseUsersReturn {
   addUser: (userData: CreateUserData) => Promise<User>;
+  users: User[];
   isLoading: boolean;
   error: string | null;
+  fetchUsers: () => Promise<void>;
 }
 
 export const useUsers = (): UseUsersReturn => {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [users, setUsers] = useState<User[]>([]);
+
+  const fetchUsers = async () => {
+    try {
+      setIsLoading(true);
+      setError(null);
+      
+      const response = await fetch('http://localhost:3000/api/v1/UsersList', {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('token')}`,
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      const data = await response.json();
+      
+      // Ensure data is an array
+      if (Array.isArray(data)) {
+        setUsers(data);
+      } else {
+        console.error('Expected array but received:', data);
+        setUsers([]);
+        setError('Invalid data format received from server');
+      }
+    } catch (error) {
+      console.error('Error fetching users:', error);
+      setError(error instanceof Error ? error.message : 'An unexpected error occurred');
+      setUsers([]); // Ensure users is always an array
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchUsers();
+  }, []);
 
   const addUser = async (userData: CreateUserData): Promise<User> => {
     setIsLoading(true);
@@ -55,9 +98,12 @@ export const useUsers = (): UseUsersReturn => {
       });
 
       // Make API call to your backend
-      const response = await fetch('/api/users', {
+      const response = await fetch('http://localhost:3000/api/v1/UsersList', {
         method: 'POST',
         body: formData,
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('token')}`,
+        },
         // Don't set Content-Type header - let the browser set it for FormData
       });
 
@@ -67,6 +113,10 @@ export const useUsers = (): UseUsersReturn => {
       }
 
       const newUser = await response.json();
+      
+      // Refresh the users list after adding
+      await fetchUsers();
+      
       return newUser;
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'An unexpected error occurred';
@@ -79,7 +129,9 @@ export const useUsers = (): UseUsersReturn => {
 
   return {
     addUser,
+    users,
     isLoading,
     error,
+    fetchUsers,
   };
 }; 
