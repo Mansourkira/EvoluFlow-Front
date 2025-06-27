@@ -521,17 +521,7 @@ export default function CourseTypesPage() {
                           </div>
                         </TableHead>
                       )}
-                      {columnVisibility.Nom_Prenom && (
-                        <TableHead 
-                          className="cursor-pointer hover:bg-gray-50"
-                          onClick={() => handleSort('Nom_Prenom')}
-                        >
-                          <div className="flex items-center gap-1">
-                            Responsable
-                            {renderSortIcon('Nom_Prenom')}
-                          </div>
-                        </TableHead>
-                      )}
+                    
                       {columnVisibility.Heure && (
                         <TableHead 
                           className="cursor-pointer hover:bg-gray-50"
@@ -582,27 +572,7 @@ export default function CourseTypesPage() {
                             )}
                           </TableCell>
                         )}
-                        {columnVisibility.Nom_Prenom && (
-                          <TableCell>
-                            {courseType.Nom_Prenom ? (
-                              <div className="flex items-center gap-2">
-                                <Avatar className="h-8 w-8">
-                                  <AvatarFallback className="text-xs bg-gray-100">
-                                    {courseType.Nom_Prenom.charAt(0)}
-                                  </AvatarFallback>
-                                </Avatar>
-                                                                 <div>
-                                   <div className="font-medium text-sm">{courseType.Nom_Prenom}</div>
-                                   {courseType.E_mail && (
-                                     <div className="text-xs text-gray-500">{courseType.E_mail}</div>
-                                   )}
-                                 </div>
-                              </div>
-                            ) : (
-                              <span className="text-gray-400">Non assigné</span>
-                            )}
-                          </TableCell>
-                        )}
+             
                         {columnVisibility.Heure && (
                           <TableCell>
                             {courseType.Heure ? new Date(courseType.Heure).toLocaleDateString('fr-FR') : '-'}

@@ -32,6 +32,8 @@ import {
 import { useAuthStatus, useLogout } from "@/hooks/useAuth"
 import { useRouter, usePathname } from "next/navigation"
 import { useEffect, useState, useRef } from "react"
+import { useSocieteDialog } from "@/hooks/useSocieteDialog"
+import { ViewSocieteDialog } from "@/components/societes/ViewSocieteDialog"
 import { 
   Search, 
   Bell, 
@@ -106,6 +108,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
   const [filteredOptions, setFilteredOptions] = useState<any[]>([])
   const [highlightedIndex, setHighlightedIndex] = useState(-1)
   const searchRef = useRef<HTMLDivElement>(null)
+  const { isOpen, societe, isLoading: societeLoading, error, openDialog, closeDialog } = useSocieteDialog()
 
   useEffect(() => {
     if (!isLoading && !isAuthenticated) {
@@ -316,8 +319,19 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
             </div>
           </div>
 
-          {/* Right Section: Notifications & User Menu */}
+          {/* Right Section: Société, Notifications & User Menu */}
           <div className="flex items-center gap-3">
+            {/* Société Info */}
+            <Button
+              variant="ghost"
+              size="sm"
+              className="h-9 w-9 p-0 hover:bg-gray-100"
+              onClick={openDialog}
+              title="Informations de la société"
+            >
+              <Building2 className="h-5 w-5 text-gray-600" />
+            </Button>
+
             {/* Notifications */}
             <Button
               variant="ghost"
@@ -415,6 +429,13 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
           {children}
         </main>
       </SidebarInset>
+      
+      {/* Société Dialog */}
+      <ViewSocieteDialog 
+        societe={societe}
+        open={isOpen}
+        onOpenChange={closeDialog}
+      />
     </SidebarProvider>
   )
 } 

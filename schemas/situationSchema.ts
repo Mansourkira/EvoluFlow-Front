@@ -7,9 +7,7 @@ export const situationSchema = z.object({
   Libelle: z.string()
     .min(1, 'Le libellé est requis')
     .max(255, 'Le libellé ne peut pas dépasser 255 caractères'),
-  Utilisateur: z.string()
-    .optional()
-    .or(z.literal(''))
+  
 })
 
 export type SituationFormData = z.infer<typeof situationSchema> 

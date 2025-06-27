@@ -252,6 +252,8 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
     }
   }
 
+
+
   if (!isAuthenticated || !user || !navigationData) {
     return null
   }
