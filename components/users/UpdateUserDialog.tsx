@@ -28,10 +28,11 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { updateUserSchema, type UpdateUserFormData } from "@/schemas/userSchema";
+import { updateUserSchema, type UpdateUserFormData, SexeOptions, EtatCivilOptions } from "@/schemas/userSchema";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, Save, Shield, User, Image as ImageIcon, X, Camera } from "lucide-react";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { ImageUpload } from "@/components/ui/ImageUpload";
+import { TUNISIA_GOVERNORATES, USER_TYPES, deduplicateArray } from "@/lib/constants";
+import { Loader2, Save, Shield, User } from "lucide-react";
 
 interface Profile {
   Reference: string;
@@ -54,6 +55,8 @@ interface UserData {
   Profil: string;
   Profil_Libelle?: string;
   Image?: string | null;
+  Sexe?: 'Homme' | 'Femme';
+  Etat_Civil?: 'Célibataire' | 'Marié(e)' | 'Divorcé(e)' | 'Veuf(ve)';
 }
 
 interface UpdateUserDialogProps {
@@ -68,7 +71,6 @@ export function UpdateUserDialog({ user, open, onOpenChange, onUserUpdated }: Up
   const [profiles, setProfiles] = useState<Profile[]>([]);
   const [loadingProfiles, setLoadingProfiles] = useState(false);
   const [fullUserData, setFullUserData] = useState<UserData | null>(null);
-  const [imagePreview, setImagePreview] = useState<string | null>(null);
   const { toast } = useToast();
 
   const form = useForm<UpdateUserFormData>({
@@ -89,6 +91,8 @@ export function UpdateUserDialog({ user, open, onOpenChange, onUserUpdated }: Up
       Site_Defaut: "",
       Profil: "",
       Image: null,
+      Sexe: undefined,
+      Etat_Civil: undefined,
     },
   });
 
@@ -111,7 +115,6 @@ export function UpdateUserDialog({ user, open, onOpenChange, onUserUpdated }: Up
         if (response.ok) {
           const userData = await response.json();
           setFullUserData(userData);
-          setImagePreview(userData.Image || null);
           
           // Populate form with all available data
           form.reset({
@@ -130,6 +133,8 @@ export function UpdateUserDialog({ user, open, onOpenChange, onUserUpdated }: Up
             Site_Defaut: userData.Site_Defaut || "",
             Profil: userData.Profil || "",
             Image: userData.Image || null,
+            Sexe: userData.Sexe || undefined,
+            Etat_Civil: userData.Etat_Civil || undefined,
           });
         } else {
           // Fallback to user data passed as prop
@@ -148,7 +153,9 @@ export function UpdateUserDialog({ user, open, onOpenChange, onUserUpdated }: Up
             Mot_de_passe: "", // Don't prefill password
             Site_Defaut: user.Site_Defaut || "",
             Profil: user.Profil || "",
-            Image: null,
+            Image: user.Image || null,
+            Sexe: user.Sexe || undefined,
+            Etat_Civil: user.Etat_Civil || undefined,
           });
         }
       } catch (error) {
@@ -169,7 +176,9 @@ export function UpdateUserDialog({ user, open, onOpenChange, onUserUpdated }: Up
           Mot_de_passe: "", // Don't prefill password
           Site_Defaut: user.Site_Defaut || "",
           Profil: user.Profil || "",
-          Image: null,
+          Image: user.Image || null,
+          Sexe: user.Sexe || undefined,
+          Etat_Civil: user.Etat_Civil || undefined,
         });
       }
     };
@@ -217,89 +226,22 @@ export function UpdateUserDialog({ user, open, onOpenChange, onUserUpdated }: Up
     }
   }, [open, toast]);
 
-  // Add image handling functions
-  const handleImageChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (file) {
-      if (file.size > 5 * 1024 * 1024) { // 5MB limit
-        toast({
-          title: "⚠️ Image trop volumineuse",
-          description: "L'image ne doit pas dépasser 5MB.",
-          variant: "destructive",
-        });
-        return;
-      }
-
-      try {
-        const base64 = await convertToBase64(file);
-        form.setValue("Image", base64);
-        setImagePreview(base64);
-      } catch (error) {
-        console.error('Error converting image:', error);
-        toast({
-          title: "❌ Erreur",
-          description: "Impossible de traiter l'image. Veuillez réessayer.",
-          variant: "destructive",
-        });
-      }
-    }
-  };
-
-  const convertToBase64 = (file: File): Promise<string> => {
-    return new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      reader.readAsDataURL(file);
-      reader.onload = () => resolve(reader.result as string);
-      reader.onerror = (error) => reject(error);
-    });
-  };
-
-  const removeImage = () => {
-    form.setValue("Image", null);
-    setImagePreview(null);
-  };
-
   const onSubmit = async (data: UpdateUserFormData) => {
-    // Validate that profile is not a placeholder value (only if a profile is selected)
-    if (data.Profil && (data.Profil === "loading" || data.Profil === "no-profiles")) {
-      toast({
-        title: "⚠️ Erreur de validation",
-        description: "Veuillez sélectionner un profil valide.",
-        variant: "destructive",
-      });
-      return;
-    }
-
     setIsLoading(true);
     try {
-      const { E_mail, ...formData } = data;
-      const updateData: any = {
-        E_mail: user.E_mail, // Use original E_mail as identifier
-      };
-
-      // Only include fields that have actual values (not empty)
-      Object.keys(formData).forEach(key => {
-        const value = formData[key as keyof typeof formData];
-        if (value !== null && value !== undefined && value !== '') {
-          updateData[key] = value;
+      // Filter out empty fields for cleaner API call
+      const updateData: Partial<UpdateUserFormData> = {};
+      
+      Object.entries(data).forEach(([key, value]) => {
+        if (value !== "" && value !== null && value !== undefined) {
+          (updateData as any)[key] = value;
         }
       });
 
-      // Handle image separately - if imagePreview is null, explicitly set Image to null
-      if (imagePreview === null) {
-        updateData.Image = null;
-      } else if (data.Image) {
-        updateData.Image = data.Image;
-      }
+      // Always include the email for identification
+      updateData.E_mail = user.E_mail;
 
-      // Only include password if it was actually provided and not empty
-      if (!data.Mot_de_passe || data.Mot_de_passe.trim() === '') {
-        delete updateData.Mot_de_passe;
-      }
-
-      // Get the authentication token from localStorage
       const token = localStorage.getItem('token');
-      
       const response = await fetch('/api/users/update', {
         method: 'PUT',
         headers: {
@@ -313,20 +255,20 @@ export function UpdateUserDialog({ user, open, onOpenChange, onUserUpdated }: Up
         const result = await response.json();
         toast({
           title: "✅ Utilisateur mis à jour",
-          description: `${updateData.Nom_Prenom || user.Nom_Prenom} a été mis à jour avec succès`,
+          description: `${data.Nom_Prenom || user.Nom_Prenom} a été modifié avec succès`,
         });
         
         onOpenChange(false);
         onUserUpdated?.();
       } else {
         const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData.error || 'Erreur lors de la mise à jour de l\'utilisateur');
+        throw new Error(errorData.error || 'Erreur lors de la modification de l\'utilisateur');
       }
     } catch (error) {
-      console.error('Erreur mise à jour utilisateur:', error);
+      console.error('Erreur modification utilisateur:', error);
       toast({
-        title: "❌ Erreur de mise à jour",
-        description: error instanceof Error ? error.message : "Impossible de mettre à jour l'utilisateur. Veuillez réessayer.",
+        title: "❌ Erreur de modification",
+        description: error instanceof Error ? error.message : "Impossible de modifier l'utilisateur. Veuillez réessayer.",
         variant: "destructive",
       });
     } finally {
@@ -348,57 +290,12 @@ export function UpdateUserDialog({ user, open, onOpenChange, onUserUpdated }: Up
             Modifier l'Utilisateur
           </DialogTitle>
           <DialogDescription>
-            Modifier les informations de {user.Nom_Prenom}
+            Modifiez les informations de l'utilisateur {user?.Nom_Prenom}.
           </DialogDescription>
         </DialogHeader>
 
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-            {/* Image Upload Section */}
-            <div className="space-y-4">
-              <h3 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
-                <Camera className="h-4 w-4" />
-                Photo de profil
-              </h3>
-              
-              <div className="flex items-start gap-6">
-                <Avatar className="h-24 w-24">
-                  <AvatarImage 
-                    src={imagePreview || undefined} 
-                    alt={user.Nom_Prenom}
-                    className="object-cover"
-                  />
-                  <AvatarFallback className="text-2xl font-semibold bg-blue-100 text-blue-700">
-                    {user.Nom_Prenom?.charAt(0)?.toUpperCase() || 'U'}
-                  </AvatarFallback>
-                </Avatar>
-
-                <div className="space-y-2">
-                  <Input
-                    type="file"
-                    accept="image/*"
-                    onChange={handleImageChange}
-                    className="max-w-sm"
-                  />
-                  {imagePreview && (
-                    <Button
-                      type="button"
-                      variant="outline"
-                      size="sm"
-                      onClick={removeImage}
-                      className="flex items-center gap-2"
-                    >
-                      <X className="h-4 w-4" />
-                      Supprimer la photo
-                    </Button>
-                  )}
-                  <p className="text-sm text-gray-500">
-                    Format accepté: JPG, PNG. Taille max: 5MB
-                  </p>
-                </div>
-              </div>
-            </div>
-
             {/* Basic Information */}
             <div className="space-y-4">
               <h3 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
@@ -406,39 +303,47 @@ export function UpdateUserDialog({ user, open, onOpenChange, onUserUpdated }: Up
                 Informations Personnelles
               </h3>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {/* Full Name */}
+                {/* Reference (Read-only) */}
                 <FormField
                   control={form.control}
-                  name="Nom_Prenom"
+                  name="Reference"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Nom Complet *</FormLabel>
+                      <FormLabel>Référence</FormLabel>
                       <FormControl>
-                        <Input placeholder="Entrer le nom complet" {...field} />
+                        <Input placeholder="Référence" {...field} disabled />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
                   )}
                 />
 
-                {/* Email - Read Only */}
+                {/* Email (Read-only) */}
                 <FormField
                   control={form.control}
                   name="E_mail"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Email *</FormLabel>
+                      <FormLabel>Email</FormLabel>
                       <FormControl>
-                        <Input 
-                          type="email" 
-                          placeholder="Entrer l'adresse email" 
-                          {...field}
-                          disabled
-                          className="bg-gray-50 text-gray-500"
-                        />
+                        <Input type="email" {...field} disabled />
                       </FormControl>
                       <FormMessage />
-                      <p className="text-xs text-gray-500">L'email ne peut pas être modifié</p>
+                    </FormItem>
+                  )}
+                />
+
+                {/* Full Name */}
+                <FormField
+                  control={form.control}
+                  name="Nom_Prenom"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Nom Complet</FormLabel>
+                      <FormControl>
+                        <Input placeholder="Entrer le nom complet" {...field} />
+                      </FormControl>
+                      <FormMessage />
                     </FormItem>
                   )}
                 />
@@ -457,6 +362,79 @@ export function UpdateUserDialog({ user, open, onOpenChange, onUserUpdated }: Up
                     </FormItem>
                   )}
                 />
+
+                {/* Sexe */}
+                <FormField
+                  control={form.control}
+                  name="Sexe"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Sexe</FormLabel>
+                      <Select onValueChange={field.onChange} value={field.value}>
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Sélectionner le sexe" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          <SelectItem value={SexeOptions.HOMME}>{SexeOptions.HOMME}</SelectItem>
+                          <SelectItem value={SexeOptions.FEMME}>{SexeOptions.FEMME}</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                {/* État Civil */}
+                <FormField
+                  control={form.control}
+                  name="Etat_Civil"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>État Civil</FormLabel>
+                      <Select onValueChange={field.onChange} value={field.value}>
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Sélectionner l'état civil" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          <SelectItem value={EtatCivilOptions.CELIBATAIRE}>{EtatCivilOptions.CELIBATAIRE}</SelectItem>
+                          <SelectItem value={EtatCivilOptions.MARIE}>{EtatCivilOptions.MARIE}</SelectItem>
+                          <SelectItem value={EtatCivilOptions.DIVORCE}>{EtatCivilOptions.DIVORCE}</SelectItem>
+                          <SelectItem value={EtatCivilOptions.VEUF}>{EtatCivilOptions.VEUF}</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                {/* Image Upload */}
+                <FormField
+                  control={form.control}
+                  name="Image"
+                  render={({ field: { value, onChange } }) => (
+                    <FormItem className="col-span-full">
+                      <FormControl>
+                        <ImageUpload
+                          label="Photo de profil"
+                          value={value}
+                          onChange={onChange}
+                          onError={(error) => toast({
+                            title: "❌ Erreur",
+                            description: error,
+                            variant: "destructive",
+                          })}
+                          size="md"
+                          shape="circle"
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
               </div>
             </div>
 
@@ -469,7 +447,7 @@ export function UpdateUserDialog({ user, open, onOpenChange, onUserUpdated }: Up
                   control={form.control}
                   name="Adresse"
                   render={({ field }) => (
-                    <FormItem className="md:col-span-2">
+                    <FormItem className="col-span-full">
                       <FormLabel>Adresse</FormLabel>
                       <FormControl>
                         <Input placeholder="Entrer l'adresse complète" {...field} />
@@ -484,10 +462,10 @@ export function UpdateUserDialog({ user, open, onOpenChange, onUserUpdated }: Up
                   control={form.control}
                   name="Complement_adresse"
                   render={({ field }) => (
-                    <FormItem className="md:col-span-2">
+                    <FormItem className="col-span-full">
                       <FormLabel>Complément d'adresse</FormLabel>
                       <FormControl>
-                        <Input placeholder="Complément d'adresse (optionnel)" {...field} value={field.value || ""} />
+                        <Input placeholder="Bâtiment, appartement, étage..." {...field} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -502,7 +480,7 @@ export function UpdateUserDialog({ user, open, onOpenChange, onUserUpdated }: Up
                     <FormItem>
                       <FormLabel>Code Postal</FormLabel>
                       <FormControl>
-                        <Input placeholder="Ex: 2005" {...field} />
+                        <Input placeholder="Code postal" {...field} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -517,7 +495,7 @@ export function UpdateUserDialog({ user, open, onOpenChange, onUserUpdated }: Up
                     <FormItem>
                       <FormLabel>Ville</FormLabel>
                       <FormControl>
-                        <Input placeholder="Ex: Gafsa" {...field} />
+                        <Input placeholder="Ville" {...field} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -538,30 +516,11 @@ export function UpdateUserDialog({ user, open, onOpenChange, onUserUpdated }: Up
                           </SelectTrigger>
                         </FormControl>
                         <SelectContent>
-                          <SelectItem value="Ariana">Ariana</SelectItem>
-                          <SelectItem value="Béja">Béja</SelectItem>
-                          <SelectItem value="Ben Arous">Ben Arous</SelectItem>
-                          <SelectItem value="Bizerte">Bizerte</SelectItem>
-                          <SelectItem value="Gabès">Gabès</SelectItem>
-                          <SelectItem value="Gafsa">Gafsa</SelectItem>
-                          <SelectItem value="Jendouba">Jendouba</SelectItem>
-                          <SelectItem value="Kairouan">Kairouan</SelectItem>
-                          <SelectItem value="Kasserine">Kasserine</SelectItem>
-                          <SelectItem value="Kébili">Kébili</SelectItem>
-                          <SelectItem value="Kef">Kef</SelectItem>
-                          <SelectItem value="Mahdia">Mahdia</SelectItem>
-                          <SelectItem value="Manouba">Manouba</SelectItem>
-                          <SelectItem value="Médenine">Médenine</SelectItem>
-                          <SelectItem value="Monastir">Monastir</SelectItem>
-                          <SelectItem value="Nabeul">Nabeul</SelectItem>
-                          <SelectItem value="Sfax">Sfax</SelectItem>
-                          <SelectItem value="Sidi Bouzid">Sidi Bouzid</SelectItem>
-                          <SelectItem value="Siliana">Siliana</SelectItem>
-                          <SelectItem value="Sousse">Sousse</SelectItem>
-                          <SelectItem value="Tataouine">Tataouine</SelectItem>
-                          <SelectItem value="Tozeur">Tozeur</SelectItem>
-                          <SelectItem value="Tunis">Tunis</SelectItem>
-                          <SelectItem value="Zaghouan">Zaghouan</SelectItem>
+                          {TUNISIA_GOVERNORATES.map((governorate, index) => (
+                            <SelectItem key={`gov-${governorate}-${index}`} value={governorate}>
+                              {governorate}
+                            </SelectItem>
+                          ))}
                         </SelectContent>
                       </Select>
                       <FormMessage />
@@ -607,8 +566,11 @@ export function UpdateUserDialog({ user, open, onOpenChange, onUserUpdated }: Up
                           </SelectTrigger>
                         </FormControl>
                         <SelectContent>
-                          <SelectItem value="Admin">Admin</SelectItem>
-                          <SelectItem value="Utilisateur avec puvoir">Utilisateur avec puvoir</SelectItem>
+                          {USER_TYPES.map((type, index) => (
+                            <SelectItem key={`user-type-${type}-${index}`} value={type}>
+                              {type}
+                            </SelectItem>
+                          ))}
                         </SelectContent>
                       </Select>
                       <FormMessage />
@@ -623,20 +585,9 @@ export function UpdateUserDialog({ user, open, onOpenChange, onUserUpdated }: Up
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>Site par Défaut</FormLabel>
-                      <Select onValueChange={field.onChange} value={field.value}>
-                        <FormControl>
-                          <SelectTrigger>
-                            <SelectValue placeholder="Sélectionner le site" />
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                          <SelectItem value="Tunis">Tunis</SelectItem>
-                          <SelectItem value="Sfax">Sfax</SelectItem>
-                          <SelectItem value="Sousse">Sousse</SelectItem>
-                          <SelectItem value="Gafsa">Gafsa</SelectItem>
-                          <SelectItem value="Gabès">Gabès</SelectItem>
-                        </SelectContent>
-                      </Select>
+                      <FormControl>
+                        <Input placeholder="Site par défaut" {...field} />
+                      </FormControl>
                       <FormMessage />
                     </FormItem>
                   )}
@@ -662,11 +613,15 @@ export function UpdateUserDialog({ user, open, onOpenChange, onUserUpdated }: Up
                               Chargement des profils...
                             </SelectItem>
                           ) : profiles.length > 0 ? (
-                            profiles.map((profile) => (
-                              <SelectItem key={profile.Reference} value={profile.Reference}>
-                                {profile.Libelle} ({profile.Reference})
-                              </SelectItem>
-                            ))
+                            (() => {
+                              // Deduplicate profiles by Reference (should be unique but extra safety)
+                              const uniqueProfiles = deduplicateArray(profiles, profile => profile.Reference);
+                              return uniqueProfiles.map((profile, index) => (
+                                <SelectItem key={`profile-${profile.Reference}-${index}`} value={profile.Reference}>
+                                  {profile.Libelle} ({profile.Reference})
+                                </SelectItem>
+                              ));
+                            })()
                           ) : (
                             <SelectItem value="no-profiles" disabled>
                               Aucun profil disponible
@@ -681,56 +636,42 @@ export function UpdateUserDialog({ user, open, onOpenChange, onUserUpdated }: Up
               </div>
             </div>
 
-            {/* Password Information */}
+            {/* Password Section */}
             <div className="space-y-4">
-              <h3 className="text-lg font-semibold text-gray-900">Changer le Mot de Passe (Optionnel)</h3>
-              <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
-                <div className="flex items-center gap-2 text-yellow-800 mb-2">
-                  <Shield className="h-4 w-4" />
-                  <span className="font-medium">Modification du mot de passe</span>
-                </div>
-                <FormField
-                  control={form.control}
-                  name="Mot_de_passe"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Nouveau mot de passe</FormLabel>
-                      <FormControl>
-                        <Input 
-                          type="password" 
-                          placeholder="Laissez vide pour conserver le mot de passe actuel" 
-                          {...field} 
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <p className="text-yellow-700 text-sm mt-2">
-                  Laissez ce champ vide si vous ne souhaitez pas changer le mot de passe.
-                </p>
-              </div>
+              <h3 className="text-lg font-semibold text-gray-900">Changer le mot de passe (optionnel)</h3>
+              <FormField
+                control={form.control}
+                name="Mot_de_passe"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Nouveau mot de passe</FormLabel>
+                    <FormControl>
+                      <Input 
+                        type="password" 
+                        placeholder="Laisser vide pour garder le mot de passe actuel"
+                        {...field} 
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
             </div>
 
-            <DialogFooter className="flex justify-end gap-2 pt-4">
-              <Button
-                type="button"
-                variant="outline"
-                onClick={handleCancel}
-                disabled={isLoading}
-              >
+            <DialogFooter className="gap-2">
+              <Button type="button" variant="outline" onClick={handleCancel}>
                 Annuler
               </Button>
-              <Button type="submit" disabled={isLoading}>
+              <Button type="submit" disabled={isLoading} className="bg-[#3A90DA] hover:bg-[#2B7BC8]">
                 {isLoading ? (
                   <>
-                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                    Mise à jour...
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Modification...
                   </>
                 ) : (
                   <>
-                    <Save className="h-4 w-4 mr-2" />
-                    Mettre à Jour
+                    <Save className="mr-2 h-4 w-4" />
+                    Enregistrer
                   </>
                 )}
               </Button>

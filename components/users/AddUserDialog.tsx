@@ -22,6 +22,7 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
+  FormDescription,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import {
@@ -31,9 +32,12 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { addUserSchema, type AddUserFormData } from "@/schemas/userSchema";
+import { Checkbox } from "@/components/ui/checkbox";
+import { addUserSchema, type AddUserFormData, SexeOptions, EtatCivilOptions, TypeUtilisateurOptions } from "@/schemas/userSchema";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, Plus, Shield, User, Eye, EyeOff, RefreshCw, Image as ImageIcon, X } from "lucide-react";
+import { ImageUpload } from "@/components/ui/ImageUpload";
+import { TUNISIA_GOVERNORATES, USER_TYPES, safeMapWithUniqueKeys, deduplicateArray } from "@/lib/constants";
+import { Loader2, Plus, Shield, User, Eye, EyeOff, RefreshCw, X, Image as ImageIcon } from "lucide-react";
 
 interface Profile {
   Reference: string;
@@ -62,7 +66,6 @@ export function AddUserDialog({ onUserAdded }: AddUserDialogProps) {
   const [profiles, setProfiles] = useState<Profile[]>([]);
   const [loadingProfiles, setLoadingProfiles] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
-  const [imagePreview, setImagePreview] = useState<string | null>(null);
   const { sites, isLoading: loadingSites } = useSites();
   const { toast } = useToast();
 
@@ -73,6 +76,7 @@ export function AddUserDialog({ onUserAdded }: AddUserDialogProps) {
       E_mail: "",
       Nom_Prenom: "",
       Adresse: "",
+      Complement_adresse: "",
       Code_Postal: "",
       Ville: "",
       Gouvernorat: "",
@@ -83,6 +87,9 @@ export function AddUserDialog({ onUserAdded }: AddUserDialogProps) {
       Site_Defaut: "",
       Profil: "",
       Image: null,
+      Sexe: undefined,
+      Etat_Civil: undefined,
+      Reinitialisation_mot_de_passe: true,
     },
   });
 
@@ -144,6 +151,7 @@ export function AddUserDialog({ onUserAdded }: AddUserDialogProps) {
         ...data,
         Reference: data.Reference || `U${String(Date.now()).slice(-3)}`,
         Mot_de_passe: "123456", // Ensure fixed password
+        Reinitialisation_mot_de_passe: data.Reinitialisation_mot_de_passe, // Use form value
       };
 
       // Remove Image field if it's null to avoid backend issues
@@ -167,7 +175,7 @@ export function AddUserDialog({ onUserAdded }: AddUserDialogProps) {
         const result = await response.json();
         toast({
           title: "✅ Utilisateur créé",
-          description: `${userData.Nom_Prenom} a été ajouté avec succès`,
+          description: `${userData.Nom_Prenom} a été ajouté avec succès.${userData.Reinitialisation_mot_de_passe ? ' Il devra changer son mot de passe lors de sa première connexion.' : ' Il peut utiliser le mot de passe temporaire directement.'}`,
         });
         
         // Reset form and close dialog
@@ -195,46 +203,7 @@ export function AddUserDialog({ onUserAdded }: AddUserDialogProps) {
     setOpen(false);
   };
 
-  const handleImageChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (file) {
-      if (file.size > 5 * 1024 * 1024) { // 5MB limit
-        toast({
-          title: "⚠️ Image trop volumineuse",
-          description: "L'image ne doit pas dépasser 5MB.",
-          variant: "destructive",
-        });
-        return;
-      }
 
-      try {
-        const base64 = await convertToBase64(file);
-        form.setValue("Image", base64);
-        setImagePreview(base64);
-      } catch (error) {
-        console.error('Error converting image:', error);
-        toast({
-          title: "❌ Erreur",
-          description: "Impossible de traiter l'image. Veuillez réessayer.",
-          variant: "destructive",
-        });
-      }
-    }
-  };
-
-  const convertToBase64 = (file: File): Promise<string> => {
-    return new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      reader.readAsDataURL(file);
-      reader.onload = () => resolve(reader.result as string);
-      reader.onerror = (error) => reject(error);
-    });
-  };
-
-  const removeImage = () => {
-    form.setValue("Image", null);
-    setImagePreview(null);
-  };
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
@@ -309,52 +278,73 @@ export function AddUserDialog({ onUserAdded }: AddUserDialogProps) {
                   )}
                 />
 
+                {/* Sexe */}
+                <FormField
+                  control={form.control}
+                  name="Sexe"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Sexe</FormLabel>
+                      <Select onValueChange={field.onChange} value={field.value}>
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Sélectionner le sexe" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          <SelectItem value={SexeOptions.HOMME}>{SexeOptions.HOMME}</SelectItem>
+                          <SelectItem value={SexeOptions.FEMME}>{SexeOptions.FEMME}</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                {/* État Civil */}
+                <FormField
+                  control={form.control}
+                  name="Etat_Civil"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>État Civil</FormLabel>
+                      <Select onValueChange={field.onChange} value={field.value}>
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Sélectionner l'état civil" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          <SelectItem value={EtatCivilOptions.CELIBATAIRE}>{EtatCivilOptions.CELIBATAIRE}</SelectItem>
+                          <SelectItem value={EtatCivilOptions.MARIE}>{EtatCivilOptions.MARIE}</SelectItem>
+                          <SelectItem value={EtatCivilOptions.DIVORCE}>{EtatCivilOptions.DIVORCE}</SelectItem>
+                          <SelectItem value={EtatCivilOptions.VEUF}>{EtatCivilOptions.VEUF}</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
                 {/* Image Upload */}
                 <FormField
                   control={form.control}
                   name="Image"
-                  render={({ field: { value, onChange, ...field } }) => (
+                  render={({ field: { value, onChange } }) => (
                     <FormItem className="col-span-full">
-                      <FormLabel>Photo de profil</FormLabel>
                       <FormControl>
-                        <div className="space-y-4">
-                          <div className="flex items-center gap-4">
-                            {imagePreview ? (
-                              <div className="relative w-24 h-24">
-                                <img
-                                  src={imagePreview}
-                                  alt="Preview"
-                                  className="w-24 h-24 object-cover rounded-lg border"
-                                />
-                                <Button
-                                  type="button"
-                                  variant="destructive"
-                                  size="icon"
-                                  className="absolute -top-2 -right-2 h-6 w-6"
-                                  onClick={removeImage}
-                                >
-                                  <X className="h-4 w-4" />
-                                </Button>
-                              </div>
-                            ) : (
-                              <div className="w-24 h-24 border-2 border-dashed rounded-lg flex items-center justify-center bg-gray-50">
-                                <ImageIcon className="h-8 w-8 text-gray-400" />
-                              </div>
-                            )}
-                            <div className="flex-1">
-                              <Input
-                                type="file"
-                                accept="image/*"
-                                onChange={handleImageChange}
-                                className="cursor-pointer"
-                                {...field}
-                              />
-                              <p className="text-sm text-gray-500 mt-2">
-                                Format accepté: JPG, PNG, GIF (max. 5MB)
-                              </p>
-                            </div>
-                          </div>
-                        </div>
+                        <ImageUpload
+                          label="Photo de profil"
+                          value={value}
+                          onChange={onChange}
+                          onError={(error) => toast({
+                            title: "❌ Erreur",
+                            description: error,
+                            variant: "destructive",
+                          })}
+                          size="md"
+                          shape="circle"
+                        />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -426,30 +416,11 @@ export function AddUserDialog({ onUserAdded }: AddUserDialogProps) {
                           </SelectTrigger>
                         </FormControl>
                         <SelectContent>
-                          <SelectItem value="Ariana">Ariana</SelectItem>
-                          <SelectItem value="Béja">Béja</SelectItem>
-                          <SelectItem value="Ben Arous">Ben Arous</SelectItem>
-                          <SelectItem value="Bizerte">Bizerte</SelectItem>
-                          <SelectItem value="Gabès">Gabès</SelectItem>
-                          <SelectItem value="Gafsa">Gafsa</SelectItem>
-                          <SelectItem value="Jendouba">Jendouba</SelectItem>
-                          <SelectItem value="Kairouan">Kairouan</SelectItem>
-                          <SelectItem value="Kasserine">Kasserine</SelectItem>
-                          <SelectItem value="Kébili">Kébili</SelectItem>
-                          <SelectItem value="Kef">Kef</SelectItem>
-                          <SelectItem value="Mahdia">Mahdia</SelectItem>
-                          <SelectItem value="Manouba">Manouba</SelectItem>
-                          <SelectItem value="Médenine">Médenine</SelectItem>
-                          <SelectItem value="Monastir">Monastir</SelectItem>
-                          <SelectItem value="Nabeul">Nabeul</SelectItem>
-                          <SelectItem value="Sfax">Sfax</SelectItem>
-                          <SelectItem value="Sidi Bouzid">Sidi Bouzid</SelectItem>
-                          <SelectItem value="Siliana">Siliana</SelectItem>
-                          <SelectItem value="Sousse">Sousse</SelectItem>
-                          <SelectItem value="Tataouine">Tataouine</SelectItem>
-                          <SelectItem value="Tozeur">Tozeur</SelectItem>
-                          <SelectItem value="Tunis">Tunis</SelectItem>
-                          <SelectItem value="Zaghouan">Zaghouan</SelectItem>
+                          {TUNISIA_GOVERNORATES.map((governorate, index) => (
+                            <SelectItem key={`gov-${governorate}-${index}`} value={governorate}>
+                              {governorate}
+                            </SelectItem>
+                          ))}
                         </SelectContent>
                       </Select>
                       <FormMessage />
@@ -495,8 +466,11 @@ export function AddUserDialog({ onUserAdded }: AddUserDialogProps) {
                           </SelectTrigger>
                         </FormControl>
                         <SelectContent>
-                          <SelectItem value="Admin">Admin</SelectItem>
-                          <SelectItem value="Utilisateur avec puvoir">Utilisateur avec puvoir</SelectItem>
+                          {USER_TYPES.map((type, index) => (
+                            <SelectItem key={`user-type-${type}-${index}`} value={type}>
+                              {type}
+                            </SelectItem>
+                          ))}
                         </SelectContent>
                       </Select>
                       <FormMessage />
@@ -524,11 +498,15 @@ export function AddUserDialog({ onUserAdded }: AddUserDialogProps) {
                               Chargement des sites...
                             </SelectItem>
                           ) : sites.length > 0 ? (
-                            sites.map((site) => (
-                              <SelectItem key={site.Raison_Sociale} value={site.Raison_Sociale}>
-                                {site.Raison_Sociale}
-                              </SelectItem>
-                            ))
+                            (() => {
+                              // Deduplicate sites by Raison_Sociale
+                              const uniqueSites = deduplicateArray(sites, site => site.Raison_Sociale);
+                              return uniqueSites.map((site, index) => (
+                                <SelectItem key={`site-${site.Raison_Sociale}-${index}`} value={site.Raison_Sociale}>
+                                  {site.Raison_Sociale}
+                                </SelectItem>
+                              ));
+                            })()
                           ) : (
                             <SelectItem value="no-sites" disabled>
                               Aucun site disponible
@@ -561,11 +539,15 @@ export function AddUserDialog({ onUserAdded }: AddUserDialogProps) {
                               Chargement des profils...
                             </SelectItem>
                           ) : profiles.length > 0 ? (
-                            profiles.map((profile) => (
-                              <SelectItem key={profile.Reference} value={profile.Reference}>
-                                {profile.Libelle} ({profile.Reference})
-                              </SelectItem>
-                            ))
+                            (() => {
+                              // Deduplicate profiles by Reference (should be unique but extra safety)
+                              const uniqueProfiles = deduplicateArray(profiles, profile => profile.Reference);
+                              return uniqueProfiles.map((profile, index) => (
+                                <SelectItem key={`profile-${profile.Reference}-${index}`} value={profile.Reference}>
+                                  {profile.Libelle} ({profile.Reference})
+                                </SelectItem>
+                              ));
+                            })()
                           ) : (
                             <SelectItem value="no-profiles" disabled>
                               Aucun profil disponible
@@ -633,15 +615,44 @@ export function AddUserDialog({ onUserAdded }: AddUserDialogProps) {
                     </FormItem>
                   )}
                 />
+                {/* Force Password Reset Checkbox */}
+                <FormField
+                  control={form.control}
+                  name="Reinitialisation_mot_de_passe"
+                  render={({ field }) => (
+                    <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-md border p-4">
+                      <FormControl>
+                        <Checkbox
+                          checked={field.value}
+                          onCheckedChange={field.onChange}
+                        />
+                      </FormControl>
+                      <div className="space-y-1 leading-none">
+                        <FormLabel className="flex items-center gap-2">
+                          <Shield className="h-4 w-4" />
+                          Forcer la réinitialisation du mot de passe
+                        </FormLabel>
+                        <FormDescription className="text-sm text-gray-600">
+                          L'utilisateur sera obligé de changer son mot de passe lors de sa première connexion. 
+                          Recommandé pour la sécurité.
+                        </FormDescription>
+                      </div>
+                    </FormItem>
+                  )}
+                />
+
                 <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
                   <div className="flex items-center gap-2 text-blue-800">
                     <Shield className="h-4 w-4" />
                     <span className="font-medium">Sécurité du mot de passe</span>
                   </div>
                   <p className="text-blue-700 text-sm mt-1">
-                    Un mot de passe sécurisé a été généré automatiquement. 
-                    Vous pouvez le modifier ou en générer un nouveau. 
-                    L'utilisateur pourra le changer lors de sa première connexion.
+                    Un mot de passe temporaire (123456) sera assigné automatiquement. 
+                    {form.watch("Reinitialisation_mot_de_passe") ? (
+                      <strong> L'utilisateur sera obligé de changer son mot de passe lors de sa première connexion</strong>
+                    ) : (
+                      " L'utilisateur peut utiliser ce mot de passe directement"
+                    )} pour des raisons de sécurité.
                   </p>
                 </div>
               </div>

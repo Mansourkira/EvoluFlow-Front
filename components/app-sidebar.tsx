@@ -1,6 +1,7 @@
 "use client"
 
 import * as React from "react"
+import { useTheme } from "@/hooks/useTheme"
 import {
   Users,
   FileText,
@@ -22,7 +23,8 @@ import {
   User,
   LogOut,
   Database,
-  Home
+  Home,
+  BookOpen
 } from "lucide-react"
 
 import { NavMain } from "@/components/nav-main"
@@ -49,7 +51,6 @@ const getNavigationByRole = (role: UserRole, user: any) => {
       title: "Tableau de bord",
       url: "/dashboard",
       icon: Home,
-      isActive: true,
     },
     fichierBase: {
       title: "Fichier de base",
@@ -75,8 +76,15 @@ const getNavigationByRole = (role: UserRole, user: any) => {
         // Subcategories under Fichier de base
         {
           title: "Sécurité",
-          url: "/dashboard/users",
+          url: "#",
           icon: Shield,
+          items: [
+            {
+              title: "Utilisateurs",
+              url: "/dashboard/users",
+              icon: Users,
+            },
+          ],
         },
         {
           title: "Paramétrage Divers",
@@ -95,7 +103,7 @@ const getNavigationByRole = (role: UserRole, user: any) => {
             },
             {
               title: "Filière",
-              url: "/dashboard/filiere",
+              url: "/dashboard/filieres",
               icon: FolderOpen,
             },
           ],
@@ -118,6 +126,11 @@ const getNavigationByRole = (role: UserRole, user: any) => {
           icon: PenTool,
           items: [
             {
+              title: "Types de Cours",
+              url: "/dashboard/course-types",
+              icon: BookOpen,
+            },
+            {
               title: "Salle",
               url: "/dashboard/salle",
               icon: Building,
@@ -129,8 +142,31 @@ const getNavigationByRole = (role: UserRole, user: any) => {
             },
           ],
         },
+        {
+          title: "Prospect-Candidat",
+          url: "#",
+          icon: User,
+          items: [
+            {
+              title: "opérations Prospect",
+              url: "/dashboard/prospect",
+              icon: User,
+            },
+            {
+              title: "Candidat",
+              url: "/dashboard/candidat",
+              icon: User,
+            },
+            {
+              title: "Situation Actuelle",
+              url: "/dashboard/situations",
+              icon: User,
+            },
+          ],
+        },
       ],
-    }
+    },
+    
   }
 
   // Filter navigation based on user role
@@ -142,6 +178,8 @@ const getNavigationByRole = (role: UserRole, user: any) => {
     
     // Always include fichier de base as main category
     items.push(baseNavigation.fichierBase)
+    
+    // Always include paramètres
     
     switch (role) {
       case 'admin':
@@ -163,12 +201,20 @@ const getNavigationByRole = (role: UserRole, user: any) => {
   return getNavItems()
 }
 
+// Logo component for the organization
+const EvoluFlowLogo = () => (
+  <img 
+    src="/sigle1.png"  
+    alt="EvoluFlow" 
+    className="h-6 w-6 object-contain"
+  />
+)
+
 // Team/Organization data
 const getTeamData = (user: any) => {
   return [{
     name: "EvoluFlow",
-    logo: Building2,
-    plan: user?.role === 'admin' ? 'Admin' : 'Utilisateur',
+    logo: EvoluFlowLogo,
   }]
 }
 
@@ -177,6 +223,7 @@ const getTeamData = (user: any) => {
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const { user, isAuthenticated } = useAuthStatus()
   const { logout } = useLogout()
+  const { colors } = useTheme()
   const router = useRouter()
   const [navigationData, setNavigationData] = useState<any>(null)
 
@@ -210,18 +257,28 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   }
 
   return (
-    <Sidebar collapsible="icon" {...props}>
+    <Sidebar 
+      collapsible="icon" 
+      {...props}
+      style={{
+        '--sidebar-background': colors.sidebar.background,
+        '--sidebar-foreground': colors.sidebar.text,
+        '--sidebar-primary': colors.sidebar.accent,
+        '--sidebar-accent': colors.sidebar.backgroundLight,
+        '--sidebar-border': colors.sidebar.border
+      } as React.CSSProperties}
+    >
       <SidebarHeader>
         <TeamSwitcher teams={navigationData.teams} />
       </SidebarHeader>
       <SidebarContent>
         <NavMain items={navigationData.navMain} />
       </SidebarContent>
-      <SidebarFooter>
+     {/*  <SidebarFooter>
         <NavUser 
           user={navigationData.user}
         />
-      </SidebarFooter>
+      </SidebarFooter> */}
       <SidebarRail />
     </Sidebar>
   )
