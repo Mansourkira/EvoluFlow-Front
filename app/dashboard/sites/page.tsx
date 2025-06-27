@@ -494,8 +494,9 @@ export default function SitesPage() {
         {/* En-tête */}
         <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-8">
           <div>
-            <h1 className="text-3xl font-bold text-gray-900 mb-2">
-              Gestion des Sites
+            <h1 className="text-3xl font-bold text-gray-900 mb-2 flex items-center gap-2">
+              <Building2 className="h-8 w-8 text-[#3A90DA]" />
+              Sites
             </h1>
             <p className="text-gray-600">
               Gérez les sites et leurs informations
