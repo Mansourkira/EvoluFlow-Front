@@ -55,7 +55,6 @@ export function useSites(): UseSitesReturn {
       });
       if (response.ok) {
         const result = await response.json();
-        console.log("sitesData", result);
         // The backend returns { sites: [...] }
         const sitesData = result.sites || result;
         setSites(Array.isArray(sitesData) ? sitesData : []);

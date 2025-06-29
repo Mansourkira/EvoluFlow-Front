@@ -28,7 +28,6 @@ export default function LoginPage() {
     
     if (result) {
       // Login successful
-      console.log('Login successful:', result)
       
       // Show success message
       alert(`Bienvenue ${result.user.name}! Connexion réussie.`)

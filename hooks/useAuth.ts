@@ -107,7 +107,6 @@ export const useLogin = () => {
       if (response.ok) {
         const data: LoginApiResponse = await response.json()
         
-        console.log('Login response:', data)
         
         // Check if password reset is required
         if (data.user.Reinitialisation_mot_de_passe === true) {
@@ -285,7 +284,6 @@ export const useAuthStatus = () => {
       if (token && userData) {
         const parsedUser = JSON.parse(userData)
         setUser(parsedUser)
-        console.log('User data:', parsedUser)
         setIsAuthenticated(true)
       } else {
         setUser(null)
@@ -317,7 +315,6 @@ export const useUsers = () => {
     setIsLoading(true)
     setError(null)
     const token = localStorage.getItem('token')
-    console.log('Fetching users with token:', token)  
     
     if (!token) {
       setError('Token d\'authentification manquant')
@@ -334,7 +331,6 @@ export const useUsers = () => {
         },
       })
 
-      console.log('Users API response status:', response.status)
 
       if (response.ok) {
         const data: UserApiResponse[] = await response.json()
@@ -417,7 +413,6 @@ export const useSociete = () => {
         body: JSON.stringify({ Utilisateur: utilisateur }),
       })
 
-      console.log('Societe API response status:', response.status)
 
       if (response.ok) {
         const data = await response.json()
@@ -504,7 +499,6 @@ export const usePasswordReset = () => {
 
       if (response.ok) {
         // The backend returns token and user info for auto-login
-        console.log('Password reset and login response:', data)
         
         // Transform API response to our User format
         const user: User = {

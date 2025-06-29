@@ -27,7 +27,6 @@ export default function LoginPage() {
 
     setIsLoading(false)
     // Handle login logic here
-    console.log("Login attempt:", { email, password })
   }
 
   return (

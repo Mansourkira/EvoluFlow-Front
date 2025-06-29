@@ -36,7 +36,6 @@ export default function ContactUsPage() {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
     // Here you would typically handle form submission
-    console.log("Form submitted:", formData)
     // You could show a success message or redirect
   }
 
