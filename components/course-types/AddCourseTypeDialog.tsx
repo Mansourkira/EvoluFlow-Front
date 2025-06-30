@@ -56,8 +56,7 @@ export function AddCourseTypeDialog({ onCourseTypeAdded }: AddCourseTypeDialogPr
     defaultValues: {
       Reference: "",
       Libelle: "",
-      Priorite: null,
-      Utilisateur: null,
+      Priorite: null, 
     },
   });
 
@@ -240,53 +239,6 @@ export function AddCourseTypeDialog({ onCourseTypeAdded }: AddCourseTypeDialogPr
                   )}
                 />
 
-                {/* User */}
-                <FormField
-                  control={form.control}
-                  name="Utilisateur"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Utilisateur Responsable</FormLabel>
-                      <Select 
-                        onValueChange={(value) => field.onChange(value === "none" ? null : value)} 
-                        value={field.value || "none"}
-                      >
-                        <FormControl>
-                          <SelectTrigger>
-                            <SelectValue placeholder={loadingUsers ? "Chargement..." : "Sélectionner l'utilisateur"} />
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                          {loadingUsers ? (
-                            <SelectItem value="loading" disabled>
-                              <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                              Chargement des utilisateurs...
-                            </SelectItem>
-                          ) : users.length > 0 ? (
-                            (() => {
-                              const uniqueUsers = deduplicateArray(users, user => user.Reference);
-                              return (
-                                <>
-                                  <SelectItem value="none">Aucun utilisateur</SelectItem>
-                                  {uniqueUsers.map((user, index) => (
-                                    <SelectItem key={`user-${user.Reference}-${index}`} value={user.Reference}>
-                                      {user.Nom_Prenom} ({user.E_mail})
-                                    </SelectItem>
-                                  ))}
-                                </>
-                              );
-                            })()
-                          ) : (
-                            <SelectItem value="no-users" disabled>
-                              Aucun utilisateur disponible
-                            </SelectItem>
-                          )}
-                        </SelectContent>
-                      </Select>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
               </div>
             </div>
 

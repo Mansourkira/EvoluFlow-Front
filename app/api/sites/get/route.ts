@@ -23,7 +23,6 @@ export async function POST(request: NextRequest) {
       const errorData = await response.json();
       return Response.json(errorData, { status: response.status });
     }
-    console.log("sites", response);
 
     const result = await response.json();
     return Response.json(result);

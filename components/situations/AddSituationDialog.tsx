@@ -8,7 +8,6 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import {
   Dialog,
   DialogContent,
@@ -19,21 +18,18 @@ import {
   DialogTrigger,
 } from '@/components/ui/dialog'
 import { PrimaryButton } from '@/components/ui/themed-button'
-import { Plus, Loader2, RefreshCw, Dice6 } from 'lucide-react'
+import { Plus, Loader2, Dice6 } from 'lucide-react'
 import { toast } from 'sonner'
-import { useUsers } from '@/hooks/useAuth'
+
 
 interface AddSituationDialogProps {
   onSituationAdded: () => void
 }
 
-const NONE_VALUE = "NONE_SELECTED"
 
 export function AddSituationDialog({ onSituationAdded }: AddSituationDialogProps) {
   const [open, setOpen] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
-  const { users } = useUsers()
-  const [selectedUser, setSelectedUser] = useState<string>(NONE_VALUE)
 
   const {
     register,
@@ -47,7 +43,6 @@ export function AddSituationDialog({ onSituationAdded }: AddSituationDialogProps
     defaultValues: {
       Reference: '',
       Libelle: '',
-      Utilisateur: ''
     }
   })
 
@@ -75,9 +70,6 @@ export function AddSituationDialog({ onSituationAdded }: AddSituationDialogProps
         return
       }
 
-      // Convert NONE_VALUE back to null for API
-      const userValue = selectedUser === NONE_VALUE ? null : selectedUser
-
       const response = await fetch('/api/situations', {
         method: 'POST',
         headers: {
@@ -86,15 +78,13 @@ export function AddSituationDialog({ onSituationAdded }: AddSituationDialogProps
         },
         body: JSON.stringify({
           Reference: data.Reference,
-          Libelle: data.Libelle,
-          Utilisateur: userValue
+          Libelle: data.Libelle,  
         }),
       })
 
       if (response.ok) {
         toast.success(`✅ Situation ajoutée - ${data.Libelle} a été ajoutée avec succès`)
         reset()
-        setSelectedUser(NONE_VALUE)
         setOpen(false)
         onSituationAdded()
       } else {
@@ -113,15 +103,10 @@ export function AddSituationDialog({ onSituationAdded }: AddSituationDialogProps
     setOpen(newOpen)
     if (!newOpen) {
       reset()
-      setSelectedUser(NONE_VALUE)
     }
   }
 
-  const handleUserChange = (value: string) => {
-    setSelectedUser(value)
-    // Set the form value to empty string if NONE is selected, otherwise set the actual value
-    setValue('Utilisateur', value === NONE_VALUE ? '' : value)
-  }
+
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
@@ -187,30 +172,7 @@ export function AddSituationDialog({ onSituationAdded }: AddSituationDialogProps
               )}
             </div>
 
-            {/* Utilisateur */}
-            <div>
-              <Label htmlFor="Utilisateur">Utilisateur assigné (optionnel)</Label>
-              <Select 
-                value={selectedUser}
-                onValueChange={handleUserChange}
-                disabled={isLoading}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Sélectionner un utilisateur" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value={NONE_VALUE}>Aucun utilisateur</SelectItem>
-                  {users.map((user) => (
-                    <SelectItem key={user.email} value={user.email}>
-                      {user.name} ({user.email})
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              {errors.Utilisateur && (
-                <p className="text-sm text-red-600 mt-1">{errors.Utilisateur.message}</p>
-              )}
-            </div>
+        
           </div>
 
           <DialogFooter>

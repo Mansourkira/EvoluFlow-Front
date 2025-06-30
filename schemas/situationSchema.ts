@@ -1,5 +1,6 @@
 import { z } from 'zod'
 
+// 🔍 Schéma de validation pour la situation
 export const situationSchema = z.object({
   Reference: z.string()
     .min(1, 'La référence est requise')

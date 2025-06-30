@@ -39,72 +39,7 @@ export default function SituationsPage() {
       filterable: true,
       render: (situation: any) => <span className="font-medium">{situation.Libelle}</span>
     },
-    {
-      key: 'Nom_Prenom',
-      label: 'Utilisateur Assigné',
-      sortable: true,
-      filterable: true,
-      render: (situation: any) => (
-        <div className="flex items-center gap-2">
-          {situation.Nom_Prenom ? (
-            <>
-              <User className="h-3.5 w-3.5 text-gray-400" />
-              <span className="text-gray-600">{situation.Nom_Prenom}</span>
-            </>
-          ) : (
-            <span className="text-gray-400 italic">Non assigné</span>
-          )}
-        </div>
-      )
-    },
-    {
-      key: 'E_mail',
-      label: 'Email Utilisateur',
-      sortable: true,
-      filterable: true,
-      render: (situation: any) => (
-        <div className="flex items-center gap-2">
-          {situation.E_mail ? (
-            <span className="text-gray-600">{situation.E_mail}</span>
-          ) : (
-            <span className="text-gray-400 italic">-</span>
-          )}
-        </div>
-      )
-    },
-    {
-      key: 'Type_Utilisateur',
-      label: 'Type Utilisateur',
-      sortable: true,
-      filterable: true,
-      render: (situation: any) => (
-        situation.Type_Utilisateur ? (
-          <Badge
-            variant={
-              situation.Type_Utilisateur === "Administratif" 
-                ? "default" 
-                : situation.Type_Utilisateur === "Consultant" 
-                ? "secondary" 
-                : "outline"
-            }
-            className="font-medium"
-          >
-            {situation.Type_Utilisateur}
-          </Badge>
-        ) : (
-          <span className="text-gray-400 italic">-</span>
-        )
-      )
-    },
-    {
-      key: 'Site_Defaut',
-      label: 'Site par Défaut',
-      sortable: true,
-      filterable: true,
-      render: (situation: any) => (
-        <span className="text-gray-600">{situation.Site_Defaut || '-'}</span>
-      )
-    },
+  
     {
       key: 'Heure',
       label: 'Date de Création',

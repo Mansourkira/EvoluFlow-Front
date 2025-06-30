@@ -45,7 +45,7 @@ export function UpdateFiliereDialog({ filiere, open, onOpenChange }: UpdateFilie
       Description: "",
       Delai_Max_Traitement_Dossier: undefined,
       Prix_Traitement_Dossier: undefined,
-      Utilisateur: "",
+      Heure: undefined,
     },
   });
 
@@ -57,7 +57,7 @@ export function UpdateFiliereDialog({ filiere, open, onOpenChange }: UpdateFilie
         Description: filiere.Description || "",
         Delai_Max_Traitement_Dossier: filiere.Delai_Max_Traitement_Dossier || undefined,
         Prix_Traitement_Dossier: filiere.Prix_Traitement_Dossier || undefined,
-        Utilisateur: filiere.Utilisateur || "",
+                Heure: filiere.Heure || undefined,
       });
     }
   }, [filiere, open, form]);
@@ -211,24 +211,6 @@ export function UpdateFiliereDialog({ filiere, open, onOpenChange }: UpdateFilie
               />
             </div>
 
-            {/* Utilisateur */}
-            <FormField
-              control={form.control}
-              name="Utilisateur"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Utilisateur responsable</FormLabel>
-                  <FormControl>
-                    <Input
-                      placeholder="Référence de l'utilisateur"
-                      {...field}
-                      disabled={isLoading}
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
 
             <DialogFooter className="flex gap-2 pt-4">
               <Button

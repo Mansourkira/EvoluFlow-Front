@@ -65,22 +65,19 @@ import {
   MoreHorizontal,
 } from "lucide-react";
 
-type SortField = 'Reference' | 'Libelle' | 'Priorite' | 'Nom_Prenom' | 'Heure';
+type SortField = 'Reference' | 'Libelle' | 'Priorite' ;
 type SortDirection = 'asc' | 'desc' | null;
 
 interface FieldFilters {
   Reference: string;
   Libelle: string;
   Priorite: string;
-  Utilisateur: string;
 }
 
 interface ColumnVisibility {
   Reference: boolean;
   Libelle: boolean;
   Priorite: boolean;
-  Nom_Prenom: boolean;
-  Heure: boolean;
 }
 
 export default function CourseTypesPage() {
@@ -98,15 +95,12 @@ export default function CourseTypesPage() {
     Reference: "",
     Libelle: "",
     Priorite: "",
-    Utilisateur: "",
   });
   const [showAdvancedFilters, setShowAdvancedFilters] = useState(false);
   const [columnVisibility, setColumnVisibility] = useState<ColumnVisibility>({
     Reference: true,
     Libelle: true,
     Priorite: true,
-    Nom_Prenom: true,
-    Heure: true,
   });
 
   // Dialog states
@@ -127,13 +121,13 @@ export default function CourseTypesPage() {
       const matchesSearch = !searchTerm || 
         courseType.Reference.toLowerCase().includes(searchTerm.toLowerCase()) ||
         courseType.Libelle.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        (courseType.Nom_Prenom && courseType.Nom_Prenom.toLowerCase().includes(searchTerm.toLowerCase()));
+        (courseType.Priorite && courseType.Priorite.toString().includes(searchTerm.toLowerCase()));
 
       const matchesFilters = 
         (!fieldFilters.Reference || courseType.Reference.toLowerCase().includes(fieldFilters.Reference.toLowerCase())) &&
         (!fieldFilters.Libelle || courseType.Libelle.toLowerCase().includes(fieldFilters.Libelle.toLowerCase())) &&
         (!fieldFilters.Priorite || (courseType.Priorite && courseType.Priorite.toString() === fieldFilters.Priorite)) &&
-        (!fieldFilters.Utilisateur || (courseType.Nom_Prenom && courseType.Nom_Prenom.toLowerCase().includes(fieldFilters.Utilisateur.toLowerCase())));
+                    (!fieldFilters.Priorite || (courseType.Priorite && courseType.Priorite.toString().includes(fieldFilters.Priorite.toLowerCase())));
 
       return matchesSearch && matchesFilters;
     })
@@ -266,7 +260,6 @@ export default function CourseTypesPage() {
       Reference: "",
       Libelle: "",
       Priorite: "",
-      Utilisateur: "",
     });
     setCurrentPage(1);
   };
@@ -277,7 +270,6 @@ export default function CourseTypesPage() {
     if (fieldFilters.Reference) count++;
     if (fieldFilters.Libelle) count++;
     if (fieldFilters.Priorite) count++;
-    if (fieldFilters.Utilisateur) count++;
     return count;
   };
 
@@ -317,7 +309,7 @@ export default function CourseTypesPage() {
               <div className="relative">
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
                 <Input
-                  placeholder="Rechercher par référence, libellé ou responsable..."
+                    placeholder="Rechercher par référence, libellé ou priorité..."
                   value={searchTerm}
                   onChange={(e) => {
                     setSearchTerm(e.target.value);
@@ -387,9 +379,7 @@ export default function CourseTypesPage() {
                       />
                       {key === 'Reference' && 'Référence'}
                       {key === 'Libelle' && 'Libellé'}
-                      {key === 'Priorite' && 'Priorité'}
-                      {key === 'Nom_Prenom' && 'Responsable'}
-                      {key === 'Heure' && 'Dernière Modif.'}
+                      {key === 'Priorite' && 'Priorité'}    
                     </DropdownMenuItem>
                   ))}
                 </DropdownMenuContent>
@@ -435,14 +425,7 @@ export default function CourseTypesPage() {
                     </SelectContent>
                   </Select>
                 </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Responsable</label>
-                  <Input
-                    placeholder="Filtrer par responsable"
-                    value={fieldFilters.Utilisateur}
-                    onChange={(e) => updateFieldFilter('Utilisateur', e.target.value)}
-                  />
-                </div>
+
               </div>
             </div>
           )}
@@ -522,17 +505,7 @@ export default function CourseTypesPage() {
                         </TableHead>
                       )}
                     
-                      {columnVisibility.Heure && (
-                        <TableHead 
-                          className="cursor-pointer hover:bg-gray-50"
-                          onClick={() => handleSort('Heure')}
-                        >
-                          <div className="flex items-center gap-1">
-                            Dernière Modif.
-                            {renderSortIcon('Heure')}
-                          </div>
-                        </TableHead>
-                      )}
+                     
                       <TableHead className="text-right">Actions</TableHead>
                     </TableRow>
                   </TableHeader>
@@ -568,16 +541,12 @@ export default function CourseTypesPage() {
                               >
                                 <Flag className="h-3 w-3 mr-1" />
                                 {getPriorityLabel(courseType.Priorite)}
-                              </Badge>
+                              </Badge>  
                             )}
                           </TableCell>
                         )}
              
-                        {columnVisibility.Heure && (
-                          <TableCell>
-                            {courseType.Heure ? new Date(courseType.Heure).toLocaleDateString('fr-FR') : '-'}
-                          </TableCell>
-                        )}
+
                         <TableCell className="text-right">
                           <DropdownMenu>
                             <DropdownMenuTrigger asChild>

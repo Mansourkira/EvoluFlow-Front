@@ -4,21 +4,7 @@ import { z } from "zod";
 export const courseTypeSchema = z.object({
   Reference: z.string().min(1, "La référence est obligatoire"),
   Libelle: z.string().min(1, "Le libellé est obligatoire"),
-  Priorite: z.number().optional().nullable(),
-  Utilisateur: z.string().optional().nullable(),
-  Heure: z.string().optional(),
-  // User info (from JOIN)
-  Nom_Prenom: z.string().optional(),
-  E_mail: z.string().optional(),
-  Profil: z.string().optional(),
-  Site_Defaut: z.string().optional(),
-  Type_Utilisateur: z.string().optional(),
-  Adresse: z.string().optional(),
-  Telephone: z.string().optional(),
-  Ville: z.string().optional(),
-  Gouvernorat: z.string().optional(),
-  Pays: z.string().optional(),
-  Image: z.string().optional(),
+  Priorite: z.number().min(0, "La priorité doit être positive").optional().nullable(),
 });
 
 // Add Course Type Schema
@@ -26,7 +12,6 @@ export const addCourseTypeSchema = z.object({
   Reference: z.string().min(1, "La référence est obligatoire"),
   Libelle: z.string().min(1, "Le libellé est obligatoire"),
   Priorite: z.number().min(0, "La priorité doit être positive").optional().nullable(),
-  Utilisateur: z.string().optional().nullable(),
 });
 
 // Update Course Type Schema
@@ -34,7 +19,6 @@ export const updateCourseTypeSchema = z.object({
   Reference: z.string().min(1, "La référence est obligatoire"),
   Libelle: z.string().min(1, "Le libellé est obligatoire").optional(),
   Priorite: z.number().min(0, "La priorité doit être positive").optional().nullable(),
-  Utilisateur: z.string().optional().nullable(),
 });
 
 // Types

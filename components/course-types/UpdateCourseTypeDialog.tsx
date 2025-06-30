@@ -30,7 +30,6 @@ import {
 } from "@/components/ui/select";
 import { updateCourseTypeSchema, type UpdateCourseTypeFormData, PriorityOptions, type CourseType } from "@/schemas/courseTypeSchema";
 import { useToast } from "@/hooks/use-toast";
-import { deduplicateArray } from "@/lib/constants";
 import { Loader2, Save, BookOpen } from "lucide-react";
 
 interface User {
@@ -53,8 +52,6 @@ export function UpdateCourseTypeDialog({
   onCourseTypeUpdated 
 }: UpdateCourseTypeDialogProps) {
   const [isLoading, setIsLoading] = useState(false);
-  const [users, setUsers] = useState<User[]>([]);
-  const [loadingUsers, setLoadingUsers] = useState(false);
   const { toast } = useToast();
 
   const form = useForm<UpdateCourseTypeFormData>({
@@ -63,7 +60,6 @@ export function UpdateCourseTypeDialog({
       Reference: "",
       Libelle: "",
       Priorite: null,
-      Utilisateur: null,
     },
   });
 
@@ -74,38 +70,11 @@ export function UpdateCourseTypeDialog({
         Reference: courseType.Reference || "",
         Libelle: courseType.Libelle || "",
         Priorite: courseType.Priorite || null,
-        Utilisateur: courseType.Utilisateur || null,
       });
     }
   }, [courseType, open, form]);
 
-  // Fetch users when dialog opens
-  useEffect(() => {
-    const fetchUsers = async () => {
-      if (!open) return;
-      
-      setLoadingUsers(true);
-      try {
-        const token = localStorage.getItem('token');
-        const response = await fetch('http://localhost:3000/api/v1/UsersList', {
-          headers: {
-            'Authorization': `Bearer ${token}`,
-            'Content-Type': 'application/json',
-          },
-        });
-        if (response.ok) {
-          const data = await response.json();
-          setUsers(data);
-        }
-      } catch (error) {
-        console.error('Error fetching users:', error);
-      } finally {
-        setLoadingUsers(false);
-      }
-    };
 
-    fetchUsers();
-  }, [open]);
 
   const onSubmit = async (data: UpdateCourseTypeFormData) => {
     setIsLoading(true);
@@ -232,67 +201,10 @@ export function UpdateCourseTypeDialog({
                   )}
                 />
 
-                {/* User */}
-                <FormField
-                  control={form.control}
-                  name="Utilisateur"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Utilisateur Responsable</FormLabel>
-                      <Select 
-                        onValueChange={(value) => field.onChange(value === "none" ? null : value)} 
-                        value={field.value || "none"}
-                      >
-                        <FormControl>
-                          <SelectTrigger>
-                            <SelectValue placeholder={loadingUsers ? "Chargement..." : "Sélectionner l'utilisateur"} />
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                          {loadingUsers ? (
-                            <SelectItem value="loading" disabled>
-                              <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                              Chargement des utilisateurs...
-                            </SelectItem>
-                          ) : users.length > 0 ? (
-                            (() => {
-                              const uniqueUsers = deduplicateArray(users, user => user.Reference);
-                              return (
-                                <>
-                                  <SelectItem value="none">Aucun utilisateur</SelectItem>
-                                  {uniqueUsers.map((user, index) => (
-                                    <SelectItem key={`user-${user.Reference}-${index}`} value={user.Reference}>
-                                      {user.Nom_Prenom} ({user.E_mail})
-                                    </SelectItem>
-                                  ))}
-                                </>
-                              );
-                            })()
-                          ) : (
-                            <SelectItem value="no-users" disabled>
-                              Aucun utilisateur disponible
-                            </SelectItem>
-                          )}
-                        </SelectContent>
-                      </Select>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
               </div>
             </div>
 
-            {/* Current User Info */}
-            {courseType?.Nom_Prenom && (
-              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-                <h4 className="font-medium text-blue-900 mb-2">Utilisateur Actuel</h4>
-                <div className="text-sm text-blue-800">
-                  <p><strong>Nom:</strong> {courseType.Nom_Prenom}</p>
-                  <p><strong>Email:</strong> {courseType.E_mail}</p>
-                  {courseType.Site_Defaut && <p><strong>Site:</strong> {courseType.Site_Defaut}</p>}
-                </div>
-              </div>
-            )}
+          
 
             <DialogFooter className="flex justify-end gap-2 pt-4">
               <Button

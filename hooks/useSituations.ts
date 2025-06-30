@@ -3,13 +3,6 @@ import { useState, useEffect } from 'react'
 interface Situation {
   Reference: string
   Libelle: string
-  Utilisateur?: string
-  Heure?: string
-  Nom_Prenom?: string
-  E_mail?: string
-  Profil?: string
-  Type_Utilisateur?: string
-  Site_Defaut?: string
 }
 
 export function useSituations() {

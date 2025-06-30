@@ -65,7 +65,7 @@ import {
   Columns,
 } from "lucide-react";
 
-type SortField = 'Reference' | 'Libelle' | 'Delai_Max_Traitement_Dossier' | 'Prix_Traitement_Dossier' | 'Nom_Prenom';
+  type SortField = 'Reference' | 'Libelle' | 'Delai_Max_Traitement_Dossier' | 'Prix_Traitement_Dossier' | 'Heure';
 type SortDirection = 'asc' | 'desc' | null;
 
 interface FieldFilters {
@@ -79,7 +79,7 @@ interface ColumnVisibility {
   Libelle: boolean;
   Delai_Max_Traitement_Dossier: boolean;
   Prix_Traitement_Dossier: boolean;
-  Nom_Prenom: boolean;
+  Heure: boolean;
 }
 
 export default function FilieresPage() {
@@ -104,7 +104,7 @@ export default function FilieresPage() {
     Libelle: true,
     Delai_Max_Traitement_Dossier: true,
     Prix_Traitement_Dossier: true,
-    Nom_Prenom: true,
+    Heure: true,
   });
 
   // Dialog states
@@ -126,12 +126,11 @@ export default function FilieresPage() {
         filiere.Reference.toLowerCase().includes(searchTerm.toLowerCase()) ||
         filiere.Libelle.toLowerCase().includes(searchTerm.toLowerCase()) ||
         (filiere.Description && filiere.Description.toLowerCase().includes(searchTerm.toLowerCase())) ||
-        (filiere.Nom_Prenom && filiere.Nom_Prenom.toLowerCase().includes(searchTerm.toLowerCase()));
+        (filiere.Heure && filiere.Heure.toString().includes(searchTerm.toLowerCase()));
 
       const matchesFilters = 
         (!fieldFilters.Reference || filiere.Reference.toLowerCase().includes(fieldFilters.Reference.toLowerCase())) &&
-        (!fieldFilters.Libelle || filiere.Libelle.toLowerCase().includes(fieldFilters.Libelle.toLowerCase())) &&
-        (!fieldFilters.Utilisateur || (filiere.Nom_Prenom && filiere.Nom_Prenom.toLowerCase().includes(fieldFilters.Utilisateur.toLowerCase())));
+        (!fieldFilters.Libelle || filiere.Libelle.toLowerCase().includes(fieldFilters.Libelle.toLowerCase()));
 
       return matchesSearch && matchesFilters;
     })
@@ -319,7 +318,7 @@ export default function FilieresPage() {
               <div className="relative">
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
                 <Input
-                  placeholder="Rechercher par référence, libellé, description ou responsable..."
+                  placeholder="Rechercher par référence, libellé, description ou sponsable..."
                   value={searchTerm}
                   onChange={(e) => {
                     setSearchTerm(e.target.value);
@@ -391,7 +390,7 @@ export default function FilieresPage() {
                       {key === 'Libelle' && 'Libellé'}
                       {key === 'Delai_Max_Traitement_Dossier' && 'Délai Max'}
                       {key === 'Prix_Traitement_Dossier' && 'Prix'}
-                      {key === 'Nom_Prenom' && 'Responsable'}
+                      {key === 'Priorite' && 'Priorité'}
                     </DropdownMenuItem>
                   ))}
                 </DropdownMenuContent>
@@ -419,14 +418,7 @@ export default function FilieresPage() {
                     onChange={(e) => updateFieldFilter('Libelle', e.target.value)}
                   />
                 </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Responsable</label>
-                  <Input
-                    placeholder="Filtrer par responsable"
-                    value={fieldFilters.Utilisateur}
-                    onChange={(e) => updateFieldFilter('Utilisateur', e.target.value)}
-                  />
-                </div>
+             
               </div>
             </div>
           )}
@@ -516,14 +508,14 @@ export default function FilieresPage() {
                           </div>
                         </TableHead>
                       )}
-                      {columnVisibility.Nom_Prenom && (
+                      {columnVisibility.Heure && (
                         <TableHead 
                           className="cursor-pointer hover:bg-gray-50"
-                          onClick={() => handleSort('Nom_Prenom')}
+                          onClick={() => handleSort('Heure')}
                         >
                           <div className="flex items-center gap-1">
-                            Responsable
-                            {renderSortIcon('Nom_Prenom')}
+                            Heure
+                            {renderSortIcon('Heure')}
                           </div>
                         </TableHead>
                       )}
@@ -582,24 +574,22 @@ export default function FilieresPage() {
                             )}
                           </TableCell>
                         )}
-                        {columnVisibility.Nom_Prenom && (
+                        {columnVisibility.Heure && (
                           <TableCell>
-                            {filiere.Nom_Prenom ? (
+                            {filiere.Heure ? (
                               <div className="flex items-center gap-2">
                                 <Avatar className="h-8 w-8">
                                   <AvatarFallback className="text-xs bg-gray-100">
-                                    {filiere.Nom_Prenom.charAt(0)}
+                                    {filiere.Heure ? new Date(filiere.Heure).toLocaleDateString('fr-FR').split('/').reverse().join('-') : '-'}
                                   </AvatarFallback>
                                 </Avatar>
                                 <div>
-                                  <div className="font-medium text-sm">{filiere.Nom_Prenom}</div>
-                                  {filiere.E_mail && (
-                                    <div className="text-xs text-gray-500">{filiere.E_mail}</div>
-                                  )}
+                                      <div className="font-medium text-sm">{filiere.Heure ? new Date(filiere.Heure).toLocaleDateString('fr-FR').split('/').reverse().join('-') : '-'      }</div>
+                                 
                                 </div>
                               </div>
                             ) : (
-                              <span className="text-gray-400">Non assigné</span>
+                                    <span className="text-gray-400">Aucune heure</span>
                             )}
                           </TableCell>
                         )}

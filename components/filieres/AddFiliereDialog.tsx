@@ -39,7 +39,7 @@ export function AddFiliereDialog({ trigger, onFiliereAdded }: AddFiliereDialogPr
   const [open, setOpen] = useState(false);
   const { addFiliere, isLoading, filieres } = useFilieres();
   const { toast } = useToast();
-  const { users, isLoading: isLoadingUsers, error: usersError } = useUsers();
+ 
   const form = useForm<AddFiliereFormData>({
     resolver: zodResolver(addFiliereSchema),
     defaultValues: {
@@ -48,7 +48,7 @@ export function AddFiliereDialog({ trigger, onFiliereAdded }: AddFiliereDialogPr
       Description: "",
       Delai_Max_Traitement_Dossier: undefined,
       Prix_Traitement_Dossier: undefined,
-      Utilisateur: "",
+          Heure   : undefined,
     },
   });
 
@@ -253,54 +253,6 @@ export function AddFiliereDialog({ trigger, onFiliereAdded }: AddFiliereDialogPr
               />
             </div>
 
-            {/* Utilisateur */}
-            <FormField
-              control={form.control}
-              name="Utilisateur"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Utilisateur responsable</FormLabel>
-                  <Select
-                    onValueChange={field.onChange}
-                    defaultValue={field.value}
-                    disabled={isLoadingUsers || isLoading}
-                  >
-                    <FormControl>
-                      <SelectTrigger>
-                        <SelectValue 
-                          placeholder={
-                            isLoadingUsers 
-                              ? "Chargement des utilisateurs..." 
-                              : usersError 
-                                ? "Erreur de chargement" 
-                                : "Sélectionner un utilisateur"
-                          } 
-                        />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      {Array.isArray(users) && users.length > 0 ? (
-                        users.map((user: any) => (
-                          <SelectItem key={user.Reference || user.id} value={user.Reference?.toString() || user.id?.toString()}>
-                            {user.Nom_Prenom} 
-                          </SelectItem>
-                        ))
-                      ) : (
-                        <SelectItem disabled value="no-users">
-                          {isLoadingUsers 
-                            ? "Chargement..." 
-                            : usersError 
-                              ? "Erreur de chargement" 
-                              : "Aucun utilisateur disponible"
-                          }
-                        </SelectItem>
-                      )}
-                    </SelectContent>
-                  </Select>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
 
             <DialogFooter className="flex gap-2 pt-4">
               <Button

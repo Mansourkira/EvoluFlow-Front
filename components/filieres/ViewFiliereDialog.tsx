@@ -99,58 +99,6 @@ export function ViewFiliereDialog({ filiere, open, onOpenChange }: ViewFiliereDi
             </div>
           </div>
 
-          {/* User Information */}
-          {filiere.Nom_Prenom && (
-            <div className="space-y-3 border-t pt-4">
-              <div className="flex items-center gap-2 text-sm font-medium text-gray-600">
-                <User className="h-4 w-4" />
-                Utilisateur responsable
-              </div>
-              
-              <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
-                <Avatar className="h-10 w-10">
-                  <AvatarImage src="/placeholder-user.jpg" />
-                  <AvatarFallback className="bg-[#3A90DA] text-white">
-                    {filiere.Nom_Prenom.split(' ').map(n => n[0]).join('').toUpperCase()}
-                  </AvatarFallback>
-                </Avatar>
-                
-                <div className="flex-1 space-y-1">
-                  <div className="font-medium">{filiere.Nom_Prenom}</div>
-                  {filiere.E_mail && (
-                    <div className="flex items-center gap-1 text-sm text-gray-600">
-                      <Mail className="h-3 w-3" />
-                      {filiere.E_mail}
-                    </div>
-                  )}
-                  {filiere.Type_Utilisateur && (
-                    <Badge variant="secondary" className="text-xs">
-                      {filiere.Type_Utilisateur}
-                    </Badge>
-                  )}
-                </div>
-              </div>
-            </div>
-          )}
-
-          {/* Timestamp */}
-          {filiere.Heure && (
-            <div className="space-y-2 border-t pt-4">
-              <div className="flex items-center gap-2 text-sm font-medium text-gray-600">
-                <Calendar className="h-4 w-4" />
-                Date de création
-              </div>
-              <div className="text-sm text-gray-600">
-                {new Date(filiere.Heure).toLocaleString('fr-FR', {
-                  year: 'numeric',
-                  month: 'long',
-                  day: 'numeric',
-                  hour: '2-digit',
-                  minute: '2-digit',
-                })}
-              </div>
-            </div>
-          )}
         </div>
       </DialogContent>
     </Dialog>

@@ -7,13 +7,7 @@ export const filiereSchema = z.object({
   Description: z.string().optional().nullable(),
   Delai_Max_Traitement_Dossier: z.number().min(0, "Le délai doit être positif").optional().nullable(),
   Prix_Traitement_Dossier: z.number().min(0, "Le prix doit être positif").optional().nullable(),
-  Utilisateur: z.string().optional().nullable(),
-  Heure: z.string().optional(),
-  // User info (from JOIN)
-  Nom_Prenom: z.string().optional(),
-  E_mail: z.string().optional(),
-  Profil: z.string().optional(),
-  Type_Utilisateur: z.string().optional(),
+  Heure: z.date().optional().nullable(),  
 });
 
 // Add Filiere Schema
@@ -23,7 +17,7 @@ export const addFiliereSchema = z.object({
   Description: z.string().optional(),
   Delai_Max_Traitement_Dossier: z.number().min(0, "Le délai doit être positif").optional(),
   Prix_Traitement_Dossier: z.number().min(0, "Le prix doit être positif").optional(),
-  Utilisateur: z.string().optional(),
+  Heure: z.date().optional().nullable(),  
 });
 
 // Update Filiere Schema
@@ -33,8 +27,8 @@ export const updateFiliereSchema = z.object({
   Description: z.string().optional(),
   Delai_Max_Traitement_Dossier: z.number().min(0, "Le délai doit être positif").optional(),
   Prix_Traitement_Dossier: z.number().min(0, "Le prix doit être positif").optional(),
-  Utilisateur: z.string().optional(),
-});
+  Heure: z.date().optional().nullable(),  
+      });
 
 // Types
 export type Filiere = z.infer<typeof filiereSchema>;
