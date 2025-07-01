@@ -92,11 +92,6 @@ const getNavigationByRole = (role: UserRole, user: any) => {
           icon: Settings,
           items: [
             {
-              title: "Société",
-              url: "/dashboard/societe",
-              icon: Building2,
-            },
-            {
               title: "Site",
               url: "/dashboard/sites",
               icon: Building,
