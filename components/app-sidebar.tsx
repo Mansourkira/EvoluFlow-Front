@@ -106,6 +106,11 @@ const getNavigationByRole = (role: UserRole, user: any) => {
               url: "/dashboard/filieres",
               icon: FolderOpen,
             },
+            {
+              title: "Types de Facturation",
+              url: "/dashboard/type-facturation",
+              icon: CreditCard,
+            },
           ],
         },
         {
