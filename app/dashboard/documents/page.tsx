@@ -23,6 +23,9 @@ export default function DocumentsPage() {
     deleteDocument,
     addDocument,
   } = useDocuments();
+   useEffect(() => {
+    fetchDocuments();
+  }, []);
 
   const [viewDialogOpen, setViewDialogOpen] = useState(false);
   const [selectedDocument, setSelectedDocument] = useState<Document | null>(null);

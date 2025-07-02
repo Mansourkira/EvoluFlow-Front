@@ -24,6 +24,7 @@ import {
 } from "@/components/ui/form";
 import { Document, updateDocumentSchema } from "@/schemas/documentShema";
 import { useDocuments } from "@/hooks/useDocuments";
+import { useUsers } from "@/hooks/useUsers";
 import { FileText, Loader2, Pencil } from "lucide-react";
 
 interface UpdateDocumentDialogProps {
@@ -34,7 +35,11 @@ interface UpdateDocumentDialogProps {
 
 export function UpdateDocumentDialog({ open, onClose, document }: UpdateDocumentDialogProps) {
   const { updateDocument } = useDocuments();
+  const { users } = useUsers();
   const [isLoading, setIsLoading] = useState(false);
+
+  const matchedUser = users.find(u => u.Reference === document.Utilisateur);
+  const fullName = matchedUser ? `${matchedUser.Nom_Prenom}` : "-";
 
   const form = useForm<Document>({
     resolver: zodResolver(updateDocumentSchema),
@@ -73,7 +78,7 @@ export function UpdateDocumentDialog({ open, onClose, document }: UpdateDocument
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {["Reference", "Nom_Document", "Lieu_Extraction", "Observation", "Type", "Reference_Filiere", "Utilisateur"].map((name) => (
+              {["Reference", "Nom_Document", "Lieu_Extraction", "Observation", "Type", "Reference_Filiere"].map((name) => (
                 <FormField
                   key={name}
                   control={form.control}
@@ -116,23 +121,23 @@ export function UpdateDocumentDialog({ open, onClose, document }: UpdateDocument
                 />
               ))}
 
-              <FormField
-                control={form.control}
-                name="Heure"
-                render={({ field }) => (
-                  <FormItem className="md:col-span-2">
-                    <FormLabel>Heure</FormLabel>
-                    <FormControl>
-                      <Input
-                        type="datetime-local"
-                        {...field}
-                        value={field.value ? new Date(field.value).toISOString().slice(0, 16) : ""}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+              <FormItem className="md:col-span-2">
+                <FormLabel>Heure</FormLabel>
+                <FormControl>
+                  <Input
+                    type="datetime-local"
+                    value={document.Heure ? new Date(document.Heure).toISOString().slice(0, 16) : ""}
+                    disabled
+                  />
+                </FormControl>
+              </FormItem>
+
+              <FormItem>
+                <FormLabel>Utilisateur</FormLabel>
+                <FormControl>
+                  <Input value={fullName} disabled />
+                </FormControl>
+              </FormItem>
 
               {["Obligatoire", "Necessaire_Examen", "Necessaire_Inscription"].map((name) => (
                 <FormField

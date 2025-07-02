@@ -15,7 +15,6 @@ import {
   MapPin,
   Info,
   CheckCircle,
-  AlertTriangle,
   Clock,
   DollarSign,
   Layers,
@@ -27,6 +26,7 @@ import {
 } from "lucide-react";
 import { Document } from "@/schemas/documentShema";
 import { formatPrice, formatDelay } from "@/schemas/documentShema";
+import { useUsers } from "@/hooks/useUsers";
 
 interface ViewDocumentDialogProps {
   open: boolean;
@@ -35,6 +35,12 @@ interface ViewDocumentDialogProps {
 }
 
 export function ViewDocumentDialog({ open, onClose, document }: ViewDocumentDialogProps) {
+  const { users } = useUsers();
+
+
+ 
+
+
   return (
     <Dialog open={open} onOpenChange={onClose}>
       <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
@@ -140,19 +146,19 @@ export function ViewDocumentDialog({ open, onClose, document }: ViewDocumentDial
             </CardContent>
           </Card>
 
-          {/* Métadonnées */}
+          {/* Sécurité */}
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2 text-lg">
                 <User className="h-5 w-5" />
-                Métadonnées
+                Sécurité
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-3">
               <div className="flex items-center gap-2">
                 <User className="h-4 w-4 text-gray-500" />
                 <span className="text-sm text-gray-600">Utilisateur :</span>
-                <span className="font-medium">{document.Utilisateur || '-'}</span>
+                <span className="font-medium">{document.Utilisateur}</span>
               </div>
               <div className="flex items-center gap-2">
                 <Calendar className="h-4 w-4 text-gray-500" />
@@ -168,6 +174,7 @@ export function ViewDocumentDialog({ open, onClose, document }: ViewDocumentDial
                   <span className="font-medium">{document.Reference_Filiere}</span>
                 </div>
               )}
+              
             </CardContent>
           </Card>
         </div>
