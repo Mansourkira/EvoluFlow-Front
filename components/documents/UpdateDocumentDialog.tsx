@@ -1,20 +1,30 @@
 "use client";
 
-import React from "react";
+import { useState } from "react";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
+  DialogFooter,
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Textarea } from "@/components/ui/textarea";
-import { useForm, Controller } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form";
 import { Document, updateDocumentSchema } from "@/schemas/documentShema";
 import { useDocuments } from "@/hooks/useDocuments";
+import { FileText, Loader2, Pencil } from "lucide-react";
 
 interface UpdateDocumentDialogProps {
   open: boolean;
@@ -22,148 +32,145 @@ interface UpdateDocumentDialogProps {
   document: Document;
 }
 
-export default function UpdateDocumentDialog({
-  open,
-  onClose,
-  document,
-}: UpdateDocumentDialogProps) {
+export function UpdateDocumentDialog({ open, onClose, document }: UpdateDocumentDialogProps) {
   const { updateDocument } = useDocuments();
+  const [isLoading, setIsLoading] = useState(false);
 
-  const { control, handleSubmit } = useForm<Document>({
-    defaultValues: {
-      ...document,
-      Delai_Traitement: document.Delai_Traitement ?? 0,
-      Prix_Traitement: document.Prix_Traitement ?? 0,
-      Ordre: document.Ordre ?? 0,
-    },
+  const form = useForm<Document>({
     resolver: zodResolver(updateDocumentSchema),
+    defaultValues: document,
   });
 
   const onSubmit = async (data: Document) => {
-    await updateDocument(data);
+    setIsLoading(true);
+    try {
+      await updateDocument(data);
+      onClose();
+    } catch (error) {
+      console.error("Erreur mise à jour document:", error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleCancel = () => {
     onClose();
   };
 
   return (
     <Dialog open={open} onOpenChange={onClose}>
-      <DialogContent>
+      <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>Modifier le document</DialogTitle>
+          <DialogTitle className="flex items-center gap-2">
+            <Pencil className="h-5 w-5" />
+            Modifier un document
+          </DialogTitle>
+          <DialogDescription>
+            Modifiez les champs nécessaires pour mettre à jour ce document.
+          </DialogDescription>
         </DialogHeader>
-        <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-          <Controller
-            name="Reference"
-            control={control}
-            render={({ field }) => (
-              <Input {...field} value={field.value ?? ""} placeholder="Référence" />
-            )}
-          />
-          <Controller
-            name="Nom_Document"
-            control={control}
-            render={({ field }) => (
-              <Input {...field} value={field.value ?? ""} placeholder="Nom du document" />
-            )}
-          />
-          <Controller
-            name="Lieu_Extraction"
-            control={control}
-            render={({ field }) => (
-              <Input {...field} value={field.value ?? ""} placeholder="Lieu d'extraction" />
-            )}
-          />
-          <Controller
-            name="Observation"
-            control={control}
-            render={({ field }) => (
-              <Textarea {...field} value={field.value ?? ""} placeholder="Observation" />
-            )}
-          />
-          <Controller
-            name="Obligatoire"
-            control={control}
-            render={({ field }) => (
-              <div className="flex items-center gap-2">
-                <Checkbox checked={!!field.value} onCheckedChange={field.onChange} />
-                <label>Obligatoire</label>
-              </div>
-            )}
-          />
-          <Controller
-            name="Necessaire_Examen"
-            control={control}
-            render={({ field }) => (
-              <div className="flex items-center gap-2">
-                <Checkbox checked={!!field.value} onCheckedChange={field.onChange} />
-                <label>Nécessaire pour examen</label>
-              </div>
-            )}
-          />
-          <Controller
-            name="Necessaire_Inscription"
-            control={control}
-            render={({ field }) => (
-              <div className="flex items-center gap-2">
-                <Checkbox checked={!!field.value} onCheckedChange={field.onChange} />
-                <label>Nécessaire pour inscription</label>
-              </div>
-            )}
-          />
-          <Controller
-            name="Delai_Traitement"
-            control={control}
-            render={({ field }) => (
-              <Input
-                {...field}
-                type="number"
-                value={field.value ?? 0}
-                onChange={(e) => field.onChange(Number(e.target.value))}
-                placeholder="Délai de traitement (jours)"
+
+        <Form {...form}>
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {["Reference", "Nom_Document", "Lieu_Extraction", "Observation", "Type", "Reference_Filiere", "Utilisateur"].map((name) => (
+                <FormField
+                  key={name}
+                  control={form.control}
+                  name={name as keyof Document}
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>{name.replaceAll("_", " ")}</FormLabel>
+                      <FormControl>
+                        <Input
+                          {...field}
+                          value={typeof field.value === "boolean" || field.value instanceof Date ? "" : field.value ?? ""}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              ))}
+
+              {["Delai_Traitement", "Prix_Traitement", "Ordre"].map((name) => (
+                <FormField
+                  key={name}
+                  control={form.control}
+                  name={name as keyof Document}
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>{name.replaceAll("_", " ")}</FormLabel>
+                      <FormControl>
+                        <Input
+                          type="number"
+                          value={typeof field.value === "number" ? field.value : field.value === undefined || field.value === null ? "" : Number(field.value)}
+                          onChange={(e) =>
+                            field.onChange(e.target.value === "" ? undefined : Number(e.target.value))
+                          }
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              ))}
+
+              <FormField
+                control={form.control}
+                name="Heure"
+                render={({ field }) => (
+                  <FormItem className="md:col-span-2">
+                    <FormLabel>Heure</FormLabel>
+                    <FormControl>
+                      <Input
+                        type="datetime-local"
+                        {...field}
+                        value={field.value ? new Date(field.value).toISOString().slice(0, 16) : ""}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
               />
-            )}
-          />
-          <Controller
-            name="Prix_Traitement"
-            control={control}
-            render={({ field }) => (
-              <Input
-                {...field}
-                type="number"
-                value={field.value ?? 0}
-                onChange={(e) => field.onChange(Number(e.target.value))}
-                placeholder="Prix de traitement"
-              />
-            )}
-          />
-          <Controller
-            name="Ordre"
-            control={control}
-            render={({ field }) => (
-              <Input
-                {...field}
-                type="number"
-                value={field.value ?? 0}
-                onChange={(e) => field.onChange(Number(e.target.value))}
-                placeholder="Ordre"
-              />
-            )}
-          />
-          <Controller
-            name="Type"
-            control={control}
-            render={({ field }) => (
-              <Input {...field} value={field.value ?? ""} placeholder="Type" />
-            )}
-          />
-          <Controller
-            name="Reference_Filiere"
-            control={control}
-            render={({ field }) => (
-              <Input {...field} value={field.value ?? ""} placeholder="Référence filière" />
-            )}
-          />
-          <Button type="submit">Enregistrer</Button>
-        </form>
+
+              {["Obligatoire", "Necessaire_Examen", "Necessaire_Inscription"].map((name) => (
+                <FormField
+                  key={name}
+                  control={form.control}
+                  name={name as keyof Document}
+                  render={({ field }) => (
+                    <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-md border p-4">
+                      <FormControl>
+                        <Checkbox checked={!!field.value} onCheckedChange={field.onChange} />
+                      </FormControl>
+                      <div className="space-y-1 leading-none">
+                        <FormLabel>{name.replaceAll("_", " ")}</FormLabel>
+                      </div>
+                    </FormItem>
+                  )}
+                />
+              ))}
+            </div>
+
+            <DialogFooter className="flex justify-end gap-2 pt-4">
+              <Button type="button" variant="outline" onClick={handleCancel} disabled={isLoading}>
+                Annuler
+              </Button>
+              <Button type="submit" disabled={isLoading}>
+                {isLoading ? (
+                  <>
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" /> Mise à jour...
+                  </>
+                ) : (
+                  <>
+                    <FileText className="h-4 w-4 mr-2" /> Mettre à jour
+                  </>
+                )}
+              </Button>
+            </DialogFooter>
+          </form>
+        </Form>
       </DialogContent>
     </Dialog>
   );
