@@ -8,9 +8,8 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog'
-import { Badge } from '@/components/ui/badge'
-import { Separator } from '@/components/ui/separator'
-import { Hash, Type, User, Mail, UserCheck, MapPin, Calendar } from 'lucide-react'
+
+import { Hash, Type, Calendar } from 'lucide-react'
 
 interface ViewSituationDialogProps {
   situation: any
@@ -35,59 +34,6 @@ export function ViewSituationDialog({ situation, open, onOpenChange }: ViewSitua
       className: 'font-medium'
     },
     {
-      icon: User,
-      label: 'Référence Utilisateur',
-      value: situation.Utilisateur,
-      className: 'font-mono text-sm'
-    },
-    {
-      icon: UserCheck,
-      label: 'Nom Utilisateur',
-      value: situation.Nom_Prenom,
-      className: 'font-medium'
-    },
-    {
-      icon: Mail,
-      label: 'Email Utilisateur',
-      value: situation.E_mail,
-      className: 'text-blue-600'
-    },
-    {
-      icon: UserCheck,
-      label: 'Profil',
-      value: situation.Profil,
-      render: (value: string) => value ? (
-        <Badge variant="outline" className="font-medium">
-          {value}
-        </Badge>
-      ) : null
-    },
-    {
-      icon: UserCheck,
-      label: 'Type Utilisateur',
-      value: situation.Type_Utilisateur,
-      render: (value: string) => value ? (
-        <Badge
-          variant={
-            value === "Administratif" 
-              ? "default" 
-              : value === "Consultant" 
-              ? "secondary" 
-              : "outline"
-          }
-          className="font-medium"
-        >
-          {value}
-        </Badge>
-      ) : null
-    },
-    {
-      icon: MapPin,
-      label: 'Site par Défaut',
-      value: situation.Site_Defaut,
-      className: 'text-gray-600'
-    },
-    {
       icon: Calendar,
       label: 'Date de Création',
       value: situation.Heure,
@@ -104,7 +50,7 @@ export function ViewSituationDialog({ situation, open, onOpenChange }: ViewSitua
             Détails de la Situation
           </DialogTitle>
           <DialogDescription>
-            Informations détaillées sur la situation et son assignation
+            Informations détaillées sur la situation
           </DialogDescription>
         </DialogHeader>
 
@@ -125,13 +71,9 @@ export function ViewSituationDialog({ situation, open, onOpenChange }: ViewSitua
                       {item.label}
                     </div>
                     <div className={`text-sm ${isEmptyValue ? 'text-gray-400 italic' : 'text-gray-900'}`}>
-                      {item.render ? (
-                        item.render(item.value)
-                      ) : (
-                        <span className={item.className}>
-                          {displayValue}
-                        </span>
-                      )}
+                      <span className={item.className}>
+                        {displayValue}
+                      </span>
                     </div>
                   </div>
                 </div>
@@ -139,28 +81,7 @@ export function ViewSituationDialog({ situation, open, onOpenChange }: ViewSitua
             })}
           </div>
 
-          <Separator className="my-4" />
 
-          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-            <div className="flex items-center gap-2 mb-2">
-              <UserCheck className="h-4 w-4 text-blue-600" />
-              <span className="text-sm font-medium text-blue-900">
-                Statut d'Assignation
-              </span>
-            </div>
-            <div className="text-sm text-blue-800">
-              {situation.Nom_Prenom ? (
-                <>
-                  Cette situation est assignée à <strong>{situation.Nom_Prenom}</strong>
-                  {situation.E_mail && (
-                    <span> ({situation.E_mail})</span>
-                  )}
-                </>
-              ) : (
-                <span className="italic">Cette situation n'est assignée à aucun utilisateur</span>
-              )}
-            </div>
-          </div>
         </div>
       </DialogContent>
     </Dialog>

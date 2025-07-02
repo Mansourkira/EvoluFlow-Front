@@ -235,7 +235,7 @@ export function AddFiliereDialog({ trigger, onFiliereAdded }: AddFiliereDialogPr
                 name="Prix_Traitement_Dossier"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Prix de traitement (TND)</FormLabel>
+                    <FormLabel>Prix de traitement</FormLabel>
                     <FormControl>
                       <Input
                         type="number"

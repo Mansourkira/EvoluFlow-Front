@@ -166,12 +166,13 @@ export default function SituationsPage() {
 
   const handleExport = async (format: string, selectedOnly = false) => {
     try {
-      const { exportAllSituations } = await import('@/lib/exportUtils')
+      const { exportGenericData, createSituationExportConfig } = await import('@/lib/exportUtils')
       const dataToExport = selectedOnly ? 
         situations.filter(situation => situation.Reference) : 
         situations
       
-      await exportAllSituations(dataToExport, format as 'PDF' | 'Excel' | 'Word')
+      const config = createSituationExportConfig(dataToExport)
+      await exportGenericData(config, format as 'PDF' | 'Excel' | 'Word')
       toast.success(`📄 Export réussi - ${dataToExport.length} situation(s) exportée(s) en ${format}`)
     } catch (error) {
       console.error('Erreur export:', error)

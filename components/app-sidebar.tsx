@@ -92,11 +92,6 @@ const getNavigationByRole = (role: UserRole, user: any) => {
           icon: Settings,
           items: [
             {
-              title: "Société",
-              url: "/dashboard/societe",
-              icon: Building2,
-            },
-            {
               title: "Site",
               url: "/dashboard/sites",
               icon: Building,
@@ -105,6 +100,11 @@ const getNavigationByRole = (role: UserRole, user: any) => {
               title: "Filière",
               url: "/dashboard/filieres",
               icon: FolderOpen,
+            },
+            {
+              title: "Types de Facturation",
+              url: "/dashboard/type-facturation",
+              icon: CreditCard,
             },
           ],
         },

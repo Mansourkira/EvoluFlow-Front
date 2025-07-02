@@ -7,6 +7,7 @@ export const filiereSchema = z.object({
   Description: z.string().optional().nullable(),
   Delai_Max_Traitement_Dossier: z.number().min(0, "Le délai doit être positif").optional().nullable(),
   Prix_Traitement_Dossier: z.number().min(0, "Le prix doit être positif").optional().nullable(),
+  Utilisateur: z.string().optional().nullable(), // User who created the record
   Heure: z.date().optional().nullable(),  
 });
 
@@ -47,4 +48,22 @@ export const formatPrice = (price: number | null | undefined): string => {
 export const formatDelay = (delay: number | null | undefined): string => {
   if (!delay) return "Non défini";
   return `${delay} jour${delay > 1 ? 's' : ''}`;
+};
+
+// Utility function for date formatting
+export const formatCreationDate = (date: Date | string | null | undefined): string => {
+  if (!date) return "Non défini";
+  
+  try {
+    const dateObj = typeof date === 'string' ? new Date(date) : date;
+    return dateObj.toLocaleDateString('fr-FR', {
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+      hour: '2-digit',
+      minute: '2-digit'
+    });
+  } catch (error) {
+    return "Date invalide";
+  }
 }; 

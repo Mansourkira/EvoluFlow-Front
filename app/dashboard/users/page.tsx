@@ -11,7 +11,6 @@ import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Mail, Phone, MapPin } from 'lucide-react'
 import { toast } from 'sonner'
-import { exportToExcel, exportToPDF, exportToWord } from '@/lib/exportUtils'
 
 export default function UsersPage() {
   const { users, isLoading, error, refetch } = useUsers()
@@ -257,32 +256,21 @@ export default function UsersPage() {
     }
   }
 
-
-    const handleExport = async (format: string) => {
-      try {
-        const filename = `users_${new Date().toISOString().slice(0, 10)}`;
-        const data = users;
-  
-        switch (format) {
-          case "PDF":
-            await exportToPDF(data, filename);
-            break;
-          case "Excel":
-            await exportToExcel(data, filename);
-            break;
-          case "Word":
-            await exportToWord(data, filename);
-            break;
-          default:
-            toast.error("Format d'export non supporté");
-            return;
-        }
-  
-        toast.success(`Export réussi en ${format}`);
-      } catch (error) {
-        toast.error("Erreur lors de l'export");
-      }
-    };
+  const handleExport = async (format: string, selectedOnly = false) => {
+    try {
+      const { exportGenericData, createUserExportConfig } = await import('@/lib/exportUtils')
+      const dataToExport = selectedOnly ? 
+        users.filter(user => user.email) : // This would need to be filtered by selected items
+        users
+      
+      const config = createUserExportConfig(dataToExport)
+      await exportGenericData(config, format as 'PDF' | 'Excel' | 'Word')
+      toast.success(`📄 Export réussi - ${dataToExport.length} utilisateur(s) exporté(s) en ${format}`)
+    } catch (error) {
+      console.error('Erreur export:', error)
+      toast.error(`❌ Erreur d'export - ${error instanceof Error ? error.message : 'Erreur inconnue'}`)
+    }
+  }
 
   return (
     <>
