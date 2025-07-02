@@ -4,367 +4,76 @@ import * as XLSX from 'xlsx'
 import { saveAs } from 'file-saver'
 import { Document, Packer, Paragraph, Table, TableCell, TableRow, WidthType, AlignmentType, TextRun } from 'docx'
 
-export interface User {
-  name: string
-  email: string
-  telephone?: string
-  adresse?: string
-  profilLabel?: string
-  joinDate?: string
+// Generic interfaces for export configuration
+export interface ExportColumn {
+  key: string
+  label: string
+  width?: number
+  formatter?: (value: any) => string
+  excelWidth?: number
+  pdfWidth?: number
+  wordWidth?: number
 }
 
-export interface Situation {
-  Reference: string
-  Libelle: string
-  Utilisateur?: string
-  Heure?: string
-  Nom_Prenom?: string
-  E_mail?: string
-  Profil?: string
-  Type_Utilisateur?: string
-  Site_Defaut?: string
+export interface ExportConfig {
+  title: string
+  filename: string
+  columns: ExportColumn[]
+  data: any[]
 }
 
-export const exportToPDF = (users: User[], filename: string = 'utilisateurs') => {
-  try {
-    const doc = new jsPDF()
-    
-    // Add title
-    doc.setFontSize(16)
-    doc.text('Liste des Utilisateurs', 14, 22)
-    
-    // Add date
-    doc.setFontSize(10)
-    doc.text(`Généré le: ${new Date().toLocaleDateString('fr-FR')}`, 14, 30)
-    
-    // Prepare table data
-    const tableColumns = ['Nom', 'Email', 'Téléphone', 'Adresse', 'Rôle', 'Date d\'inscription']
-    const tableRows = users.map(user => [
-      user.name || '',
-      user.email || '',
-      user.telephone || '',
-      user.adresse || '',
-      user.profilLabel || '',
-      user.joinDate ? new Date(user.joinDate).toLocaleDateString('fr-FR') : ''
-    ])
-    
-    // Add table
-    autoTable(doc, {
-      head: [tableColumns],
-      body: tableRows,
-      startY: 35,
-      styles: {
-        fontSize: 8,
-        cellPadding: 3,
-      },
-      headStyles: {
-        fillColor: [58, 144, 218], // Blue color matching the theme
-        textColor: 255,
-        fontSize: 9,
-        fontStyle: 'bold'
-      },
-      alternateRowStyles: {
-        fillColor: [248, 250, 252] // Light gray
-      },
-      margin: { top: 35 }
-    })
-    
-    // Save the PDF
-    doc.save(`${filename}.pdf`)
-    
-    return true
-  } catch (error) {
-    console.error('Erreur lors de l\'export PDF:', error)
-    return false
-  }
-}
-
-export const exportToExcel = (users: User[], filename: string = 'utilisateurs') => {
-  try {
-    // Prepare data for Excel
-    const excelData = users.map(user => ({
-      'Nom': user.name || '',
-      'Email': user.email || '',
-      'Téléphone': user.telephone || '',
-      'Adresse': user.adresse || '',
-      'Rôle': user.profilLabel || '',
-      'Date d\'inscription': user.joinDate ? new Date(user.joinDate).toLocaleDateString('fr-FR') : ''
-    }))
-    
-    // Create workbook and worksheet
-    const worksheet = XLSX.utils.json_to_sheet(excelData)
-    const workbook = XLSX.utils.book_new()
-    
-    // Set column widths
-    const colWidths = [
-      { wch: 25 }, // Nom
-      { wch: 30 }, // Email
-      { wch: 15 }, // Téléphone
-      { wch: 40 }, // Adresse
-      { wch: 20 }, // Rôle
-      { wch: 20 }  // Date d'inscription
-    ]
-    worksheet['!cols'] = colWidths
-    
-    XLSX.utils.book_append_sheet(workbook, worksheet, 'Utilisateurs')
-    
-    // Save the Excel file
-    const excelBuffer = XLSX.write(workbook, { bookType: 'xlsx', type: 'array' })
-    const blob = new Blob([excelBuffer], { type: 'application/octet-stream' })
-    saveAs(blob, `${filename}.xlsx`)
-    
-    return true
-  } catch (error) {
-    console.error('Erreur lors de l\'export Excel:', error)
-    return false
-  }
-}
-
-export const exportToWord = async (users: User[], filename: string = 'utilisateurs') => {
-  try {
-    // Create table rows for users
-    const tableRows = users.map(user => 
-      new TableRow({
-        children: [
-          new TableCell({
-            children: [new Paragraph(user.name || '')],
-            width: { size: 20, type: WidthType.PERCENTAGE }
-          }),
-          new TableCell({
-            children: [new Paragraph(user.email || '')],
-            width: { size: 25, type: WidthType.PERCENTAGE }
-          }),
-          new TableCell({
-            children: [new Paragraph(user.telephone || '')],
-            width: { size: 15, type: WidthType.PERCENTAGE }
-          }),
-          new TableCell({
-            children: [new Paragraph(user.adresse || '')],
-            width: { size: 25, type: WidthType.PERCENTAGE }
-          }),
-          new TableCell({
-            children: [new Paragraph(user.profilLabel || '')],
-            width: { size: 15, type: WidthType.PERCENTAGE }
-          }),
-          new TableCell({
-            children: [new Paragraph(user.joinDate ? new Date(user.joinDate).toLocaleDateString('fr-FR') : '')],
-            width: { size: 20, type: WidthType.PERCENTAGE }
-          })
-        ]
-      })
-    )
-
-    // Create the document
-    const doc = new Document({
-      sections: [{
-        children: [
-          new Paragraph({
-            children: [
-              new TextRun({
-                text: "Liste des Utilisateurs",
-                bold: true,
-                size: 32,
-                color: "3A90DA"
-              })
-            ],
-            alignment: AlignmentType.CENTER,
-            spacing: { after: 300 }
-          }),
-          new Paragraph({
-            children: [
-              new TextRun({
-                text: `Généré le: ${new Date().toLocaleDateString('fr-FR')}`,
-                italics: true,
-                size: 20
-              })
-            ],
-            alignment: AlignmentType.CENTER,
-            spacing: { after: 400 }
-          }),
-          new Table({
-            width: { size: 100, type: WidthType.PERCENTAGE },
-            rows: [
-              // Header row
-              new TableRow({
-                children: [
-                  new TableCell({
-                    children: [new Paragraph({
-                      children: [new TextRun({ text: "Nom", bold: true, color: "FFFFFF" })]
-                    })],
-                    shading: { fill: "3A90DA" },
-                    width: { size: 20, type: WidthType.PERCENTAGE }
-                  }),
-                  new TableCell({
-                    children: [new Paragraph({
-                      children: [new TextRun({ text: "Email", bold: true, color: "FFFFFF" })]
-                    })],
-                    shading: { fill: "3A90DA" },
-                    width: { size: 25, type: WidthType.PERCENTAGE }
-                  }),
-                  new TableCell({
-                    children: [new Paragraph({
-                      children: [new TextRun({ text: "Téléphone", bold: true, color: "FFFFFF" })]
-                    })],
-                    shading: { fill: "3A90DA" },
-                    width: { size: 15, type: WidthType.PERCENTAGE }
-                  }),
-                  new TableCell({
-                    children: [new Paragraph({
-                      children: [new TextRun({ text: "Adresse", bold: true, color: "FFFFFF" })]
-                    })],
-                    shading: { fill: "3A90DA" },
-                    width: { size: 25, type: WidthType.PERCENTAGE }
-                  }),
-                  new TableCell({
-                    children: [new Paragraph({
-                      children: [new TextRun({ text: "Rôle", bold: true, color: "FFFFFF" })]
-                    })],
-                    shading: { fill: "3A90DA" },
-                    width: { size: 15, type: WidthType.PERCENTAGE }
-                  }),
-                  new TableCell({
-                    children: [new Paragraph({
-                      children: [new TextRun({ text: "Date d'inscription", bold: true, color: "FFFFFF" })]
-                    })],
-                    shading: { fill: "3A90DA" },
-                    width: { size: 20, type: WidthType.PERCENTAGE }
-                  })
-                ]
-              }),
-              // Data rows
-              ...tableRows
-            ]
-          }),
-          new Paragraph({
-            children: [
-              new TextRun({
-                text: `Total: ${users.length} utilisateur(s)`,
-                bold: true
-              })
-            ],
-            spacing: { before: 400 }
-          })
-        ]
-      }]
-    })
-
-    // Generate and save the document
-    const buffer = await Packer.toBlob(doc)
-    saveAs(buffer, `${filename}.docx`)
-    
-    return true
-  } catch (error) {
-    console.error('Erreur lors de l\'export Word:', error)
-    return false
-  }
-}
-
-export const exportBulkUsers = async (users: User[], selectedEmails: string[], format: 'PDF' | 'Excel' | 'Word') => {
-  // Filter users based on selected emails
-  const selectedUsers = users.filter(user => selectedEmails.includes(user.email))
-  
-  if (selectedUsers.length === 0) {
-    throw new Error('Aucun utilisateur sélectionné pour l\'export')
-  }
-  
-  const timestamp = new Date().toISOString().slice(0, 10)
-  const filename = `utilisateurs_selection_${timestamp}`
-  
-  switch (format) {
-    case 'PDF':
-      return exportToPDF(selectedUsers, filename)
-    case 'Excel':
-      return exportToExcel(selectedUsers, filename)
-    case 'Word':
-      return await exportToWord(selectedUsers, filename)
-    default:
-      throw new Error('Format d\'export non supporté')
-  }
-}
-
-export const exportAllUsers = async (users: User[], format: 'PDF' | 'Excel' | 'Word') => {
-  if (users.length === 0) {
-    throw new Error('Aucun utilisateur à exporter')
-  }
-  
-  const timestamp = new Date().toISOString().slice(0, 10)
-  const filename = `tous_utilisateurs_${timestamp}`
-  
-  switch (format) {
-    case 'PDF':
-      return exportToPDF(users, filename)
-    case 'Excel':
-      return exportToExcel(users, filename)
-    case 'Word':
-      return await exportToWord(users, filename)
-    default:
-      throw new Error('Format d\'export non supporté')
-  }
-}
-
-export const exportAllSituations = async (situations: Situation[], format: 'PDF' | 'Excel' | 'Word') => {
-  if (situations.length === 0) {
-    throw new Error('Aucune situation à exporter')
-  }
-  
-  const timestamp = new Date().toISOString().slice(0, 10)
-  const filename = `situations_${timestamp}`
-  
-  switch (format) {
-    case 'PDF':
-      return exportSituationsToPDF(situations, filename)
-    case 'Excel':
-      return exportSituationsToExcel(situations, filename)
-    case 'Word':
-      return await exportSituationsToWord(situations, filename)
-    default:
-      throw new Error('Format d\'export non supporté')
-  }
-}
-
-export const exportSituationsToPDF = (situations: Situation[], filename: string = 'situations') => {
+// Generic export functions
+export const exportToGenericPDF = (config: ExportConfig): boolean => {
   try {
     const doc = new jsPDF()
     
     // Add title
     doc.setFontSize(20)
     doc.setTextColor(58, 144, 218)
-    doc.text('Liste des Situations', 20, 20)
+    doc.text(config.title, 20, 20)
     
     // Add date
     doc.setFontSize(10)
     doc.setTextColor(100, 100, 100)
     doc.text(`Généré le: ${new Date().toLocaleDateString('fr-FR')}`, 20, 30)
     
-    // Create table data
-    const tableData = situations.map(situation => [
-      situation.Reference || '',
-      situation.Libelle || '',
-      situation.Nom_Prenom || 'Non assigné',
-      situation.E_mail || '-',
-      situation.Type_Utilisateur || '-',
-      situation.Heure ? new Date(situation.Heure).toLocaleDateString('fr-FR') : '-'
-    ])
+    // Prepare table data
+    const tableColumns = config.columns.map(col => col.label)
+    const tableRows = config.data.map(item => 
+      config.columns.map(col => {
+        const value = item[col.key]
+        return col.formatter ? col.formatter(value) : (value?.toString() || '')
+      })
+    )
+    
+    // Create column styles
+    const columnStyles: { [key: number]: any } = {}
+    config.columns.forEach((col, index) => {
+      if (col.pdfWidth) {
+        columnStyles[index] = { cellWidth: col.pdfWidth }
+      }
+    })
     
     // Add table
     autoTable(doc, {
-      head: [['Référence', 'Libellé', 'Utilisateur', 'Email', 'Type', 'Date']],
-      body: tableData,
+      head: [tableColumns],
+      body: tableRows,
       startY: 40,
       theme: 'striped',
+      styles: {
+        fontSize: 8,
+        cellPadding: 3,
+      },
       headStyles: {
         fillColor: [58, 144, 218],
         textColor: [255, 255, 255],
+        fontSize: 9,
         fontStyle: 'bold'
       },
-      columnStyles: {
-        0: { cellWidth: 25 },
-        1: { cellWidth: 40 },
-        2: { cellWidth: 30 },
-        3: { cellWidth: 35 },
-        4: { cellWidth: 25 },
-        5: { cellWidth: 25 }
+      alternateRowStyles: {
+        fillColor: [248, 250, 252]
       },
+      columnStyles,
       margin: { left: 10, right: 10 }
     })
     
@@ -372,10 +81,10 @@ export const exportSituationsToPDF = (situations: Situation[], filename: string 
     const finalY = (doc as any).lastAutoTable.finalY || 40
     doc.setFontSize(10)
     doc.setTextColor(0, 0, 0)
-    doc.text(`Total: ${situations.length} situation(s)`, 20, finalY + 20)
+    doc.text(`Total: ${config.data.length} enregistrement(s)`, 20, finalY + 20)
     
     // Save the PDF
-    doc.save(`${filename}.pdf`)
+    doc.save(`${config.filename}.pdf`)
     
     return true
   } catch (error) {
@@ -384,49 +93,34 @@ export const exportSituationsToPDF = (situations: Situation[], filename: string 
   }
 }
 
-export const exportSituationsToExcel = (situations: Situation[], filename: string = 'situations') => {
+export const exportToGenericExcel = (config: ExportConfig): boolean => {
   try {
+    // Prepare data for Excel
+    const excelData = config.data.map(item => {
+      const row: { [key: string]: any } = {}
+      config.columns.forEach(col => {
+        const value = item[col.key]
+        row[col.label] = col.formatter ? col.formatter(value) : (value?.toString() || '')
+      })
+      return row
+    })
+    
     // Create workbook and worksheet
+    const worksheet = XLSX.utils.json_to_sheet(excelData)
     const workbook = XLSX.utils.book_new()
     
-    // Create header
-    const headers = ['Référence', 'Libellé', 'Utilisateur Assigné', 'Email Utilisateur', 'Type Utilisateur', 'Site par Défaut', 'Date de Création']
-    
-    // Create data rows
-    const data = situations.map(situation => [
-      situation.Reference || '',
-      situation.Libelle || '',
-      situation.Nom_Prenom || 'Non assigné',
-      situation.E_mail || '-',
-      situation.Type_Utilisateur || '-',
-      situation.Site_Defaut || '-',
-      situation.Heure ? new Date(situation.Heure).toLocaleDateString('fr-FR') : '-'
-    ])
-    
-    // Combine headers and data
-    const worksheetData = [headers, ...data]
-    
-    // Create worksheet
-    const worksheet = XLSX.utils.aoa_to_sheet(worksheetData)
-    
     // Set column widths
-    const colWidths = [
-      { wch: 15 }, // Référence
-      { wch: 30 }, // Libellé
-      { wch: 25 }, // Utilisateur
-      { wch: 30 }, // Email
-      { wch: 20 }, // Type
-      { wch: 20 }, // Site
-      { wch: 15 }  // Date
-    ]
+    const colWidths = config.columns.map(col => ({
+      wch: col.excelWidth || col.width || 20
+    }))
     worksheet['!cols'] = colWidths
     
-    XLSX.utils.book_append_sheet(workbook, worksheet, 'Situations')
+    XLSX.utils.book_append_sheet(workbook, worksheet, 'Data')
     
     // Save the Excel file
     const excelBuffer = XLSX.write(workbook, { bookType: 'xlsx', type: 'array' })
     const blob = new Blob([excelBuffer], { type: 'application/octet-stream' })
-    saveAs(blob, `${filename}.xlsx`)
+    saveAs(blob, `${config.filename}.xlsx`)
     
     return true
   } catch (error) {
@@ -435,37 +129,22 @@ export const exportSituationsToExcel = (situations: Situation[], filename: strin
   }
 }
 
-export const exportSituationsToWord = async (situations: Situation[], filename: string = 'situations') => {
+export const exportToGenericWord = async (config: ExportConfig): Promise<boolean> => {
   try {
-    // Create table rows for situations
-    const tableRows = situations.map(situation => 
+    // Create table rows
+    const tableRows = config.data.map(item => 
       new TableRow({
-        children: [
-          new TableCell({
-            children: [new Paragraph(situation.Reference || '')],
-            width: { size: 15, type: WidthType.PERCENTAGE }
-          }),
-          new TableCell({
-            children: [new Paragraph(situation.Libelle || '')],
-            width: { size: 25, type: WidthType.PERCENTAGE }
-          }),
-          new TableCell({
-            children: [new Paragraph(situation.Nom_Prenom || 'Non assigné')],
-            width: { size: 20, type: WidthType.PERCENTAGE }
-          }),
-          new TableCell({
-            children: [new Paragraph(situation.E_mail || '-')],
-            width: { size: 25, type: WidthType.PERCENTAGE }
-          }),
-          new TableCell({
-            children: [new Paragraph(situation.Type_Utilisateur || '-')],
-            width: { size: 15, type: WidthType.PERCENTAGE }
-          }),
-          new TableCell({
-            children: [new Paragraph(situation.Heure ? new Date(situation.Heure).toLocaleDateString('fr-FR') : '-')],
-            width: { size: 15, type: WidthType.PERCENTAGE }
+        children: config.columns.map(col => {
+          const value = item[col.key]
+          const displayValue = col.formatter ? col.formatter(value) : (value?.toString() || '')
+          return new TableCell({
+            children: [new Paragraph(displayValue)],
+            width: { 
+              size: col.wordWidth || col.width || (100 / config.columns.length), 
+              type: WidthType.PERCENTAGE 
+            }
           })
-        ]
+        })
       })
     )
 
@@ -476,7 +155,7 @@ export const exportSituationsToWord = async (situations: Situation[], filename: 
           new Paragraph({
             children: [
               new TextRun({
-                text: "Liste des Situations",
+                text: config.title,
                 bold: true,
                 size: 32,
                 color: "3A90DA"
@@ -501,50 +180,18 @@ export const exportSituationsToWord = async (situations: Situation[], filename: 
             rows: [
               // Header row
               new TableRow({
-                children: [
+                children: config.columns.map(col => 
                   new TableCell({
                     children: [new Paragraph({
-                      children: [new TextRun({ text: "Référence", bold: true, color: "FFFFFF" })]
+                      children: [new TextRun({ text: col.label, bold: true, color: "FFFFFF" })]
                     })],
                     shading: { fill: "3A90DA" },
-                    width: { size: 15, type: WidthType.PERCENTAGE }
-                  }),
-                  new TableCell({
-                    children: [new Paragraph({
-                      children: [new TextRun({ text: "Libellé", bold: true, color: "FFFFFF" })]
-                    })],
-                    shading: { fill: "3A90DA" },
-                    width: { size: 25, type: WidthType.PERCENTAGE }
-                  }),
-                  new TableCell({
-                    children: [new Paragraph({
-                      children: [new TextRun({ text: "Utilisateur", bold: true, color: "FFFFFF" })]
-                    })],
-                    shading: { fill: "3A90DA" },
-                    width: { size: 20, type: WidthType.PERCENTAGE }
-                  }),
-                  new TableCell({
-                    children: [new Paragraph({
-                      children: [new TextRun({ text: "Email", bold: true, color: "FFFFFF" })]
-                    })],
-                    shading: { fill: "3A90DA" },
-                    width: { size: 25, type: WidthType.PERCENTAGE }
-                  }),
-                  new TableCell({
-                    children: [new Paragraph({
-                      children: [new TextRun({ text: "Type", bold: true, color: "FFFFFF" })]
-                    })],
-                    shading: { fill: "3A90DA" },
-                    width: { size: 15, type: WidthType.PERCENTAGE }
-                  }),
-                  new TableCell({
-                    children: [new Paragraph({
-                      children: [new TextRun({ text: "Date", bold: true, color: "FFFFFF" })]
-                    })],
-                    shading: { fill: "3A90DA" },
-                    width: { size: 15, type: WidthType.PERCENTAGE }
+                    width: { 
+                      size: col.wordWidth || col.width || (100 / config.columns.length), 
+                      type: WidthType.PERCENTAGE 
+                    }
                   })
-                ]
+                )
               }),
               // Data rows
               ...tableRows
@@ -553,7 +200,7 @@ export const exportSituationsToWord = async (situations: Situation[], filename: 
           new Paragraph({
             children: [
               new TextRun({
-                text: `Total: ${situations.length} situation(s)`,
+                text: `Total: ${config.data.length} enregistrement(s)`,
                 bold: true
               })
             ],
@@ -565,11 +212,176 @@ export const exportSituationsToWord = async (situations: Situation[], filename: 
 
     // Generate and save the document
     const buffer = await Packer.toBlob(doc)
-    saveAs(buffer, `${filename}.docx`)
+    saveAs(buffer, `${config.filename}.docx`)
     
     return true
   } catch (error) {
     console.error('Erreur lors de l\'export Word:', error)
     return false
   }
+}
+
+// Main generic export function
+export const exportGenericData = async (
+  config: ExportConfig, 
+  format: 'PDF' | 'Excel' | 'Word'
+): Promise<boolean> => {
+  try {
+    const timestamp = new Date().toISOString().slice(0, 10)
+    const filename = `${config.filename}_${timestamp}`
+    const exportConfig = { ...config, filename }
+    
+    switch (format) {
+      case 'PDF':
+        return exportToGenericPDF(exportConfig)
+      case 'Excel':
+        return exportToGenericExcel(exportConfig)
+      case 'Word':
+        return await exportToGenericWord(exportConfig)
+      default:
+        throw new Error('Format d\'export non supporté')
+    }
+  } catch (error) {
+    console.error('Erreur lors de l\'export:', error)
+    return false
+  }
+}
+
+// Utility function to create export configurations for common entities
+export const createUserExportConfig = (users: any[]): ExportConfig => ({
+  title: 'Liste des Utilisateurs',
+  filename: 'utilisateurs',
+  data: users,
+  columns: [
+    { key: 'name', label: 'Nom', width: 25, pdfWidth: 25, excelWidth: 25 },
+    { key: 'email', label: 'Email', width: 30, pdfWidth: 35, excelWidth: 30 },
+    { key: 'telephone', label: 'Téléphone', width: 15, pdfWidth: 20, excelWidth: 15 },
+    { key: 'adresse', label: 'Adresse', width: 40, pdfWidth: 40, excelWidth: 40 },
+    { key: 'profilLabel', label: 'Rôle', width: 20, pdfWidth: 25, excelWidth: 20 },
+    { 
+      key: 'joinDate', 
+      label: 'Date d\'inscription', 
+      width: 20, 
+      pdfWidth: 25, 
+      excelWidth: 20,
+      formatter: (value) => value ? new Date(value).toLocaleDateString('fr-FR') : ''
+    }
+  ]
+})
+
+export const createSituationExportConfig = (situations: any[]): ExportConfig => ({
+  title: 'Liste des Situations',
+  filename: 'situations',
+  data: situations,
+  columns: [
+    { key: 'Reference', label: 'Référence', width: 15, pdfWidth: 25, excelWidth: 15 },
+    { key: 'Libelle', label: 'Libellé', width: 30, pdfWidth: 40, excelWidth: 30 },
+    { 
+      key: 'Heure', 
+      label: 'Date de Création', 
+      width: 15, 
+      pdfWidth: 25, 
+      excelWidth: 15,
+      formatter: (value) => value ? new Date(value).toLocaleDateString('fr-FR') : '-'
+    }
+  ]
+})
+
+export const createCourseTypeExportConfig = (courseTypes: any[]): ExportConfig => ({
+  title: 'Liste des Types de Cours',
+  filename: 'types_cours',
+  data: courseTypes,
+  columns: [
+    { key: 'Reference', label: 'Référence', width: 20, pdfWidth: 30, excelWidth: 20 },
+    { key: 'Libelle', label: 'Libellé', width: 40, pdfWidth: 50, excelWidth: 40 },
+    { 
+      key: 'Priorite', 
+      label: 'Priorité', 
+      width: 20, 
+      pdfWidth: 25, 
+      excelWidth: 20,
+      formatter: (value) => {
+        const priorityLabels: { [key: number]: string } = {
+          1: "Faible",
+          2: "Moyenne", 
+          3: "Élevée",
+          4: "Urgente",
+        }
+        return value ? priorityLabels[value] || "Inconnue" : "Non définie"
+      }
+    }
+  ]
+})
+
+export const createFiliereExportConfig = (filieres: any[]): ExportConfig => ({
+  title: 'Liste des Filières',
+  filename: 'filieres',
+  data: filieres,
+  columns: [
+    { key: 'Reference', label: 'Référence', width: 20, pdfWidth: 30, excelWidth: 20 },
+    { key: 'Libelle', label: 'Libellé', width: 40, pdfWidth: 50, excelWidth: 40 },
+    { key: 'Description', label: 'Description', width: 60, pdfWidth: 70, excelWidth: 60 }
+  ]
+})
+
+export const createRegimeTvaExportConfig = (regimesTva: any[]): ExportConfig => ({
+  title: 'Liste des Régimes TVA',
+  filename: 'regimes_tva',
+  data: regimesTva,
+  columns: [
+    { key: 'Reference', label: 'Référence', width: 20, pdfWidth: 30, excelWidth: 20 },
+    { key: 'Libelle', label: 'Libellé', width: 40, pdfWidth: 50, excelWidth: 40 },
+    { key: 'Taux', label: 'Taux (%)', width: 15, pdfWidth: 20, excelWidth: 15 }
+  ]
+})
+
+export const createSiteExportConfig = (sites: any[]): ExportConfig => ({
+  title: 'Liste des Sites',
+  filename: 'sites',
+  data: sites,
+  columns: [
+    { key: 'Reference', label: 'Référence', width: 20, pdfWidth: 25, excelWidth: 20 },
+    { key: 'Libelle', label: 'Libellé', width: 30, pdfWidth: 35, excelWidth: 30 },
+    { key: 'Adresse', label: 'Adresse', width: 50, pdfWidth: 60, excelWidth: 50 }
+  ]
+})
+
+export const createTypeFacturationExportConfig = (typesFacturation: any[]): ExportConfig => ({
+  title: 'Liste des Types de Facturation',
+  filename: 'types_facturation',
+  data: typesFacturation,
+  columns: [
+    { key: 'Reference', label: 'Référence', width: 20, pdfWidth: 30, excelWidth: 20 },
+    { key: 'Libelle', label: 'Libellé', width: 40, pdfWidth: 50, excelWidth: 40 },
+    { key: 'Description', label: 'Description', width: 60, pdfWidth: 70, excelWidth: 60 }
+  ]
+})
+
+// Legacy functions for backward compatibility
+export const exportToPDF = (users: any[], filename: string = 'utilisateurs') => {
+  const config = createUserExportConfig(users)
+  config.filename = filename
+  return exportToGenericPDF(config)
+}
+
+export const exportToExcel = (users: any[], filename: string = 'utilisateurs') => {
+  const config = createUserExportConfig(users)
+  config.filename = filename
+  return exportToGenericExcel(config)
+}
+
+export const exportToWord = async (users: any[], filename: string = 'utilisateurs') => {
+  const config = createUserExportConfig(users)
+  config.filename = filename
+  return await exportToGenericWord(config)
+}
+
+export const exportAllUsers = async (users: any[], format: 'PDF' | 'Excel' | 'Word') => {
+  const config = createUserExportConfig(users)
+  return await exportGenericData(config, format)
+}
+
+export const exportAllSituations = async (situations: any[], format: 'PDF' | 'Excel' | 'Word') => {
+  const config = createSituationExportConfig(situations)
+  return await exportGenericData(config, format)
 } 

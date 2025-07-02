@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useCourseTypes } from "@/hooks/useCourseTypes";
-import { CourseType, getPriorityLabel, getPriorityColor } from "@/schemas/courseTypeSchema";
+import { CourseType, getPriorityLabel, getPriorityColor, getPriorityIcon, getPriorityBadgeVariant } from "@/schemas/courseTypeSchema";
 import { AddCourseTypeDialog } from "@/components/course-types/AddCourseTypeDialog";
 import { UpdateCourseTypeDialog } from "@/components/course-types/UpdateCourseTypeDialog";
 import { ViewCourseTypeDialog } from "@/components/course-types/ViewCourseTypeDialog";
@@ -43,6 +43,7 @@ import {
 } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useToast } from "@/hooks/use-toast";
+import { exportGenericData, createCourseTypeExportConfig } from "@/lib/exportUtils";
 import {
   BookOpen,
   Search,
@@ -63,6 +64,13 @@ import {
   Columns,
   Plus,
   MoreHorizontal,
+  ArrowDown,
+  ArrowUp,
+  Minus,
+  AlertTriangle,
+  HelpCircle,
+  Download,
+  FileText,
 } from "lucide-react";
 
 type SortField = 'Reference' | 'Libelle' | 'Priorite' ;
@@ -283,6 +291,25 @@ export default function CourseTypesPage() {
     setCurrentPage(page);
   };
 
+  // Export handler
+  const handleExport = async (format: 'PDF' | 'Excel' | 'Word') => {
+    try {
+      const config = createCourseTypeExportConfig(courseTypes)
+      await exportGenericData(config, format)
+      toast({
+        title: "Export réussi", 
+        description: `${courseTypes.length} type(s) de cours exporté(s) en ${format}`,
+      })
+    } catch (error) {
+      console.error('Erreur export:', error)
+      toast({
+        title: "Erreur d'export",
+        description: error instanceof Error ? error.message : 'Erreur inconnue',
+        variant: "destructive"
+      })
+    }
+  };
+
   return (
     <div className="container mx-auto py-8 px-4">
       <div className="max-w-7xl mx-auto">
@@ -358,6 +385,30 @@ export default function CourseTypesPage() {
                 <RefreshCw className="h-4 w-4" />
                 Actualiser
               </Button>
+
+              {/* Export */}
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="outline" className="flex items-center gap-2">
+                    <Download className="h-4 w-4" />
+                    Exporter
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent>
+                  <DropdownMenuItem onClick={() => handleExport('PDF')}>
+                    <FileText className="mr-2 h-4 w-4" />
+                    Exporter en PDF
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => handleExport('Excel')}>
+                    <FileText className="mr-2 h-4 w-4" />
+                    Exporter en Excel
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => handleExport('Word')}>
+                    <FileText className="mr-2 h-4 w-4" />
+                    Exporter en Word
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
 
               {/* Colonnes visibles */}
               <DropdownMenu>
@@ -534,15 +585,27 @@ export default function CourseTypesPage() {
                         )}
                         {columnVisibility.Priorite && (
                           <TableCell>
-                            {courseType.Priorite && (
-                              <Badge 
-                                variant="outline" 
-                                className={`${getPriorityColor(courseType.Priorite)} text-white border-0`}
-                              >
-                                <Flag className="h-3 w-3 mr-1" />
-                                {getPriorityLabel(courseType.Priorite)}
-                              </Badge>  
-                            )}
+                            <div className="flex items-center">
+                              {courseType.Priorite ? (
+                                <Badge 
+                                  variant={getPriorityBadgeVariant(courseType.Priorite)}
+                                  className={`${getPriorityColor(courseType.Priorite)} flex items-center gap-1.5 px-2.5 py-1 border font-medium`}
+                                >
+                                  {getPriorityIcon(courseType.Priorite) === "ArrowDown" && <ArrowDown className="h-3 w-3" />}
+                                  {getPriorityIcon(courseType.Priorite) === "Minus" && <Minus className="h-3 w-3" />}
+                                  {getPriorityIcon(courseType.Priorite) === "ArrowUp" && <ArrowUp className="h-3 w-3" />}
+                                  {getPriorityIcon(courseType.Priorite) === "AlertTriangle" && <AlertTriangle className="h-3 w-3" />}
+                                  <span className="text-xs font-semibold">
+                                    {getPriorityLabel(courseType.Priorite)}
+                                  </span>
+                                </Badge>
+                              ) : (
+                                <Badge variant="outline" className="bg-gray-50 text-gray-500 border-gray-200 flex items-center gap-1.5 px-2.5 py-1">
+                                  <HelpCircle className="h-3 w-3" />
+                                  <span className="text-xs">Non définie</span>
+                                </Badge>
+                              )}
+                            </div>
                           </TableCell>
                         )}
              

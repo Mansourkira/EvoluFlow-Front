@@ -5,6 +5,7 @@ export const regimeTvaSchema = z.object({
   Reference: z.string().min(1, "La référence est obligatoire"),
   Libelle: z.string().min(1, "Le libellé est obligatoire"),
   Sous_Traitance: z.boolean().optional().nullable(),
+  Utilisateur: z.string().optional().nullable(), // User who created the record
   Heure: z.string().optional().nullable(), // Creation date from backend
 });
 

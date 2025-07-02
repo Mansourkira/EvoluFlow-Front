@@ -1,6 +1,6 @@
 "use client";
 
-import { Filiere, formatPrice, formatDelay } from "@/schemas/filiereSchema";
+import { Filiere, formatPrice, formatDelay, formatCreationDate } from "@/schemas/filiereSchema";
 import {
   Dialog,
   DialogContent,
@@ -96,6 +96,32 @@ export function ViewFiliereDialog({ filiere, open, onOpenChange }: ViewFiliereDi
               <Badge variant="outline" className="text-sm">
                 {formatPrice(filiere.Prix_Traitement_Dossier)}
               </Badge>
+            </div>
+          </div>
+
+          {/* Informations système */}
+          <div className="border-t pt-4 space-y-3">
+            <h3 className="text-sm font-semibold text-gray-700">Informations système</h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <div className="flex items-center gap-2 text-sm font-medium text-gray-600">
+                  <User className="h-4 w-4" />
+                  Créé par
+                </div>
+                <div className="text-sm text-gray-700">
+                  {filiere.Utilisateur || "Non défini"}
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <div className="flex items-center gap-2 text-sm font-medium text-gray-600">
+                  <Calendar className="h-4 w-4" />
+                  Date de création
+                </div>
+                <div className="text-sm text-gray-700">
+                  {formatCreationDate(filiere.Heure)}
+                </div>
+              </div>
             </div>
           </div>
 

@@ -44,6 +44,7 @@ import {
   MapPin,
   Building,
   Globe,
+  MoreHorizontal,
 } from "lucide-react"
 import { useSites } from "@/hooks/useSites"
 import { AddSiteDialog } from "@/components/sites/AddSiteDialog"
@@ -906,12 +907,7 @@ export default function SitesPage() {
                         <DropdownMenu>
                           <DropdownMenuTrigger asChild>
                             <Button variant="ghost" className="h-8 w-8 p-0">
-                              <span className="sr-only">Ouvrir le menu</span>
-                              <div className="h-4 w-4 flex flex-col justify-center items-center">
-                                <div className="w-1 h-1 bg-current rounded-full mb-0.5"></div>
-                                <div className="w-1 h-1 bg-current rounded-full mb-0.5"></div>
-                                <div className="w-1 h-1 bg-current rounded-full"></div>
-                              </div>
+                              <MoreHorizontal className="h-4 w-4" />
                             </Button>
                           </DropdownMenuTrigger>
                           <DropdownMenuContent align="end">

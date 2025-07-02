@@ -257,14 +257,14 @@ export default function UsersPage() {
   }
 
   const handleExport = async (format: string, selectedOnly = false) => {
-    // TODO: Implement export functionality
     try {
-      const { exportAllUsers } = await import('@/lib/exportUtils')
+      const { exportGenericData, createUserExportConfig } = await import('@/lib/exportUtils')
       const dataToExport = selectedOnly ? 
         users.filter(user => user.email) : // This would need to be filtered by selected items
         users
       
-      await exportAllUsers(dataToExport, format as 'PDF' | 'Excel' | 'Word')
+      const config = createUserExportConfig(dataToExport)
+      await exportGenericData(config, format as 'PDF' | 'Excel' | 'Word')
       toast.success(`📄 Export réussi - ${dataToExport.length} utilisateur(s) exporté(s) en ${format}`)
     } catch (error) {
       console.error('Erreur export:', error)

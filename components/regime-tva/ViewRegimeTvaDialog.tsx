@@ -10,7 +10,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Receipt, Check, X, Calendar } from "lucide-react";
+import { Receipt, Check, X, Calendar, User } from "lucide-react";
 import { RegimeTva, getSousTraitanceLabel, getSousTraitanceColor, formatCreationDate } from "@/schemas/regimeTvaSchema";
 
 interface ViewRegimeTvaDialogProps {
@@ -69,11 +69,25 @@ export function ViewRegimeTvaDialog({
                 </Badge>
               </div>
             </div>
-            <div>
-              <label className="text-sm font-medium text-gray-500">Date de création</label>
-              <div className="mt-1 flex items-center gap-1">
-                <Calendar className="h-3 w-3 text-gray-400" />
-                <p className="text-sm">{formatCreationDate(regimeTva.Heure)}</p>
+          </div>
+
+          {/* Informations système */}
+          <div className="border-t pt-4 space-y-3">
+            <h3 className="text-sm font-semibold text-gray-700">Informations système</h3>
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="text-sm font-medium text-gray-500">Créé par</label>
+                <div className="mt-1 flex items-center gap-1">
+                  <User className="h-3 w-3 text-gray-400" />
+                  <p className="text-sm">{regimeTva.Utilisateur || "Non défini"}</p>
+                </div>
+              </div>
+              <div>
+                <label className="text-sm font-medium text-gray-500">Date de création</label>
+                <div className="mt-1 flex items-center gap-1">
+                  <Calendar className="h-3 w-3 text-gray-400" />
+                  <p className="text-sm">{formatCreationDate(regimeTva.Heure)}</p>
+                </div>
               </div>
             </div>
           </div>
