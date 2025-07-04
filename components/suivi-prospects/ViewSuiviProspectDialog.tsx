@@ -105,7 +105,7 @@ export function ViewSuiviProspectDialog({ suiviProspect, open, onClose }: ViewSu
               <div className="space-y-2">
                 <label className="text-sm font-medium text-gray-700 flex items-center gap-2">
                   <User className="h-4 w-4 text-gray-500" />
-                  Créé par
+                  Utilisateur
                 </label>
                 <div className="flex items-center gap-2 p-2 bg-white rounded border border-gray-200">
                   <span className="text-sm text-gray-800">{suiviProspect.Utilisateur || "Non spécifié"}</span>

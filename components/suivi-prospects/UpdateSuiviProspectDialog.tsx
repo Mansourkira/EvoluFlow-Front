@@ -51,28 +51,45 @@ export function UpdateSuiviProspectDialog({ suiviProspect, open, onClose, onSuiv
       form.reset({
         Reference: suiviProspect.Reference,
         Libelle: suiviProspect.Libelle,
-        Relance: suiviProspect.Relance,
+        Relance: suiviProspect.Relance || false, // Ensure Relance is always a boolean
       });
     }
   }, [suiviProspect, form]);
 
-  const onSubmit = async (data: UpdateSuiviProspectFormData) => {
+  const onSubmit = async (formData: UpdateSuiviProspectFormData) => {
+    if (!suiviProspect) return;
+
     setIsLoading(true);
     try {
       const token = localStorage.getItem('token');
       
+      // Only include fields that have changed
+      const updates: Partial<UpdateSuiviProspectFormData> = {
+        Reference: formData.Reference, // Reference is required and readonly
+      };
+
+      // Only include Libelle if it's changed
+      if (formData.Libelle !== suiviProspect.Libelle) {
+        updates.Libelle = formData.Libelle;
+      }
+
+      // Only include Relance if it's changed
+      if (formData.Relance !== suiviProspect.Relance) {
+        updates.Relance = formData.Relance;
+      }
+
       const response = await fetch('/api/suivi-prospects/update', {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`,
         },
-        body: JSON.stringify(data),
+        body: JSON.stringify(updates),
       });
 
       if (response.ok) {
         const result = await response.json();
-        toast.success(`✅ Suivi prospect mis à jour - ${data.Libelle} a été modifié avec succès.`);
+        toast.success(`✅ Suivi prospect mis à jour - ${formData.Libelle} a été modifié avec succès.`);
         
         onClose();
         onSuiviProspectUpdated?.();

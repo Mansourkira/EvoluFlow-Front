@@ -14,7 +14,15 @@ import { SuiviProspect } from '@/schemas/suiviProspectSchema'
 import { createProspectExportConfig, exportGenericData } from '@/lib/exportUtils'
 
 export default function ProspectsPage() {
-  const { suiviProspects, isLoading, error, refetch } = useSuiviProspects()
+  const { 
+    suiviProspects, 
+    isLoading, 
+    error, 
+    refetch,
+    deleteProspect,
+    bulkDeleteProspects 
+  } = useSuiviProspects()
+  
   const [viewDialogOpen, setViewDialogOpen] = useState(false)
   const [prospectToView, setProspectToView] = useState<SuiviProspect | null>(null)
   const [updateDialogOpen, setUpdateDialogOpen] = useState(false)
@@ -74,92 +82,54 @@ export default function ProspectsPage() {
     setUpdateDialogOpen(true)
   }
 
-  const handleDelete = async (prospectReference: string) => {
-    try {
-      const token = localStorage.getItem('token')
-      if (!token) {
-        toast.error('🔒 Erreur d\'authentification - Vous devez être connecté')
-        return
-      }
-
-      const response = await fetch('/api/prospects/delete', {
-        method: 'DELETE',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`,
-        },
-        body: JSON.stringify({ Reference: prospectReference }),
-      })
-
-      if (response.ok) {
-        const deletedProspect = suiviProspects.find(prospect => prospect.Reference === prospectReference)
-        toast.success(`✅ Prospect supprimé - ${deletedProspect?.Libelle || prospectReference} a été supprimé avec succès`)
-        await refetch()
-      } else {
-        const errorData = await response.json().catch(() => ({}))
-        throw new Error(errorData.error || 'Erreur lors de la suppression')
-      }
-    } catch (error) {
-      console.error('Erreur suppression prospect:', error)
-      toast.error(`❌ Erreur de suppression - ${error instanceof Error ? error.message : 'Impossible de supprimer le prospect'}`)
-    }
-  }
-
-  const handleBulkDelete = async (prospectReferences: string[]) => {
-    try {
-      const token = localStorage.getItem('token')
-      if (!token) {
-        toast.error('🔒 Erreur d\'authentification - Vous devez être connecté')
-        return
-      }
-
-      const deletePromises = prospectReferences.map(ref => 
-        fetch('/api/prospects/delete', {
-          method: 'DELETE',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${token}`,
-          },
-          body: JSON.stringify({ Reference: ref }),
-        })
-      )
-
-      const responses = await Promise.all(deletePromises)
-      const failedDeletes = responses.filter(response => !response.ok)
-
-      if (failedDeletes.length === 0) {
-        toast.success(`✅ Suppression en masse - ${prospectReferences.length} prospects ont été supprimés avec succès`)
-      } else {
-        toast.error(`⚠️ Suppression partielle - ${responses.length - failedDeletes.length}/${responses.length} prospects supprimés`)
-      }
-
-      await refetch()
-    } catch (error) {
-      console.error('Erreur suppression en masse:', error)
-      toast.error('❌ Erreur de suppression en masse - Impossible de supprimer les prospects sélectionnés')
-    }
-  }
-
   const handleExport = async (format: string, selectedOnly = false) => {
     try {
-      const dataToExport = selectedOnly ? suiviProspects : suiviProspects
-      const exportConfig = createProspectExportConfig(dataToExport)
+      const dataToExport = selectedOnly ? suiviProspects : suiviProspects;
+      const exportConfig = createProspectExportConfig(dataToExport);
       
+      // Map the format to the supported formats
+      let exportFormat: 'PDF' | 'Excel' | 'Word';
+      switch (format.toLowerCase()) {
+        case 'excel':
+          exportFormat = 'Excel';
+          break;
+        case 'word':
+          exportFormat = 'Word';
+          break;
+        case 'pdf':
+        default:
+          exportFormat = 'PDF';
+          break;
+      }
+
       const success = await exportGenericData(
         exportConfig,
-        format.toUpperCase() as 'PDF' | 'Excel' | 'Word'
-      )
+        exportFormat
+      );
 
-      if (success) {
-        toast.success(`📊 Export ${format.toUpperCase()} - ${dataToExport.length} prospects exportés`)
-      } else {
-        throw new Error(`Échec de l'export en ${format.toUpperCase()}`)
+      if (!success) {
+        throw new Error(`Échec de l'export en ${format.toUpperCase()}`);
       }
     } catch (error) {
-      console.error('Erreur export:', error)
-      toast.error('❌ Erreur d\'export - Impossible d\'exporter les données')
+      console.error('Erreur export:', error);
+      let errorMessage = "Impossible d'exporter les données";
+      
+      // Check for specific error messages
+      if (error instanceof Error) {
+        if (error.message.includes('utilisé par un autre utilisateur') || 
+            error.message.includes('being used by another')) {
+          errorMessage = "Le fichier est actuellement utilisé par une autre application. Veuillez fermer toute application qui pourrait utiliser ce fichier et réessayer.";
+        } else {
+          errorMessage = error.message;
+        }
+      }
+      
+      toast.error(`❌ Erreur d'export - ${errorMessage}`, {
+        duration: 5000,
+        description: "Si le problème persiste, essayez de fermer et rouvrir l'application."
+      });
     }
-  }
+  };
 
   if (error) {
     return (
@@ -182,7 +152,6 @@ export default function ProspectsPage() {
 
   return (
     <div className="container mx-auto p-6 space-y-6">
-
       <GenericDataTable
         data={suiviProspects}
         columns={columns}
@@ -194,8 +163,8 @@ export default function ProspectsPage() {
         idField="Reference"
         onView={handleView}
         onEdit={handleEdit}
-        onDelete={(itemId) => handleDelete(itemId)}
-        onBulkDelete={(itemIds) => handleBulkDelete(itemIds)}
+        onDelete={deleteProspect}
+        onBulkDelete={bulkDeleteProspects}
         onExport={handleExport}
         addButton={<AddSuiviProspectDialog onSuiviProspectAdded={refetch} />}
       />
