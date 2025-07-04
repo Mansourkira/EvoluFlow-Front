@@ -149,7 +149,7 @@ const getNavigationByRole = (role: UserRole, user: any) => {
           items: [
             {
               title: "opérations Prospect",
-              url: "/dashboard/prospect",
+              url: "/dashboard/suivi-prospects",
               icon: User,
             },
             {

@@ -357,6 +357,37 @@ export const createTypeFacturationExportConfig = (typesFacturation: any[]): Expo
   ]
 })
 
+export const createProspectExportConfig = (prospects: any[]): ExportConfig => ({
+  title: 'Suivi des Opérations des Prospects',
+  filename: `prospects_${new Date().toISOString().split('T')[0]}`,
+  columns: [
+    { key: 'Reference', label: 'Référence', width: 15 },
+    { key: 'Libelle', label: 'Libellé', width: 30 },
+    { 
+      key: 'Relance', 
+      label: 'Relance', 
+      width: 15,
+      formatter: (value: boolean) => value ? 'Nécessaire' : 'Pas nécessaire'
+    },
+    { key: 'Utilisateur', label: 'Utilisateur', width: 20 },
+    { 
+      key: 'Heure', 
+      label: 'Date de création', 
+      width: 20,
+      formatter: (value: string) => value 
+        ? new Date(value).toLocaleDateString('fr-FR', {
+            day: '2-digit',
+            month: '2-digit',
+            year: 'numeric',
+            hour: '2-digit',
+            minute: '2-digit'
+          })
+        : 'Non spécifiée'
+    }
+  ],
+  data: prospects
+})
+
 // Legacy functions for backward compatibility
 export const exportToPDF = (users: any[], filename: string = 'utilisateurs') => {
   const config = createUserExportConfig(users)
