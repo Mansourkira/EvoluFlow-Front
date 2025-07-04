@@ -1,3 +1,4 @@
+
 "use client";
 
 import {
@@ -69,6 +70,13 @@ export function ViewDocumentDialog({ open, onClose, document }: ViewDocumentDial
                 <span className="text-sm text-gray-600">Référence :</span>
                 <span className="font-medium">{document.Reference}</span>
               </div>
+              {document.Reference_Filiere && (
+                <div className="flex items-center gap-2">
+                  <Hash className="h-4 w-4 text-gray-500" />
+                  <span className="text-sm text-gray-600">Référence Filière :</span>
+                  <span className="font-medium">{document.Reference_Filiere}</span>
+                </div>
+              )}
               <div className="flex items-center gap-2">
                 <StickyNote className="h-4 w-4 text-gray-500" />
                 <span className="text-sm text-gray-600">Nom :</span>
@@ -95,6 +103,7 @@ export function ViewDocumentDialog({ open, onClose, document }: ViewDocumentDial
                   <span className="font-medium">{document.Observation}</span>
                 </div>
               )}
+              
             </CardContent>
           </Card>
 
@@ -167,13 +176,7 @@ export function ViewDocumentDialog({ open, onClose, document }: ViewDocumentDial
                   {document.Heure ? new Date(document.Heure).toLocaleString('fr-FR') : '-'}
                 </span>
               </div>
-              {document.Reference_Filiere && (
-                <div className="flex items-center gap-2">
-                  <Hash className="h-4 w-4 text-gray-500" />
-                  <span className="text-sm text-gray-600">Référence Filière :</span>
-                  <span className="font-medium">{document.Reference_Filiere}</span>
-                </div>
-              )}
+              
               
             </CardContent>
           </Card>
