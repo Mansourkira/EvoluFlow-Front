@@ -3,6 +3,8 @@ import autoTable from 'jspdf-autotable'
 import * as XLSX from 'xlsx'
 import { saveAs } from 'file-saver'
 import { Document, Packer, Paragraph, Table, TableCell, TableRow, WidthType, AlignmentType, TextRun } from 'docx'
+import { ObjetReglement } from '@/schemas/reglementShema'
+
 
 // Generic interfaces for export configuration
 export interface ExportColumn {
@@ -433,6 +435,27 @@ export const createRaisonExportConfig = (raisons: any[]): ExportConfig => ({
       excelWidth: 20,
       formatter: (value) =>
         value ? new Date(value).toLocaleDateString('fr-FR') : '-',
+    },
+  ],
+});
+export const createObjetReglementExportConfig = (
+  objets: any[]
+): ExportConfig => ({
+  title: "Liste des Objets de Règlement",
+  filename: "objets_reglement",
+  data: objets,
+  columns: [
+    { key: "Reference", label: "Référence", width: 20, pdfWidth: 30, excelWidth: 20 },
+    { key: "Intitule", label: "Intitulé", width: 40, pdfWidth: 50, excelWidth: 40 },
+    { key: "Utilisateur", label: "Utilisateur", width: 30, pdfWidth: 40, excelWidth: 30 },
+    {
+      key: "Heure",
+      label: "Date de Création",
+      width: 20,
+      pdfWidth: 30,
+      excelWidth: 20,
+      formatter: (value) =>
+        value ? new Date(value).toLocaleDateString("fr-FR") : "-",
     },
   ],
 });
