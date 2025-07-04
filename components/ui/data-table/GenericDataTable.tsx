@@ -439,7 +439,7 @@ export function GenericDataTable<T>({ config, addDialog }: GenericDataTableProps
                   </ThemedTableRow>
                 </ThemedTableHeader>
                 <ThemedTableBody>
-                  {paginatedData.map((item) => {
+                  {paginatedData.map((item:any) => {
                     const itemId = config.getItemId(item)
                     return (
                       <ThemedTableRow 
@@ -594,7 +594,7 @@ export function GenericDataTable<T>({ config, addDialog }: GenericDataTableProps
                 <br />
                 <span className="font-medium text-gray-900 mt-2 block">
                   {config.getItemDisplayName && itemToDelete ? 
-                    config.getItemDisplayName(data.find(item => config.getItemId(item) === itemToDelete)!) :
+                    config.getItemDisplayName(data.find((item:any) => config.getItemId(item) === itemToDelete)!) :
                     itemToDelete
                   }
                 </span>

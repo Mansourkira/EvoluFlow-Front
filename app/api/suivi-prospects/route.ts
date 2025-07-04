@@ -10,7 +10,7 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Token d\'authentification manquant' }, { status: 401 });
     }
 
-    const response = await fetch(`${API_BASE_URL}/prospects`, {
+    const response = await fetch(`${API_BASE_URL}/suivi-prospects`, {
       method: 'GET',
       headers: {
         'Authorization': authHeader,

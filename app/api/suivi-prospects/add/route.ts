@@ -12,7 +12,7 @@ export async function POST(request: NextRequest) {
 
     const body = await request.json();
 
-    const response = await fetch(`${API_BASE_URL}/prospects/add`, {
+    const response = await fetch(`${API_BASE_URL}/suivi-prospects/add`, {
       method: 'POST',
       headers: {
         'Authorization': authHeader,
