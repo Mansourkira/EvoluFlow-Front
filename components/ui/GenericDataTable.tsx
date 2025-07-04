@@ -857,8 +857,8 @@ export function GenericDataTable({
                 Êtes-vous sûr de vouloir supprimer ce {entityName} ? Cette action est irréversible.
                 <br />
                 <span className="font-medium text-gray-900 mt-2 block">
-                  {getItemDisplayName && itemToDelete ? 
-                    getItemDisplayName(data.find(item => getItemId(item) === itemToDelete)!) :
+                  {itemToDelete ? 
+                    getItemDisplayName(data.find((item:any) => getItemId(item) === itemToDelete)!) :
                     itemToDelete
                   }
                 </span>

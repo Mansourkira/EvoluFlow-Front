@@ -12,7 +12,7 @@ export async function PUT(request: NextRequest) {
 
     const body = await request.json();
 
-    const response = await fetch(`${API_BASE_URL}/prospects/update`, {
+    const response = await fetch(`${API_BASE_URL}/suivi-prospects/update`, {
       method: 'PUT',
       headers: {
         'Authorization': authHeader,

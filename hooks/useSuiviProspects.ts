@@ -52,7 +52,10 @@ export const useSuiviProspects = (): UseSuiviProspectsReturn => {
 
       const response = await fetch(`/api/suivi-prospects`, {
         method: 'GET',
-        headers: getAuthHeaders(),
+        headers: localStorage.getItem('token') ? {
+          'Authorization': `Bearer ${localStorage.getItem('token')}`,
+          'Content-Type': 'application/json',
+        } : {},
       });
 
       if (!response.ok) {

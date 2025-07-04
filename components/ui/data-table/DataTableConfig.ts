@@ -40,43 +40,56 @@ export interface ExportConfig {
   fileName: string
 }
 
-export interface DataTableConfig<T = any> {
-  // Basic configuration
+export interface DataTableConfig<T> {
+  title?: string
+  description?: string
   entityName: string
   entityNamePlural: string
-  apiEndpoint: string
-  
-  // Table configuration
-  columns: TableColumn<T>[]
-  actions: TableAction<T>[]
-  bulkActions?: BulkAction<T>[]
-  
-  // Features
+  data: T[]
+  isLoading?: boolean
+  error?: string | null
+  refetch?: () => void
+  columns: {
+    key: string
+    label: string
+    icon?: LucideIcon
+    width?: string
+    className?: string
+    sortable?: boolean
+    filterable?: boolean
+    searchable?: boolean
+    render?: (item: T, value: any) => React.ReactNode
+  }[]
+  getItemId: (item: T) => string
+  getItemDisplayName?: (item: T) => string
   enableSearch?: boolean
   enableAdvancedFilters?: boolean
   enableBulkSelect?: boolean
   enableColumnToggle?: boolean
-  enableExport?: boolean
-  exportConfig?: ExportConfig
   enableRefresh?: boolean
-  
-  // Pagination
-  defaultItemsPerPage?: number
+  enableExport?: boolean
   itemsPerPageOptions?: number[]
-  
-  // Styling
-  title?: string
-  description?: string
-  
-  // Data processing
-  getItemId: (item: T) => string
-  getItemDisplayName?: (item: T) => string
-  
-  // Custom hooks
-  useDataHook: () => {
-    data: T[]
-    isLoading: boolean
-    error: string | null
-    refetch: () => void
+  exportConfig?: {
+    formats: string[]
   }
+  onDelete?: (itemId: string) => Promise<void>
+  onBulkDelete?: (itemIds: string[]) => Promise<void>
+  onExport?: (format: string, data: T[]) => void
+  actions: {
+    key: string
+    label: string
+    icon: LucideIcon
+    variant?: 'default' | 'destructive' | 'outline' | 'secondary' | 'ghost' | 'link'
+    className?: string
+    condition?: (item: T) => boolean
+    onClick: (item: T) => void
+  }[]
+  bulkActions?: {
+    key: string
+    label: string
+    icon: LucideIcon
+    variant?: 'default' | 'destructive' | 'outline' | 'secondary' | 'ghost' | 'link'
+    className?: string
+    onClick: (selectedItems: string[], data: T[]) => void
+  }[]
 } 

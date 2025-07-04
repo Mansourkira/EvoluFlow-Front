@@ -12,7 +12,7 @@ export async function DELETE(request: NextRequest) {
 
     const body = await request.json();
 
-    const response = await fetch(`${API_BASE_URL}/prospects/delete`, {
+    const response = await fetch(`${API_BASE_URL}/suivi-prospects/delete`, {
       method: 'DELETE',
       headers: {
         'Authorization': authHeader,
