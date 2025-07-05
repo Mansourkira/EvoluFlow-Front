@@ -1,86 +1,96 @@
-"use client";
+'use client';
 
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
-import { Calendar, Hash, Landmark, User2, XCircle } from "lucide-react";
-import { Magasin } from "@/schemas/magasinShema";
+import { useEffect, useState } from 'react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
+import type { Magasin } from '@/schemas/magasinSchema';
+import { Loader2 } from 'lucide-react';
 
 interface ViewMagasinDialogProps {
-  magasin: Magasin;
   open: boolean;
   onClose: () => void;
+  reference: string;
 }
 
-export default function ViewMagasinDialog({ magasin, open, onClose }: ViewMagasinDialogProps) {
-  if (!magasin) {
-    return (
-      <Dialog open={open} onOpenChange={onClose}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <XCircle className="h-5 w-5 text-red-500" />
-              Détails du magasin
-            </DialogTitle>
-          </DialogHeader>
-          <p>Magasin introuvable</p>
-        </DialogContent>
-      </Dialog>
-    );
-  }
+export default function ViewMagasinDialog({
+  open,
+  onClose,
+  reference,
+}: ViewMagasinDialogProps) {
+  const [magasin, setMagasin] = useState<Magasin | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchMagasin = async () => {
+      if (!open || !reference) return;
+
+      setLoading(true);
+      try {
+        const token = localStorage.getItem('token');
+        const response = await fetch('http://localhost:3000/api/v1/magasins/get', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({ Reference: reference }),
+        });
+
+        if (!response.ok) throw new Error('Erreur de récupération');
+        const data = await response.json();
+        setMagasin(data);
+      } catch (error) {
+        console.error('Erreur lors du chargement du magasin :', error);
+        setMagasin(null);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchMagasin();
+  }, [open, reference]);
 
   return (
     <Dialog open={open} onOpenChange={onClose}>
-      <DialogContent className="max-w-md space-y-4">
+      <DialogContent>
         <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
-            <Hash className="h-5 w-5" /> Détails du magasin
-          </DialogTitle>
+          <DialogTitle>Détails du magasin</DialogTitle>
         </DialogHeader>
 
-        <div className="space-y-3">
-          <div>
-            <label className="text-sm text-muted-foreground flex items-center gap-2">
-              <Hash className="h-4 w-4" /> Référence
-            </label>
-            <Input value={magasin.Reference} disabled />
+        {loading ? (
+          <div className="flex justify-center items-center p-4">
+            <Loader2 className="animate-spin h-5 w-5 mr-2" />
+            Chargement...
           </div>
-
-          <div>
-            <label className="text-sm text-muted-foreground flex items-center gap-2">
-              <Landmark className="h-4 w-4" /> Libellé
-            </label>
-            <Input value={magasin.Libelle} disabled />
+        ) : magasin ? (
+          <div className="grid gap-4">
+            <div>
+              <label>Référence</label>
+              <Input value={magasin.Reference} disabled />
+            </div>
+            <div>
+              <label>Libellé</label>
+              <Input value={magasin.Libelle} disabled />
+            </div>
+            <div>
+              <label>Stock Négatif</label>
+              <Input
+                value={magasin.Stock_Negatif === 1 ? 'Autorisé' : 'Non autorisé'}
+                disabled
+              />
+            </div>
+            <div>
+              <label>Utilisateur</label>
+              <Input value={magasin.Utilisateur ?? '-'} disabled />
+            </div>
+            <div>
+              <label>Heure</label>
+              <Input value={magasin.Heure ?? '-'} disabled />
+            </div>
           </div>
-
-          <div>
-            <label className="text-sm text-muted-foreground">Stock Négatif</label>
-            <Input
-              value={magasin.Stock_Negatif === 1 ? "Autorisé" : "Non autorisé"}
-              disabled
-            />
-          </div>
-
-          <div>
-            <label className="text-sm text-muted-foreground flex items-center gap-2">
-              <User2 className="h-4 w-4" /> Utilisateur
-            </label>
-            <Input value={magasin.Utilisateur || "N/A"} disabled />
-          </div>
-
-          <div>
-            <label className="text-sm text-muted-foreground flex items-center gap-2">
-              <Calendar className="h-4 w-4" /> Date de Création
-            </label>
-            <Input
-              value={
-                magasin.Heure
-                  ? new Date(magasin.Heure).toLocaleString("fr-FR")
-                  : "N/A"
-              }
-              disabled
-            />
-          </div>
-        </div>
+        ) : (
+          <p className="text-center text-red-500">Magasin introuvable.</p>
+        )}
       </DialogContent>
     </Dialog>
   );

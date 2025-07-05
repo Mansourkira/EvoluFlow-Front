@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useMagasins } from "@/hooks/use-magasin";
-import { Magasin } from "@/schemas/magasinShema";
+import { Magasin } from "@/schemas/magasinSchema";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { GenericDataTable } from "@/components/ui/GenericDataTable";
@@ -183,14 +183,14 @@ export default function MagasinPage() {
         />
       )}
 
-      {selectedMagasin && viewDialogOpen && (
-       <ViewMagasinDialog
-  magasin={selectedMagasin} // ✅ Corrigé
-  open={viewDialogOpen}
-  onClose={() => setViewDialogOpen(false)}
-/>
+{selectedMagasin && viewDialogOpen && (
+  <ViewMagasinDialog
+    reference={selectedMagasin.Reference}
+    open={viewDialogOpen}
+    onClose={() => setViewDialogOpen(false)}
+  />
+)}
 
-      )}
     </>
   );
 }

@@ -1,108 +1,90 @@
 "use client";
 
-import { useEffect } from "react";
-import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
-  DialogFooter,
 } from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
 import {
-  Form,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormControl,
-  FormMessage,
-} from "@/components/ui/form";
-import { Magasin, magasinSchema} from "@/schemas/magasinShema";
+  updateMagasinSchema,
+  Magasin,
+} from "@/schemas/magasinSchema";
+import { useEffect } from "react";
 
 interface Props {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   magasin: Magasin;
-  onSubmit: (data: Magasin) => Promise<void>;
+  onSubmit: (data: Magasin) => void;
 }
 
-export default function UpdateMagasinDialog({ open, onOpenChange, magasin, onSubmit }: Props) {
-  const form = useForm<Magasin>({
-    resolver: zodResolver(magasinSchema),
+export default function UpdateMagasinDialog({
+  open,
+  onOpenChange,
+  magasin,
+  onSubmit,
+}: Props) {
+  const {
+    register,
+    handleSubmit,
+    formState: { errors },
+    reset,
+  } = useForm<Magasin>({
+    resolver: zodResolver(updateMagasinSchema),
     defaultValues: magasin,
   });
 
   useEffect(() => {
-    if (open) {
-      form.reset(magasin);
-    }
-  }, [open, magasin, form]);
-
-  const handleSubmit = (data: Magasin) => {
-    onSubmit(data);
-  };
+    reset(magasin);
+  }, [magasin, reset]);
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent>
+      <DialogContent aria-describedby="update-magasin-description">
         <DialogHeader>
-          <DialogTitle>Modifier un magasin</DialogTitle>
+          <DialogTitle id="update-magasin-description">Modifier le magasin</DialogTitle>
         </DialogHeader>
-        <Form {...form}>
-          <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4">
-            <FormField
-              control={form.control}
-              name="Reference"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Référence</FormLabel>
-                  <FormControl>
-                    <Input {...field} disabled />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={form.control}
-              name="Libelle"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Libellé</FormLabel>
-                  <FormControl>
-                    <Input {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={form.control}
-              name="Stock_Negatif"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Stock négatif</FormLabel>
-                  <FormControl>
-                    <select
-                      {...field}
-                      className="border rounded px-3 py-2 w-full"
-                    >
-                      <option value={0}>Non autorisé</option>
-                      <option value={1}>Autorisé</option>
-                    </select>
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <DialogFooter className="pt-4">
-              <Button type="submit">Enregistrer</Button>
-            </DialogFooter>
-          </form>
-        </Form>
+
+        <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+          <div>
+            <label htmlFor="Reference">Référence</label>
+            <Input disabled {...register("Reference")} id="Reference" />
+            {errors.Reference && <p className="text-red-500 text-sm">{errors.Reference.message}</p>}
+          </div>
+          <div>
+            <label htmlFor="Libelle">Libellé</label>
+            <Input {...register("Libelle")} id="Libelle" />
+            {errors.Libelle && <p className="text-red-500 text-sm">{errors.Libelle.message}</p>}
+          </div>
+          <div>
+            <label htmlFor="Stock_Negatif">Stock Négatif</label>
+            <select
+              {...register("Stock_Negatif", { valueAsNumber: true })}
+              id="Stock_Negatif"
+              className="w-full border px-2 py-1 rounded"
+            >
+              <option value={1}>Autorisé</option>
+              <option value={0}>Non autorisé</option>
+            </select>
+            {errors.Stock_Negatif && <p className="text-red-500 text-sm">{errors.Stock_Negatif.message}</p>}
+          </div>
+          <div>
+            <label htmlFor="Utilisateur">Utilisateur</label>
+            <Input disabled {...register("Utilisateur")} id="Utilisateur" />
+          </div>
+          <div>
+            <label htmlFor="Heure">Date de création</label>
+            <Input disabled {...register("Heure")} id="Heure" />
+          </div>
+          <div className="flex justify-end">
+            <Button type="submit">Mettre à jour</Button>
+          </div>
+        </form>
       </DialogContent>
     </Dialog>
   );

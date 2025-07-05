@@ -1,19 +1,20 @@
-"use client";
-
+// ✅ AddMagasinDialog.tsx corrigé
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { magasinSchema, AddMagasinFormData } from "@/schemas/magasinShema";
+
 import { Shuffle } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useEffect } from "react";
+import { addMagasinSchema, AddMagasinFormData } from "@/schemas/magasinSchema";
+import { Magasin } from "@/schemas/magasinSchema";
 
 interface AddMagasinDialogProps {
   open: boolean;
   onClose: () => void;
-  onSubmit: (data: AddMagasinFormData) => void;
+  onSubmit: (data: Magasin) => void;
 }
 
 export default function AddMagasinDialog({ open, onClose, onSubmit }: AddMagasinDialogProps) {
@@ -25,11 +26,12 @@ export default function AddMagasinDialog({ open, onClose, onSubmit }: AddMagasin
     formState: { errors },
     reset,
     setValue,
-  } = useForm<AddMagasinFormData>({
-    resolver: zodResolver(magasinSchema),
+    getValues,
+  } = useForm<Magasin>({
+    resolver: zodResolver(addMagasinSchema),
   });
 
-  const handleFormSubmit = (data: AddMagasinFormData) => {
+  const handleFormSubmit = (data: Magasin) => {
     onSubmit(data);
     reset();
   };
@@ -37,7 +39,7 @@ export default function AddMagasinDialog({ open, onClose, onSubmit }: AddMagasin
   const generateReference = () => {
     const year = new Date().getFullYear().toString().slice(-2);
     const month = (new Date().getMonth() + 1).toString().padStart(2, "0");
-    const ref = `MAG${year}${month}${Math.floor(100 + Math.random() * 900)}`;
+    const ref = `MAG${year}${month}${Math.floor(1000 + Math.random() * 9000)}`;
     setValue("Reference", ref);
     toast({ title: "✅ Référence générée", description: `Nouvelle référence : ${ref}` });
   };
@@ -48,7 +50,7 @@ export default function AddMagasinDialog({ open, onClose, onSubmit }: AddMagasin
 
   return (
     <Dialog open={open} onOpenChange={onClose}>
-      <DialogContent>
+      <DialogContent aria-describedby="add-magasin-description">
         <DialogHeader>
           <DialogTitle>Ajouter un magasin</DialogTitle>
         </DialogHeader>
@@ -71,19 +73,21 @@ export default function AddMagasinDialog({ open, onClose, onSubmit }: AddMagasin
 
           <div>
             <label htmlFor="Libelle">Libellé</label>
-            <Input {...register("Libelle")} id="Libelle" placeholder="Libellé du magasin" />
+            <Input {...register("Libelle")} id="Libelle" placeholder="Nom du magasin" />
             {errors.Libelle && <p className="text-sm text-red-600">{errors.Libelle.message}</p>}
           </div>
 
           <div>
-            <label htmlFor="Stock_Negatif">Stock négatif</label>
-            <select {...register("Stock_Negatif")}
+            <label htmlFor="Stock_Negatif">Stock Négatif (0 = non, 1 = oui)</label>
+            <Input
+              type="number"
+              {...register("Stock_Negatif", { valueAsNumber: true })}
               id="Stock_Negatif"
-              className="border rounded px-3 py-2 w-full"
-            >
-              <option value={0}>Non autorisé</option>
-              <option value={1}>Autorisé</option>
-            </select>
+              placeholder="0 ou 1"
+            />
+            {errors.Stock_Negatif && (
+              <p className="text-sm text-red-600">{errors.Stock_Negatif.message}</p>
+            )}
           </div>
 
           <div className="flex justify-end">

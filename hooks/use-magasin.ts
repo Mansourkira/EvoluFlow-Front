@@ -1,5 +1,5 @@
 import { useState, useCallback } from 'react';
-import { Magasin } from '@/schemas/magasinShema';
+import { Magasin } from '@/schemas/magasinSchema';
 
 export const useMagasins = () => {
   const [magasins, setMagasins] = useState<Magasin[]>([]);
@@ -8,7 +8,6 @@ export const useMagasins = () => {
 
   const baseUrl = 'http://localhost:3000/api/v1';
 
-  // ✅ Lister
   const fetchMagasins = useCallback(async () => {
     setIsLoading(true);
     setError(null);
@@ -31,108 +30,126 @@ export const useMagasins = () => {
     }
   }, []);
 
-  // ✅ Ajouter
-  const addMagasin = useCallback(async (data: Magasin) => {
-    setIsLoading(true);
-    setError(null);
-    try {
-      const token = localStorage.getItem('token');
-      const response = await fetch(`${baseUrl}/magasins/add`, {
-        method: 'POST',
-        headers: {
-          Authorization: `Bearer ${token}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(data),
-      });
+  const addMagasin = useCallback(
+    async (data: Magasin) => {
+      setIsLoading(true);
+      setError(null);
+      try {
+        const token = localStorage.getItem('token');
+        const payload = {
+          ...data,
+          Stock_Negatif: Number(data.Stock_Negatif), // ⚠️ assure qu’on envoie un number
+        };
 
-      if (!response.ok) throw new Error('Erreur lors de l\'ajout');
-      await fetchMagasins();
-      return true;
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Erreur inconnue');
-      return false;
-    } finally {
-      setIsLoading(false);
-    }
-  }, [fetchMagasins]);
+        const response = await fetch(`${baseUrl}/magasins/add`, {
+          method: 'POST',
+          headers: {
+            Authorization: `Bearer ${token}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(payload),
+        });
 
-  // ✅ Modifier
-  const updateMagasin = useCallback(async (data: Magasin) => {
-    setIsLoading(true);
-    setError(null);
-    try {
-      const token = localStorage.getItem('token');
-      const response = await fetch(`${baseUrl}/magasins/update`, {
-        method: 'PUT',
-        headers: {
-          Authorization: `Bearer ${token}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(data),
-      });
+        if (!response.ok) throw new Error('Erreur lors de l\'ajout');
+        await fetchMagasins();
+        return true;
+      } catch (err) {
+        setError(err instanceof Error ? err.message : 'Erreur inconnue');
+        return false;
+      } finally {
+        setIsLoading(false);
+      }
+    },
+    [fetchMagasins]
+  );
 
-      if (!response.ok) throw new Error('Erreur lors de la modification');
-      await fetchMagasins();
-      return true;
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Erreur inconnue');
-      return false;
-    } finally {
-      setIsLoading(false);
-    }
-  }, [fetchMagasins]);
+  const updateMagasin = useCallback(
+    async (data: Magasin) => {
+      setIsLoading(true);
+      setError(null);
+      try {
+        const token = localStorage.getItem('token');
+        const payload = {
+          ...data,
+          Stock_Negatif: Number(data.Stock_Negatif), // ⚠️ conversion sécurisée
+        };
 
-  // ✅ Supprimer
-  const deleteMagasin = useCallback(async (reference: string) => {
-    setIsLoading(true);
-    setError(null);
-    try {
-      const token = localStorage.getItem('token');
-      const response = await fetch(`${baseUrl}/magasins/delete`, {
-        method: 'DELETE',
-        headers: {
-          Authorization: `Bearer ${token}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ Reference: reference }),
-      });
+        const response = await fetch(`${baseUrl}/magasins/update`, {
+          method: 'PUT',
+          headers: {
+            Authorization: `Bearer ${token}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(payload),
+        });
 
-      if (!response.ok) throw new Error('Erreur lors de la suppression');
-      await fetchMagasins();
-      return true;
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Erreur inconnue');
-      return false;
-    } finally {
-      setIsLoading(false);
-    }
-  }, [fetchMagasins]);
+        if (!response.ok) throw new Error('Erreur lors de la modification');
+        await fetchMagasins();
+        return true;
+      } catch (err) {
+        setError(err instanceof Error ? err.message : 'Erreur inconnue');
+        return false;
+      } finally {
+        setIsLoading(false);
+      }
+    },
+    [fetchMagasins]
+  );
 
-  // ✅ Récupérer un par référence
-  const getMagasinByReference = useCallback(async (reference: string) => {
-    setIsLoading(true);
-    setError(null);
-    try {
-      const token = localStorage.getItem('token');
-      const response = await fetch(`${baseUrl}/magasins/get`, {
-        method: 'POST',
-        headers: {
-          Authorization: `Bearer ${token}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ Reference: reference }),
-      });
+  const deleteMagasin = useCallback(
+    async (reference: string) => {
+      setIsLoading(true);
+      setError(null);
+      try {
+        const token = localStorage.getItem('token');
+        const response = await fetch(`${baseUrl}/magasins/delete`, {
+          method: 'DELETE',
+          headers: {
+            Authorization: `Bearer ${token}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ Reference: reference }),
+        });
 
-      if (!response.ok) throw new Error('Magasin non trouvé');
-      return await response.json();
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Erreur inconnue');
-      return null;
-    } finally {
-      setIsLoading(false);
-    }
-  }, []);
+        if (!response.ok) throw new Error('Erreur lors de la suppression');
+        await fetchMagasins();
+        return true;
+      } catch (err) {
+        setError(err instanceof Error ? err.message : 'Erreur inconnue');
+        return false;
+      } finally {
+        setIsLoading(false);
+      }
+    },
+    [fetchMagasins]
+  );
+
+  const getMagasinByReference = useCallback(
+    async (reference: string) => {
+      setIsLoading(true);
+      setError(null);
+      try {
+        const token = localStorage.getItem('token');
+        const response = await fetch(`${baseUrl}/magasins/get`, {
+          method: 'POST',
+          headers: {
+            Authorization: `Bearer ${token}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ Reference: reference }),
+        });
+
+        if (!response.ok) throw new Error('Magasin non trouvé');
+        return await response.json();
+      } catch (err) {
+        setError(err instanceof Error ? err.message : 'Erreur inconnue');
+        return null;
+      } finally {
+        setIsLoading(false);
+      }
+    },
+    []
+  );
 
   return {
     magasins,
@@ -143,6 +160,5 @@ export const useMagasins = () => {
     updateMagasin,
     deleteMagasin,
     getMagasinByReference,
-    refetch: fetchMagasins,
   };
 };
