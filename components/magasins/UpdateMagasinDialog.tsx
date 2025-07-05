@@ -1,74 +1,108 @@
-'use client';
+"use client";
 
-import { useState, useEffect } from 'react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Magasin } from '@/schemas/magasinShema';
-import { useMagasins } from '@/hooks/use-magasin';
+import { useEffect } from "react";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import {
+  Form,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormControl,
+  FormMessage,
+} from "@/components/ui/form";
+import { Magasin, magasinSchema} from "@/schemas/magasinShema";
 
 interface Props {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
   magasin: Magasin;
+  onSubmit: (data: Magasin) => Promise<void>;
 }
 
-export default function UpdateMagasinDialog({ magasin }: Props) {
-  const { updateMagasin, refetch } = useMagasins();
-  const [open, setOpen] = useState(false);
-  const [reference, setReference] = useState(magasin.Reference);
-  const [libelle, setLibelle] = useState(magasin.Libelle);
-  const [stockNegatif, setStockNegatif] = useState<0 | 1>(magasin.Stock_Negatif);
+export default function UpdateMagasinDialog({ open, onOpenChange, magasin, onSubmit }: Props) {
+  const form = useForm<Magasin>({
+    resolver: zodResolver(magasinSchema),
+    defaultValues: magasin,
+  });
 
   useEffect(() => {
     if (open) {
-      setReference(magasin.Reference);
-      setLibelle(magasin.Libelle);
-      setStockNegatif(magasin.Stock_Negatif);
+      form.reset(magasin);
     }
-  }, [open, magasin]);
+  }, [open, magasin, form]);
 
-  const handleSubmit = async () => {
-    const success = await updateMagasin({
-      Reference: reference,
-      Libelle: libelle,
-      Stock_Negatif: stockNegatif,
-    });
-
-    if (success) {
-      setOpen(false);
-      refetch();
-    }
+  const handleSubmit = (data: Magasin) => {
+    onSubmit(data);
   };
 
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>
-        <Button variant="outline">Modifier</Button>
-      </DialogTrigger>
-      <DialogContent className="w-[500px] max-w-full">
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent>
         <DialogHeader>
           <DialogTitle>Modifier un magasin</DialogTitle>
         </DialogHeader>
-        <div className="grid gap-4 py-4">
-          <Input
-            placeholder="Référence"
-            value={reference}
-            onChange={(e) => setReference(e.target.value)}
-          />
-          <Input
-            placeholder="Libellé"
-            value={libelle}
-            onChange={(e) => setLibelle(e.target.value)}
-          />
-          <select
-            value={stockNegatif}
-            onChange={(e) => setStockNegatif(Number(e.target.value) as 0 | 1)}
-            className="border rounded px-3 py-2"
-          >
-            <option value={0}>Stock Positif</option>
-            <option value={1}>Stock Négatif Autorisé</option>
-          </select>
-        </div>
-        <Button onClick={handleSubmit}>Enregistrer</Button>
+        <Form {...form}>
+          <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4">
+            <FormField
+              control={form.control}
+              name="Reference"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Référence</FormLabel>
+                  <FormControl>
+                    <Input {...field} disabled />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="Libelle"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Libellé</FormLabel>
+                  <FormControl>
+                    <Input {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="Stock_Negatif"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Stock négatif</FormLabel>
+                  <FormControl>
+                    <select
+                      {...field}
+                      className="border rounded px-3 py-2 w-full"
+                    >
+                      <option value={0}>Non autorisé</option>
+                      <option value={1}>Autorisé</option>
+                    </select>
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <DialogFooter className="pt-4">
+              <Button type="submit">Enregistrer</Button>
+            </DialogFooter>
+          </form>
+        </Form>
       </DialogContent>
     </Dialog>
   );

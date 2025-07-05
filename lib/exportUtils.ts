@@ -459,3 +459,30 @@ export const createObjetReglementExportConfig = (
     },
   ],
 });
+export const createMagasinExportConfig = (magasins: any[]): ExportConfig => ({
+  title: 'Liste des Magasins',
+  filename: 'magasins',
+  data: magasins,
+  columns: [
+    { key: 'Reference', label: 'Référence', width: 20, pdfWidth: 30, excelWidth: 20 },
+    { key: 'Libelle', label: 'Libellé', width: 40, pdfWidth: 50, excelWidth: 40 },
+    {
+      key: 'Stock_Negatif',
+      label: 'Stock Négatif',
+      width: 20,
+      pdfWidth: 30,
+      excelWidth: 20,
+      formatter: (value) => (value === 1 ? 'Autorisé' : 'Non autorisé'),
+    },
+    { key: 'Utilisateur', label: 'Utilisateur', width: 30, pdfWidth: 40, excelWidth: 30 },
+    {
+      key: 'Heure',
+      label: 'Date de Création',
+      width: 20,
+      pdfWidth: 30,
+      excelWidth: 20,
+      formatter: (value) =>
+        value ? new Date(value).toLocaleDateString('fr-FR') : '-',
+    },
+  ],
+});

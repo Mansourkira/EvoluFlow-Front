@@ -1,49 +1,86 @@
-'use client';
+"use client";
 
-import { useEffect, useState } from 'react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { Button } from '@/components/ui/button';
-import { Eye } from 'lucide-react';
-import { useMagasins } from '@/hooks/use-magasin';
-import { Magasin } from '@/schemas/magasinShema';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Calendar, Hash, Landmark, User2, XCircle } from "lucide-react";
+import { Magasin } from "@/schemas/magasinShema";
 
 interface ViewMagasinDialogProps {
-  reference: string;
+  magasin: Magasin;
+  open: boolean;
+  onClose: () => void;
 }
 
-export default function ViewMagasinDialog({ reference }: ViewMagasinDialogProps) {
-  const [open, setOpen] = useState(false);
-  const [magasin, setMagasin] = useState<Magasin | null>(null);
-  const { getMagasinByReference } = useMagasins();
-
-  useEffect(() => {
-    if (open) {
-      getMagasinByReference(reference).then((data) => setMagasin(data));
-    }
-  }, [open, reference, getMagasinByReference]);
+export default function ViewMagasinDialog({ magasin, open, onClose }: ViewMagasinDialogProps) {
+  if (!magasin) {
+    return (
+      <Dialog open={open} onOpenChange={onClose}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <XCircle className="h-5 w-5 text-red-500" />
+              Détails du magasin
+            </DialogTitle>
+          </DialogHeader>
+          <p>Magasin introuvable</p>
+        </DialogContent>
+      </Dialog>
+    );
+  }
 
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>
-        <Button variant="ghost" size="icon">
-          <Eye className="w-4 h-4" />
-        </Button>
-      </DialogTrigger>
-      <DialogContent className="w-[500px] max-w-full">
+    <Dialog open={open} onOpenChange={onClose}>
+      <DialogContent className="max-w-md space-y-4">
         <DialogHeader>
-          <DialogTitle>Détails du Magasin</DialogTitle>
+          <DialogTitle className="flex items-center gap-2">
+            <Hash className="h-5 w-5" /> Détails du magasin
+          </DialogTitle>
         </DialogHeader>
-        {magasin ? (
-          <div className="grid gap-4 py-4">
-            <p><strong>Référence :</strong> {magasin.Reference}</p>
-            <p><strong>Libellé :</strong> {magasin.Libelle}</p>
-            <p><strong>Stock Négatif :</strong> {magasin.Stock_Negatif ? 'Oui' : 'Non'}</p>
-            <p><strong>Utilisateur :</strong> {magasin.Utilisateur || '-'}</p>
-            <p><strong>Heure :</strong> {magasin.Heure ? new Date(magasin.Heure).toLocaleString() : '-'}</p>
+
+        <div className="space-y-3">
+          <div>
+            <label className="text-sm text-muted-foreground flex items-center gap-2">
+              <Hash className="h-4 w-4" /> Référence
+            </label>
+            <Input value={magasin.Reference} disabled />
           </div>
-        ) : (
-          <p>Chargement...</p>
-        )}
+
+          <div>
+            <label className="text-sm text-muted-foreground flex items-center gap-2">
+              <Landmark className="h-4 w-4" /> Libellé
+            </label>
+            <Input value={magasin.Libelle} disabled />
+          </div>
+
+          <div>
+            <label className="text-sm text-muted-foreground">Stock Négatif</label>
+            <Input
+              value={magasin.Stock_Negatif === 1 ? "Autorisé" : "Non autorisé"}
+              disabled
+            />
+          </div>
+
+          <div>
+            <label className="text-sm text-muted-foreground flex items-center gap-2">
+              <User2 className="h-4 w-4" /> Utilisateur
+            </label>
+            <Input value={magasin.Utilisateur || "N/A"} disabled />
+          </div>
+
+          <div>
+            <label className="text-sm text-muted-foreground flex items-center gap-2">
+              <Calendar className="h-4 w-4" /> Date de Création
+            </label>
+            <Input
+              value={
+                magasin.Heure
+                  ? new Date(magasin.Heure).toLocaleString("fr-FR")
+                  : "N/A"
+              }
+              disabled
+            />
+          </div>
+        </div>
       </DialogContent>
     </Dialog>
   );
