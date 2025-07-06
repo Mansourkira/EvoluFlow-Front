@@ -69,7 +69,7 @@ export const useFilieres = () => {
     try {
       const token = localStorage.getItem('token');
       const response = await fetch('/api/filiere/update', {
-        method: 'PUT',
+        method: 'PUT',    
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json',
