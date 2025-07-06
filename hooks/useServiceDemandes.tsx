@@ -153,15 +153,16 @@ export const useServiceDemandes = () => {
     []
   );
 
-  return {
-    serviceDemandes,
-    isLoading,
-    error,
-    fetchServiceDemandes,
-    addServiceDemande,
-    updateServiceDemande,
-    deleteServiceDemande,
-    getServiceDemandeByReference,
-    refetch: fetchServiceDemandes,
-  };
+ return {
+  serviceDemandes,
+  isLoading,
+  error,
+  fetchServiceDemandes,
+  addServiceDemande,
+  updateServiceDemande,
+  deleteServiceDemande,
+  getServiceDemandeByReference,
+  refetch: fetchServiceDemandes,
+};
+
 };

@@ -1,57 +1,63 @@
-// components/serviceDemand/UpdateServiceDemandeDialog.tsx
-"use client";
+// components/service-demandes/UpdateServiceDemandeDialog.tsx
+'use client';
 
-import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { useEffect } from "react";
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { useEffect, useState } from 'react';
+import {
+  updateServiceDemandeSchema,
+  ServiceDemande,
+} from '@/schemas/serviceDemandeSchema';
+import { useServiceDemandes } from '@/hooks/useServiceDemandes';
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
   DialogFooter,
-} from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from "@/components/ui/form";
-import {
-  updateServiceDemandeSchema,
-  ServiceDemande,
-} from "@/schemas/serviceDemandeSchema";
+} from '@/components/ui/dialog';
+import { Form, FormField, FormItem, FormLabel, FormControl, FormMessage } from '@/components/ui/form';
+import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/button';
+import { Loader2 } from 'lucide-react';
 
-interface UpdateServiceDemandeDialogProps {
+export interface UpdateServiceDemandeDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  demande: ServiceDemande;
+  /** Référence de la demande à éditer */
+  reference: string;
+  /** Appelé quand le formulaire est soumis */
   onSubmit: (data: ServiceDemande) => Promise<void>;
 }
 
 export default function UpdateServiceDemandeDialog({
   open,
   onOpenChange,
-  demande,
+  reference,
   onSubmit,
 }: UpdateServiceDemandeDialogProps) {
+  const { getServiceDemandeByReference } = useServiceDemandes();
+  const [loading, setLoading] = useState(false);
+
   const form = useForm<ServiceDemande>({
     resolver: zodResolver(updateServiceDemandeSchema),
-    defaultValues: demande,
+    defaultValues: { Reference: '', Libelle: '' },
   });
-  const { handleSubmit, control, reset, formState } = form;
+  const { handleSubmit, reset, formState } = form;
 
+  // Charger les données quand on ouvre
   useEffect(() => {
-    reset(demande);
-  }, [demande, reset]);
+    if (!open) return;
+    setLoading(true);
+    getServiceDemandeByReference(reference)
+      .then((data) => {
+        if (data) reset(data);
+      })
+      .finally(() => setLoading(false));
+  }, [open, reference, getServiceDemandeByReference, reset]);
 
-  const onSubmitInternal = async (data: ServiceDemande) => {
+  const submitHandler = async (data: ServiceDemande) => {
     await onSubmit(data);
-    onOpenChange(false);
   };
 
   return (
@@ -61,49 +67,62 @@ export default function UpdateServiceDemandeDialog({
           <DialogTitle>Modifier la demande de service</DialogTitle>
         </DialogHeader>
 
-        <Form {...form}>
-          <form onSubmit={handleSubmit(onSubmitInternal)} className="space-y-4">
-            <FormField
-              control={control}
-              name="Reference"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Référence</FormLabel>
-                  <FormControl>
-                    <Input {...field} disabled />
-                  </FormControl>
-                </FormItem>
-              )}
-            />
+        {loading ? (
+          <div className="p-4 flex justify-center">
+            <Loader2 className="animate-spin h-5 w-5 text-gray-500" />
+          </div>
+        ) : (
+          <Form {...form}>
+            <form onSubmit={handleSubmit(submitHandler)} className="space-y-4">
+              <FormField
+                control={form.control}
+                name="Reference"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Référence</FormLabel>
+                    <FormControl>
+                      <Input disabled {...field} />
+                    </FormControl>
+                  </FormItem>
+                )}
+              />
 
-            <FormField
-              control={control}
-              name="Libelle"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Libellé</FormLabel>
-                  <FormControl>
-                    <Input {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+              <FormField
+                control={form.control}
+                name="Libelle"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Libellé</FormLabel>
+                    <FormControl>
+                      <Input {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
 
-            <DialogFooter className="flex justify-end gap-2">
-              <Button
-                variant="outline"
-                type="button"
-                onClick={() => onOpenChange(false)}
-              >
-                Annuler
-              </Button>
-              <Button type="submit" disabled={formState.isSubmitting}>
-                Modifier
-              </Button>
-            </DialogFooter>
-          </form>
-        </Form>
+              <DialogFooter className="flex justify-end gap-2">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => onOpenChange(false)}
+                  disabled={formState.isSubmitting}
+                >
+                  Annuler
+                </Button>
+                <Button type="submit" disabled={formState.isSubmitting}>
+                  {formState.isSubmitting ? (
+                    <>
+                      <Loader2 className="animate-spin h-4 w-4 mr-2" /> Enregistrement...
+                    </>
+                  ) : (
+                    'Mettre à jour'
+                  )}
+                </Button>
+              </DialogFooter>
+            </form>
+          </Form>
+        )}
       </DialogContent>
     </Dialog>
   );

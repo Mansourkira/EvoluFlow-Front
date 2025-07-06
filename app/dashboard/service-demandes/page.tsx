@@ -1,4 +1,3 @@
-// app/dashboard/service-demandes/page.tsx
 "use client";
 
 import { useEffect, useState } from "react";
@@ -11,8 +10,8 @@ import AddServiceDemandeDialog from "@/components/service-demandes/AddServiceDem
 import ViewServiceDemandeDialog from "@/components/service-demandes/ViewServiceDemandeDialog";
 import UpdateServiceDemandeDialog from "@/components/service-demandes/UpdateServiceDemandeDialog";
 import {
-  exportGenericData,
   createServiceDemandeExportConfig,
+  exportGenericData,
 } from "@/lib/exportUtils";
 import {
   DropdownMenu,
@@ -31,62 +30,18 @@ export default function ServiceDemandesPage() {
     deleteServiceDemande,
   } = useServiceDemandes();
 
-  const [addDialogOpen, setAddDialogOpen] = useState(false);
-  const [viewDialogOpen, setViewDialogOpen] = useState(false);
-  const [updateDialogOpen, setUpdateDialogOpen] = useState(false);
-  const [selectedDemande, setSelectedDemande] = useState<ServiceDemande | null>(null);
+  const [addOpen,setAddOpen] = useState(false);
+  const [viewOpen,setViewOpen] = useState(false);
+  const [editOpen,setEditOpen] = useState(false);
+  const [sel,setSel] = useState<ServiceDemande|null>(null);
 
-  useEffect(() => {
-    fetchServiceDemandes();
-  }, [fetchServiceDemandes]);
+  useEffect(()=>{ fetchServiceDemandes(); }, []);
 
-  const handleView = (demande: ServiceDemande) => {
-    setSelectedDemande(demande);
-    setViewDialogOpen(true);
-  };
-
-  const handleEdit = (demande: ServiceDemande) => {
-    setSelectedDemande(demande);
-    setUpdateDialogOpen(true);
-  };
-
-  const handleDelete = async (ref: string) => {
-    const success = await deleteServiceDemande(ref);
-    if (success) {
-      toast.success("Demande supprimée avec succès");
-      fetchServiceDemandes();
-    } else {
-      toast.error("Erreur lors de la suppression");
-    }
-  };
-
-  const handleAdd = async (data: ServiceDemande) => {
-    const success = await addServiceDemande(data);
-    if (success) {
-      toast.success("Demande ajoutée avec succès");
-      fetchServiceDemandes();
-      setAddDialogOpen(false);
-    } else {
-      toast.error("Erreur lors de l'ajout");
-    }
-  };
-
-  const handleUpdate = async (data: ServiceDemande) => {
-    const success = await updateServiceDemande(data);
-    if (success) {
-      toast.success("Demande mise à jour avec succès");
-      fetchServiceDemandes();
-      setUpdateDialogOpen(false);
-    } else {
-      toast.error("Erreur lors de la mise à jour");
-    }
-  };
-
-  const columns = [
-    { key: "Reference", label: "Référence" },
-    { key: "Libelle", label: "Libellé" },
-    { key: "Utilisateur", label: "Utilisateur" },
-    { key: "Heure", label: "Date de création" },
+  const cols = [
+    { key:"Reference", label:"Réf" },
+    { key:"Libelle",  label:"Libellé" },
+    { key:"Utilisateur", label:"Utilisateur" },
+    { key:"Heure", label:"Date création" },
   ];
 
   return (
@@ -95,87 +50,73 @@ export default function ServiceDemandesPage() {
         data={serviceDemandes}
         isLoading={false}
         onRefresh={fetchServiceDemandes}
-        title="Demandes de Service"
-        description="Gérez vos demandes de service"
+        title="Demandes de service"
+        description="..."
         entityName="demande"
         entityNamePlural="demandes"
-        columns={columns}
+        columns={cols}
         idField="Reference"
-        onView={handleView}
-        onEdit={handleEdit}
-        onDelete={handleDelete}
+        onView={(d)=>{ setSel(d); setViewOpen(true); }}
+        onEdit={(d)=>{ setSel(d); setEditOpen(true); }}
+        onDelete={async ref=>{
+          const ok = await deleteServiceDemande(ref);
+          toast[ok?"success":"error"]( ok?"Supprimée":"Erreur" );
+        }}
         addButton={
           <div className="flex gap-2">
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button variant="outline">
-                  <Download className="mr-2 h-4 w-4" />
-                  Exporter
+                  <Download className="mr-2 h-4 w-4"/>Exporter
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
-                <DropdownMenuItem
-                  onClick={() =>
+                {(["PDF","Excel","Word"] as const).map(fmt=>(
+                  <DropdownMenuItem key={fmt} onClick={()=>
                     exportGenericData(
                       createServiceDemandeExportConfig(serviceDemandes),
-                      "PDF"
+                      fmt
                     )
-                  }
-                >
-                  PDF
-                </DropdownMenuItem>
-                <DropdownMenuItem
-                  onClick={() =>
-                    exportGenericData(
-                      createServiceDemandeExportConfig(serviceDemandes),
-                      "Excel"
-                    )
-                  }
-                >
-                  Excel
-                </DropdownMenuItem>
-                <DropdownMenuItem
-                  onClick={() =>
-                    exportGenericData(
-                      createServiceDemandeExportConfig(serviceDemandes),
-                      "Word"
-                    )
-                  }
-                >
-                  Word
-                </DropdownMenuItem>
+                  }>{fmt}</DropdownMenuItem>
+                ))}
               </DropdownMenuContent>
             </DropdownMenu>
-            <Button
-              onClick={() => setAddDialogOpen(true)}
-              className="bg-black text-white hover:bg-black/80"
-            >
-              Ajouter une demande
+            <Button onClick={()=>setAddOpen(true)} className="bg-black text-white">
+              Nouvelle demande
             </Button>
           </div>
         }
       />
 
       <AddServiceDemandeDialog
-        open={addDialogOpen}
-        onClose={() => setAddDialogOpen(false)}
-        onSubmit={handleAdd}
+        open={addOpen}
+        onClose={()=>setAddOpen(false)}
+        onSubmit={async data=>{
+          const ok=await addServiceDemande(data);
+          toast[ok?"success":"error"]( ok?"Ajouté":"Erreur" );
+          if(ok) fetchServiceDemandes();
+        }}
       />
 
-      {selectedDemande && (
+      {sel && (
         <ViewServiceDemandeDialog
-          reference={selectedDemande.Reference}
-          open={viewDialogOpen}
-          onClose={() => setViewDialogOpen(false)}
+          open={viewOpen}
+          onClose={()=>setViewOpen(false)}
+          reference={sel.Reference}       // ← prop attendue
         />
       )}
 
-      {selectedDemande && (
+      {sel && (
         <UpdateServiceDemandeDialog
-          open={updateDialogOpen}
-          onOpenChange={setUpdateDialogOpen}
-          demande={selectedDemande}
-          onSubmit={handleUpdate}
+          open={editOpen}
+          onOpenChange={o=>!o&&setEditOpen(false)}
+          reference={sel.Reference}       // ← prop attendue
+          onSubmit={async data=>{
+            const ok=await updateServiceDemande(data);
+            toast[ok?"success":"error"]( ok?"Modifié":"Erreur" );
+            if(ok) fetchServiceDemandes();
+            setEditOpen(false);
+          }}
         />
       )}
     </>

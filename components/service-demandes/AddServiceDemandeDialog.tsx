@@ -1,201 +1,127 @@
-// components/mode-paiement/AddModePaiementDialog.tsx
+// components/service-demandes/AddServiceDemandeDialog.tsx
 "use client";
 
 import { useEffect } from "react";
-import { Plus, Loader2, Shuffle, Hash, StickyNote } from "lucide-react";
+import { Shuffle } from "lucide-react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Checkbox } from "@/components/ui/checkbox";
-import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from "@/components/ui/form";
 import { useToast } from "@/hooks/use-toast";
-import { useModePaiement } from "@/hooks/useModePaiement";
+import { useServiceDemandes } from "@/hooks/useServiceDemandes";
 import {
-  addModePaiementSchema,
-  AddModePaiementFormData,
-} from "@/schemas/modePaiementSchema";
+  addServiceDemandeSchema,
+  AddServiceDemandeFormData,
+} from "@/schemas/serviceDemandeSchema";
 
-interface Props {
+interface AddServiceDemandeDialogProps {
   open: boolean;
   onClose: () => void;
-  onSubmit: (data: AddModePaiementFormData) => Promise<void>;
+  onSubmit: (data: AddServiceDemandeFormData) => void;
 }
 
-export default function AddModePaiementDialog({ open, onClose, onSubmit }: Props) {
-  const { modes } = useModePaiement();
+export default function AddServiceDemandeDialog({
+  open,
+  onClose,
+  onSubmit,
+}: AddServiceDemandeDialogProps) {
   const { toast } = useToast();
+  const { serviceDemandes } = useServiceDemandes();
 
-  const form = useForm<AddModePaiementFormData>({
-    resolver: zodResolver(addModePaiementSchema),
-    defaultValues: {
-      Reference: "",
-      Libelle: "",
-      Versement_Banque: 0,
-      Nombre_Jour_Echeance: 0,
-    },
+  const {
+    register,
+    handleSubmit,
+    formState: { errors },
+    reset,
+    setValue,
+    getValues,
+  } = useForm<AddServiceDemandeFormData>({
+    resolver: zodResolver(addServiceDemandeSchema),
   });
 
-  const { handleSubmit, reset, control, setValue, getValues, formState } = form;
-
+  // Génère une référence SD + AA + MM + 4 chiffres au hasard
   const generateReference = () => {
-    const year = new Date().getFullYear().toString().slice(-2);
-    const month = (new Date().getMonth() + 1).toString().padStart(2, "0");
-    const existing = modes
-      .map((m) => m.Reference)
-      .filter((ref) => ref.startsWith(`MP${year}${month}`));
-
-    let counter = 1;
-    let ref = `MP${year}${month}${counter.toString().padStart(3, "0")}`;
-    while (existing.includes(ref)) {
-      counter++;
-      ref = `MP${year}${month}${counter.toString().padStart(3, "0")}`;
-    }
-
-    setValue("Reference", ref);         // met à jour le formulaire
-    toast({ title: "Référence générée", description: ref });
+    const yy = new Date().getFullYear().toString().slice(-2);
+    const mm = (new Date().getMonth() + 1).toString().padStart(2, "0");
+    // On peut filtrer si on veut garantir l'unicité :
+    const existing = serviceDemandes.map((d) => d.Reference);
+    let ref: string;
+    do {
+      ref = `SD${yy}${mm}${Math.floor(1000 + Math.random() * 9000)}`;
+    } while (existing.includes(ref));
+    setValue("Reference", ref);
+    toast({
+      title: "✅ Référence générée",
+      description: `Nouvelle référence : ${ref}`,
+    });
   };
 
-  // Génère une ref à l’ouverture si vide
+  // À chaque ouverture, on reset le formulaire
   useEffect(() => {
-    if (open && !getValues("Reference")) {
-      generateReference();
-    }
-  }, [open]);
+    if (open) reset();
+  }, [open, reset]);
 
-  const handleClose = () => {
+  const onSubmitForm = (data: AddServiceDemandeFormData) => {
+    onSubmit(data);
     reset();
-    onClose();
-  };
-
-  const handleFormSubmit = async (data: AddModePaiementFormData) => {
-    await onSubmit(data);
-    handleClose();
   };
 
   return (
-    <Dialog open={open} onOpenChange={(open) => !open && handleClose()}>
+    <Dialog open={open} onOpenChange={onClose}>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>Ajouter un mode de paiement</DialogTitle>
-          <DialogDescription>Remplissez les champs obligatoires.</DialogDescription>
+          <DialogTitle>Ajouter une demande de service</DialogTitle>
         </DialogHeader>
-
-        <Form {...form}>
-          <form onSubmit={handleSubmit(handleFormSubmit)} className="space-y-4">
-            {/* Référence + génération */}
-            <FormField
-              control={control}
-              name="Reference"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Référence</FormLabel>
-                  <FormControl>
-                    <div className="flex items-center gap-2">
-                      <Hash className="w-4 h-4 text-gray-500" />
-                      {/* on retire le value explicite pour laisser react-hook-form gérer */}
-                      <Input {...field} />
-                      <Button
-                        type="button"
-                        size="icon"
-                        variant="outline"
-                        onClick={generateReference}
-                      >
-                        <Shuffle className="w-4 h-4" />
-                      </Button>
-                    </div>
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            {/* Libellé */}
-            <FormField
-              control={control}
-              name="Libelle"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Libellé</FormLabel>
-                  <FormControl>
-                    <div className="flex items-center gap-2">
-                      <StickyNote className="w-4 h-4 text-gray-500" />
-                      <Input {...field} />
-                    </div>
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            {/* Versement en banque */}
-            <FormField
-              control={control}
-              name="Versement_Banque"
-              render={({ field }) => (
-                <FormItem className="flex items-center gap-2">
-                  <FormControl>
-                    <Checkbox
-                      checked={field.value === 1}
-                      onCheckedChange={(checked) =>
-                        field.onChange(checked ? 1 : 0)
-                      }
-                    />
-                  </FormControl>
-                  <FormLabel>Versement en banque</FormLabel>
-                </FormItem>
-              )}
-            />
-
-            {/* Nombre de jours */}
-            <FormField
-              control={control}
-              name="Nombre_Jour_Echeance"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Jours d’échéance</FormLabel>
-                  <FormControl>
-                    <Input
-                      type="number"
-                      {...field}
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <DialogFooter className="flex justify-end gap-2">
-              <Button type="button" variant="outline" onClick={handleClose}>
-                Annuler
+        <form onSubmit={handleSubmit(onSubmitForm)} className="space-y-4">
+          {/* Référence */}
+          <div>
+            <label htmlFor="Reference" className="mb-1 block">
+              Référence
+            </label>
+            <div className="flex gap-2 items-center">
+              <Input
+                id="Reference"
+                {...register("Reference")}
+                placeholder="Cliquez sur l’icône pour générer"
+                disabled
+              />
+              <Button
+                type="button"
+                size="icon"
+                variant="outline"
+                onClick={generateReference}
+              >
+                <Shuffle className="h-4 w-4" />
               </Button>
-              <Button type="submit" disabled={formState.isSubmitting}>
-                {formState.isSubmitting ? (
-                  <Loader2 className="w-4 h-4 animate-spin" />
-                ) : (
-                  <Plus className="w-4 h-4" />
-                )}
-                &nbsp;Ajouter
-              </Button>
-            </DialogFooter>
-          </form>
-        </Form>
+            </div>
+            {errors.Reference && (
+              <p className="text-sm text-red-600">
+                {errors.Reference.message}
+              </p>
+            )}
+          </div>
+
+          {/* Libellé */}
+          <div>
+            <label htmlFor="Libelle" className="mb-1 block">
+              Libellé
+            </label>
+            <Input
+              id="Libelle"
+              {...register("Libelle")}
+              placeholder="Libellé de la demande"
+            />
+            {errors.Libelle && (
+              <p className="text-sm text-red-600">{errors.Libelle.message}</p>
+            )}
+          </div>
+
+          {/* Footer */}
+          <div className="flex justify-end">
+            <Button type="submit">Ajouter</Button>
+          </div>
+        </form>
       </DialogContent>
     </Dialog>
   );
