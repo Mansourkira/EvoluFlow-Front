@@ -577,3 +577,22 @@ export const createModePaiementExportConfig = (modes: any[]): ExportConfig => ({
     },
   ],
 });
+export const createNiveauCourExportConfig = (niveaux: any[]): ExportConfig => ({
+  title: "Liste des Niveaux de Cours",
+  filename: "niveaux_cours",
+  data: niveaux,
+  columns: [
+    { key: "Reference", label: "Référence", width: 20, pdfWidth: 30, excelWidth: 20 },
+    { key: "Libelle", label: "Libellé", width: 40, pdfWidth: 50, excelWidth: 40 },
+    { key: "Nombre_Heure", label: "Heures", width: 15, pdfWidth: 20, excelWidth: 15 },
+    { key: "Utilisateur", label: "Utilisateur", width: 30, pdfWidth: 40, excelWidth: 30 },
+    {
+      key: "Heure",
+      label: "Date de Création",
+      width: 20,
+      pdfWidth: 30,
+      excelWidth: 20,
+      formatter: (v) => (v ? new Date(v).toLocaleDateString("fr-FR") : "-"),
+    },
+  ],
+});
