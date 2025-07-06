@@ -3,6 +3,8 @@ import autoTable from 'jspdf-autotable'
 import * as XLSX from 'xlsx'
 import { saveAs } from 'file-saver'
 import { Document, Packer, Paragraph, Table, TableCell, TableRow, WidthType, AlignmentType, TextRun } from 'docx'
+import { ObjetReglement } from '@/schemas/reglementShema'
+
 
 // Generic interfaces for export configuration
 export interface ExportColumn {
@@ -416,3 +418,280 @@ export const exportAllSituations = async (situations: any[], format: 'PDF' | 'Ex
   const config = createSituationExportConfig(situations)
   return await exportGenericData(config, format)
 } 
+
+export const createRaisonExportConfig = (raisons: any[]): ExportConfig => ({
+  title: 'Liste des Raisons',
+  filename: 'raisons',
+  data: raisons,
+  columns: [
+    { key: 'Reference', label: 'Référence', width: 20, pdfWidth: 30, excelWidth: 20 },
+    { key: 'Libelle', label: 'Libellé', width: 40, pdfWidth: 50, excelWidth: 40 },
+    { key: 'Utilisateur', label: 'Utilisateur', width: 30, pdfWidth: 40, excelWidth: 30 },
+    {
+      key: 'Heure',
+      label: 'Date de Création',
+      width: 20,
+      pdfWidth: 30,
+      excelWidth: 20,
+      formatter: (value) =>
+        value ? new Date(value).toLocaleDateString('fr-FR') : '-',
+    },
+  ],
+});
+export const createObjetReglementExportConfig = (
+  objets: any[]
+): ExportConfig => ({
+  title: "Liste des Objets de Règlement",
+  filename: "objets_reglement",
+  data: objets,
+  columns: [
+    { key: "Reference", label: "Référence", width: 20, pdfWidth: 30, excelWidth: 20 },
+    { key: "Intitule", label: "Intitulé", width: 40, pdfWidth: 50, excelWidth: 40 },
+    { key: "Utilisateur", label: "Utilisateur", width: 30, pdfWidth: 40, excelWidth: 30 },
+    {
+      key: "Heure",
+      label: "Date de Création",
+      width: 20,
+      pdfWidth: 30,
+      excelWidth: 20,
+      formatter: (value) =>
+        value ? new Date(value).toLocaleDateString("fr-FR") : "-",
+    },
+  ],
+});
+export const createMagasinExportConfig = (magasins: any[]): ExportConfig => ({
+  title: 'Liste des Magasins',
+  filename: 'magasins',
+  data: magasins,
+  columns: [
+    { key: 'Reference', label: 'Référence', width: 20, pdfWidth: 30, excelWidth: 20 },
+    { key: 'Libelle', label: 'Libellé', width: 40, pdfWidth: 50, excelWidth: 40 },
+    {
+      key: 'Stock_Negatif',
+      label: 'Stock Négatif',
+      width: 20,
+      pdfWidth: 30,
+      excelWidth: 20,
+      formatter: (value) => (value === 1 ? 'Autorisé' : 'Non autorisé'),
+    },
+    { key: 'Utilisateur', label: 'Utilisateur', width: 30, pdfWidth: 40, excelWidth: 30 },
+    {
+      key: 'Heure',
+      label: 'Date de Création',
+      width: 20,
+      pdfWidth: 30,
+      excelWidth: 20,
+      formatter: (value) =>
+        value ? new Date(value).toLocaleDateString('fr-FR') : '-',
+    },
+  ],
+});
+export const createValidationReglementExportConfig = (
+  validations: any[]
+): ExportConfig => ({
+  title: "Liste des Validations de Règlement",
+  filename: "validations_reglement",
+  data: validations,
+  columns: [
+    { key: "Reference", label: "Référence", width: 20, pdfWidth: 30, excelWidth: 20 },
+    { key: "Libelle", label: "Libellé", width: 40, pdfWidth: 50, excelWidth: 40 },
+    {
+      key: "Valide",
+      label: "Statut",
+      width: 15,
+      pdfWidth: 20,
+      excelWidth: 15,
+      formatter: (value) => value === 1 ? "Validé" : "Non Validé",
+    },
+    { key: "Utilisateur", label: "Utilisateur", width: 30, pdfWidth: 40, excelWidth: 30 },
+    {
+      key: "Heure",
+      label: "Date de Création",
+      width: 20,
+      pdfWidth: 30,
+      excelWidth: 20,
+      formatter: (value) =>
+        value ? new Date(value).toLocaleDateString("fr-FR") : "-",
+    },
+  ],
+});
+export const createTvaExportConfig = (tvas: any[]): ExportConfig => ({
+  title: "Liste des Régimes TVA",
+  filename: "tva",
+  data: tvas,
+  columns: [
+    { key: "Reference", label: "Référence", width: 20, pdfWidth: 30, excelWidth: 20 },
+    { key: "Libelle", label: "Libellé", width: 40, pdfWidth: 50, excelWidth: 40 },
+    { key: "Taux", label: "Taux (%)", width: 20, pdfWidth: 25, excelWidth: 20 },
+    {
+      key: "Actif",
+      label: "État",
+      width: 15,
+      pdfWidth: 20,
+      excelWidth: 15,
+      formatter: (value) => (value === 1 ? "Actif" : "Inactif"),
+    },
+    { key: "Utilisateur", label: "Utilisateur", width: 30, pdfWidth: 40, excelWidth: 30 },
+    {
+      key: "Heure",
+      label: "Date de Création",
+      width: 20,
+      pdfWidth: 30,
+      excelWidth: 20,
+      formatter: (value) =>
+        value ? new Date(value).toLocaleDateString("fr-FR") : "-",
+    },
+  ],
+});
+export const createModePaiementExportConfig = (modes: any[]): ExportConfig => ({
+  title: "Liste des Modes de Paiement",
+  filename: "modes_paiement",
+  data: modes,
+  columns: [
+    { key: "Reference", label: "Référence", width: 20, pdfWidth: 30, excelWidth: 20 },
+    { key: "Libelle", label: "Libellé", width: 40, pdfWidth: 50, excelWidth: 40 },
+    {
+      key: "Nombre_Jour_Echeance",
+      label: "Jours Échéance",
+      width: 20,
+      pdfWidth: 25,
+      excelWidth: 20,
+    },
+    {
+      key: "Versement_Banque",
+      label: "Versement Banque",
+      width: 20,
+      pdfWidth: 25,
+      excelWidth: 20,
+      formatter: (value) => (value === 1 ? "Oui" : "Non"),
+    },
+    { key: "Utilisateur", label: "Utilisateur", width: 30, pdfWidth: 40, excelWidth: 30 },
+    {
+      key: "Heure",
+      label: "Date de Création",
+      width: 20,
+      pdfWidth: 30,
+      excelWidth: 20,
+      formatter: (value) =>
+        value ? new Date(value).toLocaleDateString("fr-FR") : "-",
+    },
+  ],
+});
+export const createNiveauCourExportConfig = (niveaux: any[]): ExportConfig => ({
+  title: "Liste des Niveaux de Cours",
+  filename: "niveaux_cours",
+  data: niveaux,
+  columns: [
+    { key: "Reference", label: "Référence", width: 20, pdfWidth: 30, excelWidth: 20 },
+    { key: "Libelle", label: "Libellé", width: 40, pdfWidth: 50, excelWidth: 40 },
+    { key: "Nombre_Heure", label: "Heures", width: 15, pdfWidth: 20, excelWidth: 15 },
+    { key: "Utilisateur", label: "Utilisateur", width: 30, pdfWidth: 40, excelWidth: 30 },
+    {
+      key: "Heure",
+      label: "Date de Création",
+      width: 20,
+      pdfWidth: 30,
+      excelWidth: 20,
+      formatter: (v) => (v ? new Date(v).toLocaleDateString("fr-FR") : "-"),
+    },
+  ],
+});
+export const createSourceContactExportConfig = (sources: any[]): ExportConfig => ({
+  title: "Liste des Sources de Contact",
+  filename: "source_contact",
+  data: sources,
+  columns: [
+    { key: "Reference", label: "Référence", width: 20, pdfWidth: 30, excelWidth: 20 },
+    { key: "Libelle", label: "Libellé", width: 40, pdfWidth: 50, excelWidth: 40 },
+    { key: "Utilisateur", label: "Utilisateur", width: 30, pdfWidth: 40, excelWidth: 30 },
+    {
+      key: "Heure",
+      label: "Date Création",
+      width: 20,
+      pdfWidth: 30,
+      excelWidth: 20,
+      formatter: (v) => (v ? new Date(v).toLocaleDateString("fr-FR") : "-"),
+    },
+  ],
+});
+export const createServiceDemandeExportConfig = (
+  serviceDemandes: any[]
+): ExportConfig => ({
+  title: "Liste des Demandes de Service",
+  filename: "service_demandes",
+  data: serviceDemandes,
+  columns: [
+    {
+      key: "Reference",
+      label: "Référence",
+      width: 20,
+      pdfWidth: 30,
+      excelWidth: 20,
+    },
+    {
+      key: "Libelle",
+      label: "Libellé",
+      width: 40,
+      pdfWidth: 50,
+      excelWidth: 40,
+    },
+    {
+      key: "Utilisateur",
+      label: "Utilisateur",
+      width: 30,
+      pdfWidth: 40,
+      excelWidth: 30,
+    },
+    {
+      key: "Heure",
+      label: "Date de Création",
+      width: 20,
+      pdfWidth: 30,
+      excelWidth: 20,
+      formatter: (value: string) =>
+        value ? new Date(value).toLocaleDateString("fr-FR") : "-",
+    },
+  ],
+});
+/**
+ * Config d’export pour les créneaux horaires (HoraireDemande)
+ */
+export const createHoraireDemandeExportConfig = (
+  horaires: any[]
+): ExportConfig => ({
+  title: "Liste des Créneaux Horaires",
+  filename: "horaires",
+  data: horaires,
+  columns: [
+    { key: "Reference", label: "Référence", width: 20, pdfWidth: 30, excelWidth: 20 },
+    { key: "Libelle", label: "Libellé", width: 40, pdfWidth: 50, excelWidth: 40 },
+    { key: "Utilisateur", label: "Utilisateur", width: 30, pdfWidth: 40, excelWidth: 30 },
+    {
+      key: "Heure",
+      label: "Date de création",
+      width: 20,
+      pdfWidth: 30,
+      excelWidth: 20,
+      formatter: (value) =>
+        value ? new Date(value).toLocaleDateString("fr-FR") : "-",
+    },
+  ],
+});
+export const createNiveauLangueExportConfig = (niveaux: any[]): ExportConfig => ({
+  title: "Liste des Niveaux de Langue",
+  filename: "niveaux_langue",
+  data: niveaux,
+  columns: [
+    { key: "Reference", label: "Référence", width: 20, pdfWidth: 30, excelWidth: 20 },
+    { key: "Libelle", label: "Libellé", width: 40, pdfWidth: 50, excelWidth: 40 },
+    { key: "Utilisateur", label: "Utilisateur", width: 30, pdfWidth: 40, excelWidth: 30 },
+    {
+      key: "Heure",
+      label: "Date de Création",
+      width: 20,
+      pdfWidth: 30,
+      excelWidth: 20,
+      formatter: (value) => (value ? new Date(value).toLocaleDateString("fr-FR") : "-"),
+    },
+  ],
+});

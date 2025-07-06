@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useEffect, useState } from "react";
@@ -63,6 +64,7 @@ export default function DocumentsPage() {
     if (failCount > 0) toast.error(`${failCount} suppression(s) échouée(s)`);
     fetchDocuments();
   };
+const [showFilters, setShowFilters] = useState(false);
 
   const handleExport = async (format: string) => {
     try {
@@ -100,6 +102,12 @@ export default function DocumentsPage() {
       toast.error("Erreur lors de l'ajout du document");
     }
   };
+{showFilters && (
+  <div className="p-4 border rounded-md shadow-sm bg-gray-50 mb-4">
+    {/* Ajoute ici tes filtres spécifiques */}
+    <p className="text-sm text-gray-600">[Tes champs de filtre ici]</p>
+  </div>
+)}
 
   const columns = [
     { key: "Reference", label: "Référence" },
@@ -165,3 +173,4 @@ export default function DocumentsPage() {
     </>
   );
 }
+
