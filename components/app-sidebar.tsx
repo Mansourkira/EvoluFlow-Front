@@ -24,7 +24,10 @@ import {
   LogOut,
   Database,
   Home,
-  BookOpen
+  BookOpen,
+  Check,
+  Percent,
+  Clock
 } from "lucide-react"
 
 import { NavMain } from "@/components/nav-main"
@@ -73,6 +76,11 @@ const getNavigationByRole = (role: UserRole, user: any) => {
           url: "/dashboard/client",
           icon: User,
         },
+        {
+          title:"Magasin",
+          url:"/dashboard/magasins",
+          icon:Building,
+        },
         // Subcategories under Fichier de base
         {
           title: "Sécurité",
@@ -109,6 +117,39 @@ const getNavigationByRole = (role: UserRole, user: any) => {
           ],
         },
         {
+          title:"Paramétrage Trésorerie",
+          url:"#",
+          icon:CreditCard,
+          items:[
+            {
+              title:"Objet de Reglement",
+              url:"/dashboard/reglements",
+              icon:FileText,
+            },
+            {
+              title:"Validation de Reglement",
+              url:"/dashboard/validation-reglement",
+              icon:Check,
+            },
+            {
+              title:"TVA",
+              url:"/dashboard/tva",
+              icon:Percent,
+            },
+            {
+              title:"Mode de Paiement",
+              url:"/dashboard/mode-payement",
+              icon:CreditCard,
+            },
+          
+            
+            
+            
+            
+          ]
+        },
+      
+        {
           title: "Traitement Dossier",
           url: "#",
           icon: FileText,
@@ -140,8 +181,20 @@ const getNavigationByRole = (role: UserRole, user: any) => {
               url: "/dashboard/modules",
               icon: Package,
             },
+            // Niveaux de Cours
+            {
+              title:"Niveaux de Cours",
+              url:"/dashboard/niveaux-cours",
+              icon:GraduationCap,
+            },
+            {
+              title:"Horaire de Demande",
+              url:"/dashboard/horaire-demande",
+              icon:Clock,
+            }
           ],
         },
+
         {
           title: "Prospect-Candidat",
           url: "#",
@@ -162,6 +215,32 @@ const getNavigationByRole = (role: UserRole, user: any) => {
               url: "/dashboard/situations",
               icon: User,
             },
+            {
+              title:"Niveaux de Cours",
+              url:"/dashboard/niveaux-cours",
+              icon:GraduationCap,
+            },
+            {
+              title:"Source de Contact",
+              url:"/dashboard/source-contact",
+              icon:User,
+            },
+            {
+              title:"Niveaux d'Etudes",
+              url:"/dashboard/niveaux-etudes",
+              icon:GraduationCap,
+            },
+            {
+              title:"Service Demandes",
+              url:"/dashboard/service-demandes",
+              icon:FileText,
+            },
+                  
+            {
+              title:"Niveaux de Langue",
+              url:"/dashboard/niveaux-langue",
+              icon:Languages,
+            }
           ],
         },
       ],
