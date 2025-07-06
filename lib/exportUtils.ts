@@ -614,3 +614,42 @@ export const createSourceContactExportConfig = (sources: any[]): ExportConfig =>
     },
   ],
 });
+export const createServiceDemandeExportConfig = (
+  serviceDemandes: any[]
+): ExportConfig => ({
+  title: "Liste des Demandes de Service",
+  filename: "service_demandes",
+  data: serviceDemandes,
+  columns: [
+    {
+      key: "Reference",
+      label: "Référence",
+      width: 20,
+      pdfWidth: 30,
+      excelWidth: 20,
+    },
+    {
+      key: "Libelle",
+      label: "Libellé",
+      width: 40,
+      pdfWidth: 50,
+      excelWidth: 40,
+    },
+    {
+      key: "Utilisateur",
+      label: "Utilisateur",
+      width: 30,
+      pdfWidth: 40,
+      excelWidth: 30,
+    },
+    {
+      key: "Heure",
+      label: "Date de Création",
+      width: 20,
+      pdfWidth: 30,
+      excelWidth: 20,
+      formatter: (value: string) =>
+        value ? new Date(value).toLocaleDateString("fr-FR") : "-",
+    },
+  ],
+});
