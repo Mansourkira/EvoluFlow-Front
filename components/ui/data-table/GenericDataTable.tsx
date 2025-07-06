@@ -462,7 +462,7 @@ export function GenericDataTable<T>({ config, addDialog }: GenericDataTableProps
                         {/* Data Columns */}
                         {config.columns.map(column => 
                           columnVisibility[column.key] && (
-                            <ThemedTableCell key={column.key} className={`py-4 ${column.className || ''}`}>
+                            <ThemedTableCell key={`${itemId}-${column.key}`} className={`py-4 ${column.className || ''}`}>
                               {column.render ? 
                                 column.render(item, (item as any)[column.key]) : 
                                 String((item as any)[column.key] || 'N/A')
@@ -478,7 +478,7 @@ export function GenericDataTable<T>({ config, addDialog }: GenericDataTableProps
                               {config.actions.map(action => 
                                 (!action.condition || action.condition(item)) && (
                                   <Button
-                                    key={action.key}
+                                    key={`${itemId}-${action.key}`}
                                     variant={action.variant || "ghost"}
                                     size="sm"
                                     className={`h-8 w-8 p-0 transition-colors ${action.className || ''}`}

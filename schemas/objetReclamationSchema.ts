@@ -1,0 +1,15 @@
+import * as z from "zod";
+
+export const objetReclamationSchema = z.object({
+    Reference: z.string().min(1, "La référence est requise").max(50, "La référence ne peut pas dépasser 50 caractères"),
+    Libelle: z.string().min(1, "Le libellé est requis").max(255, "Le libellé ne peut pas dépasser 255 caractères"),
+});
+
+export type ObjetReclamationFormValues = z.infer<typeof objetReclamationSchema>; 
+
+export interface ObjetReclamation {
+    Reference: string;
+    Libelle: string;
+    Utilisateur: string;
+    Heure: string;
+}

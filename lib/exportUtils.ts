@@ -93,6 +93,33 @@ export const exportToGenericPDF = (config: ExportConfig): boolean => {
   }
 }
 
+export const createObjetReclamationExportConfig = (objetReclamations: any[]): ExportConfig => ({
+  title: 'Liste des Objets de Réclamation',
+  filename: 'objets_reclamation',
+  data: objetReclamations,
+  columns: [
+    { key: 'Reference', label: 'Référence', width: 20, pdfWidth: 30, excelWidth: 20 },
+    { key: 'Libelle', label: 'Libellé', width: 40, pdfWidth: 50, excelWidth: 40 },
+    { key: 'Relance', label: 'Relance', width: 15, pdfWidth: 20, excelWidth: 15 },
+    { 
+      key: 'Heure', 
+      label: 'Date de création', 
+      width: 20,
+      pdfWidth: 25,
+      excelWidth: 20,
+      formatter: (value: string) => value 
+        ? new Date(value).toLocaleDateString('fr-FR', {
+            day: '2-digit',
+            month: '2-digit',
+            year: 'numeric',
+            hour: '2-digit',
+            minute: '2-digit'
+          })
+        : 'Non spécifiée'
+    }
+  ]
+})
+
 export const exportToGenericExcel = (config: ExportConfig): boolean => {
   try {
     // Prepare data for Excel

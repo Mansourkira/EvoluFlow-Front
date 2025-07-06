@@ -106,6 +106,12 @@ const getNavigationByRole = (role: UserRole, user: any) => {
               url: "/dashboard/type-facturation",
               icon: CreditCard,
             },
+            //feat/Mansour-object-de-reclamation
+            {
+              title: "Object de Reclamation",
+              url: "/dashboard/object-de-reclamation",
+              icon: FileText,
+            },
           ],
         },
         {
