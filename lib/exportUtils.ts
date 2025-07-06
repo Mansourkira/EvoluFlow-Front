@@ -596,3 +596,21 @@ export const createNiveauCourExportConfig = (niveaux: any[]): ExportConfig => ({
     },
   ],
 });
+export const createSourceContactExportConfig = (sources: any[]): ExportConfig => ({
+  title: "Liste des Sources de Contact",
+  filename: "source_contact",
+  data: sources,
+  columns: [
+    { key: "Reference", label: "Référence", width: 20, pdfWidth: 30, excelWidth: 20 },
+    { key: "Libelle", label: "Libellé", width: 40, pdfWidth: 50, excelWidth: 40 },
+    { key: "Utilisateur", label: "Utilisateur", width: 30, pdfWidth: 40, excelWidth: 30 },
+    {
+      key: "Heure",
+      label: "Date Création",
+      width: 20,
+      pdfWidth: 30,
+      excelWidth: 20,
+      formatter: (v) => (v ? new Date(v).toLocaleDateString("fr-FR") : "-"),
+    },
+  ],
+});
