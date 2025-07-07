@@ -1,130 +1,121 @@
-import { useState, useEffect } from "react";
+"use client";
+
+import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
-import { Input } from "@/components/ui/input";  
-import { objetReclamationSchema, ObjetReclamationFormValues, ObjetReclamation } from "@/schemas/objetReclamationSchema";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Separator } from "@/components/ui/separator";
+import { Input } from "@/components/ui/input";
+import { updateObjetReclamationSchema, type UpdateObjetReclamationFormData, type ObjetReclamation } from "@/schemas/objetReclamationSchema";
 import { toast } from "sonner";
+import { Loader2 } from "lucide-react";
+import { useObjetReclamation } from "@/hooks/useObjetReclamation";
 
 interface UpdateObjetReclamationDialogProps {
-    objetReclamation: ObjetReclamation;
-    onSubmit: (Reference: string, data: ObjetReclamationFormValues) => Promise<boolean>;
     open: boolean;
-    onClose: () => void;
-    onObjetReclamationUpdated?: () => void;
+    onOpenChange: (open: boolean) => void;
+    objetReclamation: ObjetReclamation;
+    onSuccess?: () => void;
 }
 
-export function UpdateObjetReclamationDialog({
-    objetReclamation,
-    onSubmit,
-    open,
-    onClose,
-    onObjetReclamationUpdated,
+export function UpdateObjetReclamationDialog({ 
+    open, 
+    onOpenChange, 
+    objetReclamation, 
+    onSuccess 
 }: UpdateObjetReclamationDialogProps) {
-    const [isSubmitting, setIsSubmitting] = useState(false);
+    const [isLoading, setIsLoading] = useState(false);
+    const { updateObjetReclamation } = useObjetReclamation();
 
-    const form = useForm<ObjetReclamationFormValues>({
-        resolver: zodResolver(objetReclamationSchema),
+    const form = useForm<UpdateObjetReclamationFormData>({
+        resolver: zodResolver(updateObjetReclamationSchema),
         defaultValues: {
             Reference: objetReclamation.Reference,
             Libelle: objetReclamation.Libelle,
         },
     });
 
-    useEffect(() => {
-        if (open) {
-            form.reset({
-                Reference: objetReclamation.Reference,
-                Libelle: objetReclamation.Libelle,
-            });
-        }
-    }, [open, objetReclamation, form]);
-
-    const handleSubmit = async (data: ObjetReclamationFormValues) => {
+    const onSubmit = async (data: UpdateObjetReclamationFormData) => {
+        setIsLoading(true);
         try {
-            setIsSubmitting(true);
-            const success = await onSubmit(objetReclamation.Reference, data);
+            const success = await updateObjetReclamation(data);
             if (success) {
-                toast.success("Objet de réclamation mis à jour avec succès");
-                onObjetReclamationUpdated?.();
-                onClose();
+                toast.success(`✅ Objet de réclamation mis à jour - ${data.Libelle} a été modifié avec succès.`);
+                onOpenChange(false);
+                onSuccess?.();
             }
         } catch (error) {
-            toast.error("Erreur lors de la mise à jour de l'objet de réclamation");
-            console.error("Error updating objet de reclamation:", error);
+            console.error('Erreur mise à jour objet de réclamation:', error);
+            toast.error(`❌ Erreur de mise à jour - ${error instanceof Error ? error.message : "Impossible de mettre à jour l'objet de réclamation. Veuillez réessayer."}`);
         } finally {
-            setIsSubmitting(false);
+            setIsLoading(false);
         }
     };
 
     return (
-        <Dialog open={open} onOpenChange={onClose}>
-            <DialogContent className="max-w-2xl">
+        <Dialog open={open} onOpenChange={onOpenChange}>
+            <DialogContent className="sm:max-w-[525px]">
                 <DialogHeader>
-                    <DialogTitle className="text-2xl font-bold">
-                        Modifier l'objet de réclamation
-                    </DialogTitle>
+                    <DialogTitle>Modifier l'objet de réclamation</DialogTitle>
+                    <DialogDescription>
+                        Modifiez les informations de l'objet de réclamation. Cliquez sur enregistrer quand vous avez terminé.
+                    </DialogDescription>
                 </DialogHeader>
-
                 <Form {...form}>
-                    <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-6">
-                        <Card>
-                            <CardHeader>
-                                <CardTitle className="text-lg font-semibold">
-                                    Informations de base
-                                </CardTitle>
-                            </CardHeader>
-                            <CardContent className="grid gap-4">
-                                <div className="grid grid-cols-2 gap-4">
-                                    <FormField
-                                        control={form.control}
-                                        name="Reference"
-                                        render={({ field }) => (
-                                            <FormItem>
-                                                <FormLabel>Référence</FormLabel>
-                                                <FormControl>
-                                                    <Input {...field} placeholder="Entrez une référence" />
-                                                </FormControl>
-                                                <FormMessage />
-                                            </FormItem>
-                                        )}
-                                    />
-                                    <FormField
-                                        control={form.control}
-                                        name="Libelle"
-                                        render={({ field }) => (
-                                            <FormItem>
-                                                <FormLabel>Libellé</FormLabel>
-                                                <FormControl>
-                                                    <Input {...field} placeholder="Entrez un libellé" />
-                                                </FormControl>
-                                                <FormMessage />
-                                            </FormItem>
-                                        )}
-                                    />
-                                </div>
-                            </CardContent>
-                        </Card>
-
-                        <Separator />
-
-                        <div className="flex justify-end gap-4">
-                            <Button
-                                type="button"
-                                variant="outline"
-                                onClick={onClose}
-                                disabled={isSubmitting}
+                    <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+                        <FormField
+                            control={form.control}
+                            name="Reference"
+                            render={({ field }) => (
+                                <FormItem>
+                                    <FormLabel>Référence *</FormLabel>
+                                    <FormControl>
+                                        <Input 
+                                            placeholder="Ex: OBJ001" 
+                                            {...field} 
+                                            disabled={isLoading}
+                                        />
+                                    </FormControl>
+                                    <FormMessage />
+                                </FormItem>
+                            )}
+                        />
+                        <FormField
+                            control={form.control}
+                            name="Libelle"
+                            render={({ field }) => (
+                                <FormItem>
+                                    <FormLabel>Libellé *</FormLabel>
+                                    <FormControl>
+                                        <Input 
+                                            placeholder="Ex: Objet de réclamation entreprise ABC" 
+                                            {...field} 
+                                            disabled={isLoading}
+                                        />
+                                    </FormControl>
+                                    <FormMessage />
+                                </FormItem>
+                            )}
+                        />
+                        <DialogFooter>
+                            <Button 
+                                type="button" 
+                                variant="outline" 
+                                onClick={() => onOpenChange(false)}
+                                disabled={isLoading}
                             >
                                 Annuler
                             </Button>
-                            <Button type="submit" disabled={isSubmitting}>
-                                {isSubmitting ? "Mise à jour en cours..." : "Mettre à jour"}
+                            <Button 
+                                type="submit" 
+                                disabled={isLoading}
+                                className="gap-2"
+                            >
+                                {isLoading && <Loader2 className="h-4 w-4 animate-spin" />}
+                                Enregistrer
                             </Button>
-                        </div>
+                        </DialogFooter>
                     </form>
                 </Form>
             </DialogContent>
