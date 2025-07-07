@@ -1,231 +1,419 @@
-"use client"
+"use client";
 
-import React, { useState } from 'react'
-import { GenericDataTable } from '@/components/ui/GenericDataTable'
-import { useSituations } from '@/hooks/useSituations'
-import { AddSituationDialog } from '@/components/situations/AddSituationDialog'
-import { ViewSituationDialog } from '@/components/situations/ViewSituationDialog'
-import { UpdateSituationDialog } from '@/components/situations/UpdateSituationDialog'
-import { Badge } from '@/components/ui/badge'
-import { Button } from '@/components/ui/button'
-import { User, Calendar, Hash } from 'lucide-react'
-import { toast } from 'sonner'
+import { useEffect, useState } from "react";
+import { useTypeFacturation } from "@/hooks/useTypeFacturation";
+import { TypeFacturation, getSousTraitanceLabel, getSousTraitanceColor, formatCreationDate } from "@/schemas/typeFacturationSchema";
+import { AddTypeFacturationDialog } from "@/components/type-facturation/AddTypeFacturationDialog";
+import { UpdateTypeFacturationDialog } from "@/components/type-facturation/UpdateTypeFacturationDialog";
+import { ViewTypeFacturationDialog } from "@/components/type-facturation/ViewTypeFacturationDialog";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Badge } from "@/components/ui/badge";
+import { GenericDataTable } from "@/components/ui/GenericDataTable";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Checkbox } from "@/components/ui/checkbox";
+import { toast } from "sonner";
+import {
+  CreditCard,
+  Search,
+  Eye,
+  Edit,
+  Trash2,
+  ChevronLeft,
+  ChevronRight,
+  ChevronUp,
+  ChevronDown,
+  Filter,
+  X,
+  Loader2,
+  RefreshCw,
+  Columns,
+  Plus,
+  MoreHorizontal,
+  PlusCircle,
+} from "lucide-react";
+import { useSituations } from "@/hooks/useSituations";
+import { AddSituationDialog } from "@/components/situations/AddSituationDialog";
+import { UpdateSituationDialog } from "@/components/situations/UpdateSituationDialog";
+import { ViewSituationDialog } from "@/components/situations/ViewSituationDialog";
+import { Situation } from "@/schemas/situationSchema";
+
+type SortField = 'Reference' | 'Libelle' | 'Heure';
+type SortDirection = 'asc' | 'desc' | null;
+
+interface FieldFilters {
+  Reference: string;
+  Libelle: string;
+  Heure: string;
+}
+
+interface ColumnVisibility {
+  Reference: boolean;
+  Libelle: boolean;
+  Heure: boolean;
+}
 
 export default function SituationsPage() {
-  const { situations, isLoading, error, refetch } = useSituations()
-  const [viewDialogOpen, setViewDialogOpen] = useState(false)
-  const [situationToView, setSituationToView] = useState<any>(null)
-  const [updateDialogOpen, setUpdateDialogOpen] = useState(false)
-  const [situationToUpdate, setSituationToUpdate] = useState<any>(null)
-
-  // Define columns for the situations table
-  const columns = [
-    {
-      key: 'Reference',
-      label: 'Référence',
-      sortable: true,
-      filterable: true,
-      render: (situation: any) => (
-        <div className="flex items-center gap-2">
-          <Hash className="h-3.5 w-3.5 text-gray-400" />
-          <span className="font-medium">{situation.Reference}</span>
-        </div>
-      )
-    },
-    {
-      key: 'Libelle',
-      label: 'Libellé',
-      sortable: true,
-      filterable: true,
-      render: (situation: any) => <span className="font-medium">{situation.Libelle}</span>
-    },
+  const { situations, isLoading, refetch, deleteSituation } = useSituations();
   
-    {
-      key: 'Heure',
-      label: 'Date de Création',
-      sortable: true,
-      filterable: true,
-      render: (situation: any) => (
-        <div className="flex items-center gap-2">
-          <Calendar className="h-3.5 w-3.5 text-gray-400" />
-          <span className="text-gray-600">
-            {situation.Heure ? new Date(situation.Heure).toLocaleDateString('fr-FR') : 'N/A'}
-          </span>
-        </div>
-      )
-    }
-  ]
+  // State management
+  const [searchTerm, setSearchTerm] = useState("");
+  const [selectedSituations, setSelectedSituations] = useState<string[]>([]);
+  const [sortField, setSortField] = useState<SortField>('Reference');
+  const [sortDirection, setSortDirection] = useState<SortDirection>('asc');
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState(10);
+  const [fieldFilters, setFieldFilters] = useState<FieldFilters>({
+    Reference: "",
+    Libelle: "",
+    Heure: "",
+  });
+  const [showAdvancedFilters, setShowAdvancedFilters] = useState(false);
+  const [columnVisibility, setColumnVisibility] = useState<ColumnVisibility>({
+    Reference: true,
+    Libelle: true,  
+    Heure: true,
+  });
 
-  // Convert situation data functions
-  const convertToViewSituationData = (situation: any) => ({
-    Reference: situation.Reference || 'N/A',
-    Libelle: situation.Libelle || 'N/A',
-    Utilisateur: situation.Utilisateur || 'N/A',
-    Nom_Prenom: situation.Nom_Prenom || 'Non assigné',
-    E_mail: situation.E_mail || 'N/A',
-    Profil: situation.Profil || 'N/A',
-    Type_Utilisateur: situation.Type_Utilisateur || 'N/A',
-    Site_Defaut: situation.Site_Defaut || 'N/A',
-    Heure: situation.Heure ? new Date(situation.Heure).toLocaleString('fr-FR') : 'N/A'
-  })
+  // Dialog states
+  const [addDialogOpen, setAddDialogOpen] = useState(false);
+  const [updateDialogOpen, setUpdateDialogOpen] = useState(false);
+  const [viewDialogOpen, setViewDialogOpen] = useState(false);
+  const [selectedSituation, setSelectedSituation] = useState<Situation | null>(null);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [situationToDelete, setSituationToDelete] = useState<string>("");
+  const [isDeleting, setIsDeleting] = useState(false);
 
-  const convertToUpdateSituationData = (situation: any) => ({
-    Reference: situation.Reference || '',
-    Libelle: situation.Libelle || '',
-    Utilisateur: situation.Utilisateur || ''
-  })
+  // Fetch data only on mount
+  useEffect(() => {
+    refetch();
+  }, []); // Empty dependency array since refetch is now memoized
 
-  // Handle actions
-  const handleView = (situation: any) => {
-    setSituationToView(convertToViewSituationData(situation))
-    setViewDialogOpen(true)
-  }
+  // Filtering and sorting logic
+  const filteredAndSortedSituations = situations
+    .filter(situation => {
+      const matchesSearch = !searchTerm || 
+        situation.Reference.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        (situation.Libelle && situation.Libelle.toLowerCase().includes(searchTerm.toLowerCase())) ||
+          formatCreationDate(situation.Heure).toLowerCase().includes(searchTerm.toLowerCase());
 
-  const handleEdit = (situation: any) => {
-    setSituationToUpdate(convertToUpdateSituationData(situation))
-    setUpdateDialogOpen(true)
-  }
+      const matchesFilters = 
+        (!fieldFilters.Reference || situation.Reference.toLowerCase().includes(fieldFilters.Reference.toLowerCase())) &&
+        (!fieldFilters.Libelle || (situation.Libelle && situation.Libelle.toLowerCase().includes(fieldFilters.Libelle.toLowerCase()))) &&
+        (!fieldFilters.Heure || formatCreationDate(situation.Heure).toLowerCase().includes(fieldFilters.Heure.toLowerCase()));
 
-  const handleDelete = async (situationRef: string) => {
-    try {
-      const token = localStorage.getItem('token')
-      if (!token) {
-        toast.error('🔒 Erreur d\'authentification - Vous devez être connecté')
-        return
-      }
-
-      const response = await fetch('http://localhost:3000/api/v1/situations/delete', {
-        method: 'DELETE',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`,
-        },
-        body: JSON.stringify({ Reference: situationRef }),
-      })
-
-      if (response.ok) {
-        const deletedSituation = situations.find(situation => situation.Reference === situationRef)
-        toast.success(`✅ Situation supprimée - ${deletedSituation?.Libelle || situationRef} a été supprimée avec succès`)
-        refetch()
-      } else {
-        const errorData = await response.json().catch(() => ({}))
-        toast.error(`❌ Erreur de suppression - ${errorData.error || errorData.message || 'Impossible de supprimer la situation'}`)
-      }
-    } catch (error) {
-      console.error('Erreur suppression situation:', error)
-      toast.error('❌ Erreur de connexion - Impossible de contacter le serveur')
-    }
-  }
-
-  const handleBulkDelete = async (situationRefs: string[]) => {
-    try {
-      const token = localStorage.getItem('token')
-      if (!token) {
-        toast.error('🔒 Erreur d\'authentification - Vous devez être connecté')
-        return
-      }
-
-      let successCount = 0
-      let failureCount = 0
-
-      for (const situationRef of situationRefs) {
-        try {
-          const response = await fetch('http://localhost:3000/api/v1/situations/delete', {
-            method: 'DELETE',
-            headers: {
-              'Content-Type': 'application/json',
-              'Authorization': `Bearer ${token}`,
-            },
-            body: JSON.stringify({ Reference: situationRef }),
-          })
-
-          if (response.ok) {
-            successCount++
-          } else {
-            failureCount++
-          }
-        } catch (error) {
-          failureCount++
-        }
-      }
-
-      if (successCount > 0 && failureCount === 0) {
-        toast.success(`✅ Suppression en lot réussie - ${successCount} situation(s) supprimée(s)`)
-      } else if (successCount > 0 && failureCount > 0) {
-        toast.warning(`⚠️ Suppression partielle - ${successCount} réussi(s), ${failureCount} échec(s)`)
-      } else {
-        toast.error(`❌ Échec de la suppression en lot`)
+      return matchesSearch && matchesFilters;
+    })
+    .sort((a, b) => {
+      if (!sortDirection) return 0;
+      
+      let aValue: any = a[sortField];
+      let bValue: any = b[sortField];
+      
+      if (sortField === 'Heure') {
+        // Sort by date - convert to Date objects for proper date sorting
+        aValue = aValue ? new Date(aValue).getTime() : 0;
+        bValue = bValue ? new Date(bValue).getTime() : 0;
       }
       
-      refetch()
-    } catch (error) {
-      console.error('Erreur suppression en lot:', error)
-      toast.error('❌ Erreur de suppression en lot')
+      if (aValue == null) aValue = '';
+      if (bValue == null) bValue = '';
+      
+      // For date fields (Heure), use numeric comparison
+      if (sortField === 'Heure') {
+        if (sortDirection === 'asc') {
+          return (aValue as number) - (bValue as number);
+        } else {
+          return (bValue as number) - (aValue as number);
+        }
+      }
+      
+      // For text fields, use string comparison
+      aValue = aValue.toString().toLowerCase();
+      bValue = bValue.toString().toLowerCase();
+      
+      if (sortDirection === 'asc') {
+        return aValue.localeCompare(bValue);
+      } else {
+        return bValue.localeCompare(aValue);
+      }
+    });
+
+  // Pagination
+  const totalPages = Math.ceil(filteredAndSortedSituations.length / itemsPerPage);
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const endIndex = startIndex + itemsPerPage;
+  const paginatedSituations = filteredAndSortedSituations.slice(startIndex, endIndex);
+
+  // Handlers
+  const handleSort = (field: SortField) => {
+    if (sortField === field) {
+      setSortDirection(sortDirection === 'asc' ? 'desc' : sortDirection === 'desc' ? null : 'asc');
+    } else {
+      setSortField(field);
+      setSortDirection('asc');
     }
-  }
+  };
+
+  const renderSortIcon = (field: SortField) => {
+    if (sortField !== field) return null;
+    if (sortDirection === 'asc') return <ChevronUp className="h-4 w-4" />;
+    if (sortDirection === 'desc') return <ChevronDown className="h-4 w-4" />;
+    return null;
+  };
+
+  const toggleColumnVisibility = (column: keyof ColumnVisibility) => {
+    setColumnVisibility(prev => ({
+      ...prev,
+      [column]: !prev[column]
+    }));
+  };
+
+  const handleSelectAll = (checked: boolean) => {
+    if (checked) {
+      setSelectedSituations(paginatedSituations.map(s => s.Reference));
+    } else {
+      setSelectedSituations([]);
+    }
+  };
+
+  const handleSelectTypeFacturation = (reference: string, checked: boolean) => {
+    if (checked) {
+        setSelectedSituations(prev => [...prev, reference]);
+    } else {
+      setSelectedSituations(prev => prev.filter(ref => ref !== reference));
+    }
+  };
+
+  const clearSelection = () => {
+    setSelectedSituations([]);
+  };
+
+  const handleViewClick = (situation: Situation) => {
+    setSelectedSituation(situation);
+    setViewDialogOpen(true);
+  };
+
+  const handleEditClick = (situation: Situation) => {
+    setSelectedSituation(situation);
+    setUpdateDialogOpen(true);
+  };
+
+  const handleDeleteClick = async (reference: string): Promise<void> => {
+    setSituationToDelete(reference);
+    setDeleteDialogOpen(true);
+  };
+
+  const handleDeleteConfirm = async () => {
+    if (!situationToDelete) return;
+    
+    setIsDeleting(true);
+    try {
+      const success = await deleteSituation(situationToDelete);
+      if (success) {
+        toast.success("Situation supprimée avec succès");
+        clearSelection();
+      }
+    } catch (error) {
+      toast.error("Erreur lors de la suppression de la situation");
+    } finally {
+      setIsDeleting(false);
+      setDeleteDialogOpen(false);
+      setSituationToDelete("");
+    }
+  };
+
+  const updateFieldFilter = (field: keyof FieldFilters, value: string) => {
+    setFieldFilters(prev => ({
+      ...prev,
+      [field]: value
+    }));
+    setCurrentPage(1);
+  };
+
+  const clearAllFilters = () => {
+    setFieldFilters({
+      Reference: "",
+      Libelle: "",
+      Heure: "",
+    });
+    setSearchTerm("");
+    setCurrentPage(1);
+  };
+
+  const getActiveFiltersCount = () => {
+    const filters = Object.entries(fieldFilters).filter(([key, value]) => {
+      return Boolean(value);
+    });
+    return filters.length + (searchTerm ? 1 : 0);
+  };
+
+  const handleItemsPerPageChange = (value: string) => {
+    setItemsPerPage(parseInt(value));
+    setCurrentPage(1);
+  };
+
+  const handlePageChange = (page: number) => {
+    setCurrentPage(page);
+  };
 
   const handleExport = async (format: string, selectedOnly = false) => {
     try {
       const { exportGenericData, createSituationExportConfig } = await import('@/lib/exportUtils')
       const dataToExport = selectedOnly ? 
-        situations.filter(situation => situation.Reference) : 
+          situations.filter(s => selectedSituations.includes(s.Reference)) : 
         situations
       
       const config = createSituationExportConfig(dataToExport)
       await exportGenericData(config, format as 'PDF' | 'Excel' | 'Word')
-      toast.success(`📄 Export réussi - ${dataToExport.length} situation(s) exportée(s) en ${format}`)
+      toast.success(`📄 Export réussi - ${dataToExport.length} situation(s) exporté(s) en ${format}`)
     } catch (error) {
-      console.error('Erreur export:', error)
+      console.error('Error exporting:', error)
       toast.error(`❌ Erreur d'export - ${error instanceof Error ? error.message : 'Erreur inconnue'}`)
     }
   }
 
   return (
-    <>
+    <div className="container mx-auto p-6 space-y-6">
       <GenericDataTable
         data={situations}
         isLoading={isLoading}
-        error={error}
-        onRefresh={refetch}
-        title="Gestion des Situations"
-        description="Gérez les situations et leurs assignations"
-        entityName="situation"
-        entityNamePlural="situations"
-        columns={columns}
+        title="Situations"
+        entityName="Situation"
+        description="Gérez et suivez vos situations efficacement"
+        entityNamePlural="Situations"
         idField="Reference"
-        onView={handleView}
-        onEdit={handleEdit}
-        onDelete={handleDelete}
-        onBulkDelete={handleBulkDelete}
+        onView={handleViewClick}
+        onEdit={handleEditClick}
+        onDelete={handleDeleteClick}
         onExport={handleExport}
-        addButton={<AddSituationDialog onSituationAdded={refetch} />}
-      />
-
-      {/* View Situation Dialog */}
-      <ViewSituationDialog 
-        situation={situationToView}
-        open={viewDialogOpen}
-        onOpenChange={(open) => {
-          setViewDialogOpen(open)
-          if (!open) {
-            setSituationToView(null)
+        selectedItems={selectedSituations}
+        onSelectedItemsChange={setSelectedSituations}
+        addButton={
+          <Button onClick={() => setAddDialogOpen(true)} size="sm">
+            <PlusCircle className="h-4 w-4 mr-2" />
+            Ajouter Situation 
+          </Button>
+        }
+        columns={[
+          {
+            key: 'Reference',
+            label: 'Référence',
+            sortable: true,
+            filterable: true,
+            render: (situation: Situation) => (
+              <span className="font-mono text-sm font-medium">{situation.Reference}</span>
+            )
+          },
+          {
+            key: 'Libelle',
+            label: 'Libellé',
+            sortable: true,
+            filterable: true,
+            render: (situation: Situation) => (
+              <span className="font-medium">{situation.Libelle}</span>
+            )
+          },
+          {   
+            key: 'Heure',
+            label: 'Date de création',
+            sortable: true,
+            filterable: true,
+              render: (situation: Situation) => (
+              <div className="flex items-center gap-2">
+                <span>{formatCreationDate(situation.Heure)}</span>
+              </div>
+            )
           }
-        }}
+        ]}
       />
 
-      {/* Update Situation Dialog */}
-      {situationToUpdate && (
+      {/* Add Dialog */}
+      <AddSituationDialog 
+        open={addDialogOpen}
+        onOpenChange={setAddDialogOpen}
+        onSituationAdded={refetch}
+      />
+
+      {/* Update Dialog */}
+      {selectedSituation && (
         <UpdateSituationDialog
-          situation={situationToUpdate}
           open={updateDialogOpen}
           onOpenChange={setUpdateDialogOpen}
-          onSituationUpdated={() => {
-            refetch()
-            setUpdateDialogOpen(false)
-            setSituationToUpdate(null)
+          situation={selectedSituation}
+          onSuccess={() => {
+            refetch();
+            setUpdateDialogOpen(false);
+            setSelectedSituation(null);
           }}
         />
       )}
-    </>
-  )
+
+      {/* View Dialog */}
+      {selectedSituation && (
+        <ViewSituationDialog
+          open={viewDialogOpen}
+          onOpenChange={setViewDialogOpen}
+          situation={selectedSituation}
+        />
+      )}
+
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Êtes-vous sûr ?</AlertDialogTitle>
+            <AlertDialogDescription>
+                Cette action ne peut pas être annulée. Cela supprimera définitivement cette situation.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={isDeleting}>Annuler</AlertDialogCancel>
+            <AlertDialogAction 
+              onClick={handleDeleteConfirm}
+              disabled={isDeleting}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {isDeleting ? (
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              ) : (
+                <Trash2 className="mr-2 h-4 w-4" />
+              )}
+              Supprimer
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </div>
+  );
 } 
