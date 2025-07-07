@@ -1,6 +1,5 @@
 "use client";
-
-import { useState } from "react";
+  
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Button } from "@/components/ui/button";
@@ -11,7 +10,6 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
 } from "@/components/ui/dialog";
 import {
   Form,
@@ -22,18 +20,23 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import { Checkbox } from "@/components/ui/checkbox";
-import { addSuiviProspectSchema, type AddSuiviProspectFormData } from "@/schemas/suiviProspectSchema";
+import { Loader2, CreditCard, Shuffle } from "lucide-react";
 import { toast } from "sonner";
-import { Loader2, Plus, RefreshCw } from "lucide-react";
+import { useSuiviProspects } from "@/hooks/useSuiviProspects";
+import { addSuiviProspectSchema, type AddSuiviProspectFormData } from "@/schemas/suiviProspectSchema";
 
 interface AddSuiviProspectDialogProps {
-  onSuiviProspectAdded?: () => void;
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  onSuccess?: () => void;
 }
 
-export function AddSuiviProspectDialog({ onSuiviProspectAdded }: AddSuiviProspectDialogProps) {
-  const [open, setOpen] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
+export function AddSuiviProspectDialog({ 
+  open, 
+  onOpenChange, 
+  onSuccess 
+}: AddSuiviProspectDialogProps) {
+  const { addSuiviProspect, isLoading } = useSuiviProspects();
 
   const form = useForm<AddSuiviProspectFormData>({
     resolver: zodResolver(addSuiviProspectSchema),
@@ -45,52 +48,35 @@ export function AddSuiviProspectDialog({ onSuiviProspectAdded }: AddSuiviProspec
   });
 
   const onSubmit = async (data: AddSuiviProspectFormData) => {
-    setIsLoading(true);
     try {
-      const token = localStorage.getItem('token');
-      
-      const response = await fetch('/api/suivi-prospects/add', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`,
-        },
-        body: JSON.stringify(data),
-      });
-
-      if (response.ok) {
-        const result = await response.json();
-        toast.success(`✅ Suivi prospect créé - ${data.Libelle} a été ajouté avec succès.`);
-        
-        // Reset form and close dialog
+      const success = await addSuiviProspect(data);
+      if (success) {
         form.reset();
-        setOpen(false);
-        onSuiviProspectAdded?.();
-      } else {
-        const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData.error || 'Erreur lors de la création du suivi prospect');
+        onOpenChange(false);
+        onSuccess?.();
       }
     } catch (error) {
-      console.error('Erreur création suivi prospect:', error);
-      toast.error(`❌ Erreur de création - ${error instanceof Error ? error.message : "Impossible de créer le suivi prospect. Veuillez réessayer."}`);
-    } finally {
-      setIsLoading(false);
+      toast.error(error instanceof Error ? error.message : "Erreur lors de l'ajout du suivi prospect");
     }
   };
 
+  const generateReference = () => {
+    const timestamp = new Date().getTime().toString();
+    const randomSuffix = Math.floor(Math.random() * 10000).toString().padStart(4, '0');
+    const reference = `SP${timestamp}${randomSuffix}`;
+    form.setValue('Reference', reference);
+  };
+
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>
-        <Button className="gap-2">
-          <Plus className="h-4 w-4" />
-          Ajouter un suivi prospect
-        </Button>
-      </DialogTrigger>
-      <DialogContent className="sm:max-w-[525px]">
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
-          <DialogTitle>Ajouter un nouveau suivi prospect</DialogTitle>
+          <DialogTitle className="flex items-center gap-2">
+            <CreditCard className="h-5 w-5" />
+            Ajouter un suivi prospect
+          </DialogTitle>
           <DialogDescription>
-            Remplissez les informations du suivi prospect. Cliquez sur enregistrer quand vous avez terminé.
+            Remplissez les informations pour créer un nouveau suivi prospect.
           </DialogDescription>
         </DialogHeader>
         <Form {...form}>
@@ -101,30 +87,27 @@ export function AddSuiviProspectDialog({ onSuiviProspectAdded }: AddSuiviProspec
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Référence *</FormLabel>
-                  <FormControl>
-                    <div className="flex gap-2">
-                      <Input 
-                        placeholder="Ex: SUIV001" 
-                        {...field} 
+                  <div className="flex gap-2">
+                    <FormControl>
+                      <Input
+                        placeholder="Ex: SP001"
+                        {...field}
                         disabled={isLoading}
+                        className="flex-1"
                       />
-                      <Button
-                        type="button"
-                        variant="outline"
-                        size="icon"
-                        onClick={() => {
-                          const timestamp = Date.now().toString().slice(-6);
-                          const randomSuffix = Math.random().toString(36).substring(2, 5).toUpperCase();
-                          const generatedReference = `SUIV${timestamp}${randomSuffix}`;
-                          field.onChange(generatedReference);
-                        }}
-                        disabled={isLoading}
-                        title="Générer une référence automatique"
-                      >
-                        <RefreshCw className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  </FormControl>
+                    </FormControl>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={generateReference}
+                      disabled={isLoading}
+                      className="px-3 flex-shrink-0"
+                      title="Générer une référence automatique"
+                    >
+                      <Shuffle className="h-4 w-4" />
+                    </Button>
+                  </div>
                   <FormMessage />
                 </FormItem>
               )}
@@ -136,55 +119,24 @@ export function AddSuiviProspectDialog({ onSuiviProspectAdded }: AddSuiviProspec
                 <FormItem>
                   <FormLabel>Libellé *</FormLabel>
                   <FormControl>
-                    <Input 
-                      placeholder="Ex: Suivi prospect entreprise ABC" 
-                      {...field} 
-                      disabled={isLoading}
-                    />
+                    <Input placeholder="Entrez le libellé" {...field} disabled={isLoading} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
               )}
             />
-            <FormField
-              control={form.control}
-              name="Relance"
-              render={({ field }) => (
-                <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-md border p-4">
-                  <FormControl>
-                    <Checkbox
-                      checked={field.value}
-                      onCheckedChange={field.onChange}
-                      disabled={isLoading}
-                    />
-                  </FormControl>
-                  <div className="space-y-1 leading-none">
-                    <FormLabel>
-                      Relance nécessaire
-                    </FormLabel>
-                    <p className="text-sm text-muted-foreground">
-                      Cochez cette case si le prospect nécessite une relance
-                    </p>
-                  </div>
-                </FormItem>
-              )}
-            />
             <DialogFooter>
-              <Button 
-                type="button" 
-                variant="outline" 
-                onClick={() => setOpen(false)}
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => onOpenChange(false)}
                 disabled={isLoading}
               >
                 Annuler
               </Button>
-              <Button 
-                type="submit" 
-                disabled={isLoading}
-                className="gap-2"
-              >
-                {isLoading && <Loader2 className="h-4 w-4 animate-spin" />}
-                Enregistrer
+              <Button type="submit" disabled={isLoading}>
+                {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                Ajouter
               </Button>
             </DialogFooter>
           </form>

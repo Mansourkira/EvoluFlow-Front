@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import React from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Button } from "@/components/ui/button";
@@ -22,103 +22,80 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
-import { updateSuiviProspectSchema, type UpdateSuiviProspectFormData, type ViewSuiviProspectData } from "@/schemas/suiviProspectSchema";
-import { toast } from "sonner";
-import { Loader2 } from "lucide-react";
+import { Loader2, CreditCard } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
+import { useSuiviProspects } from "@/hooks/useSuiviProspects";
+import { SuiviProspect, updateSuiviProspectSchema, UpdateSuiviProspectFormData } from "@/schemas/suiviProspectSchema";
 
 interface UpdateSuiviProspectDialogProps {
-  suiviProspect: ViewSuiviProspectData | null;
   open: boolean;
-  onClose: () => void;
-  onSuiviProspectUpdated?: () => void;
+  onOpenChange: (open: boolean) => void;
+  suiviProspect: SuiviProspect;
+  onSuccess?: () => void;
 }
 
-export function UpdateSuiviProspectDialog({ suiviProspect, open, onClose, onSuiviProspectUpdated }: UpdateSuiviProspectDialogProps) {
-  const [isLoading, setIsLoading] = useState(false);
+export function UpdateSuiviProspectDialog({ 
+  open,
+  onOpenChange,
+  suiviProspect,
+  onSuccess 
+}: UpdateSuiviProspectDialogProps) {
+  const { updateSuiviProspect, isLoading } = useSuiviProspects();
+  const { toast } = useToast();
 
   const form = useForm<UpdateSuiviProspectFormData>({
     resolver: zodResolver(updateSuiviProspectSchema),
     defaultValues: {
-      Reference: "",
-      Libelle: "",
-      Relance: false,
+      Reference: suiviProspect.Reference,
+      Libelle: suiviProspect.Libelle,
+      Relance: suiviProspect.Relance || false,
     },
   });
 
-  // Reset form when suivi prospect changes
-  useEffect(() => {
-    if (suiviProspect) {
+  const onSubmit = async (data: UpdateSuiviProspectFormData) => {
+    try {
+      const success = await updateSuiviProspect({
+        ...data,
+        Reference: suiviProspect.Reference
+      });
+      if (success) {
+        toast({
+          title: "✅ Succès",
+          description: "Suivi prospect modifié avec succès",
+        });
+        form.reset();
+        onSuccess?.();
+      }
+    } catch (error) {
+      toast({
+        title: "❌ Erreur",
+        description: "Erreur lors de la modification du suivi prospect",
+        variant: "destructive",
+      });
+    }
+  };
+
+  // Reset form when dialog opens with new data
+  React.useEffect(() => {
+    if (open && suiviProspect) {
       form.reset({
         Reference: suiviProspect.Reference,
         Libelle: suiviProspect.Libelle,
-        Relance: suiviProspect.Relance || false, // Ensure Relance is always a boolean
+        Relance: suiviProspect.Relance || false,
       });
     }
-  }, [suiviProspect, form]);
-
-  const onSubmit = async (formData: UpdateSuiviProspectFormData) => {
-    if (!suiviProspect) return;
-
-    setIsLoading(true);
-    try {
-      const token = localStorage.getItem('token');
-      
-      // Only include fields that have changed
-      const updates: Partial<UpdateSuiviProspectFormData> = {
-        Reference: formData.Reference, // Reference is required and readonly
-      };
-
-      // Only include Libelle if it's changed
-      if (formData.Libelle !== suiviProspect.Libelle) {
-        updates.Libelle = formData.Libelle;
-      }
-
-      // Only include Relance if it's changed
-      if (formData.Relance !== suiviProspect.Relance) {
-        updates.Relance = formData.Relance;
-      }
-
-      const response = await fetch('/api/suivi-prospects/update', {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`,
-        },
-        body: JSON.stringify(updates),
-      });
-
-      if (response.ok) {
-        const result = await response.json();
-        toast.success(`✅ Suivi prospect mis à jour - ${formData.Libelle} a été modifié avec succès.`);
-        
-        onClose();
-        onSuiviProspectUpdated?.();
-      } else {
-        const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData.error || 'Erreur lors de la mise à jour du suivi prospect');
-      }
-    } catch (error) {
-      console.error('Erreur mise à jour suivi prospect:', error);
-      toast.error(`❌ Erreur de mise à jour - ${error instanceof Error ? error.message : "Impossible de mettre à jour le suivi prospect. Veuillez réessayer."}`);
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const handleClose = () => {
-    form.reset();
-    onClose();
-  };
-
-  if (!suiviProspect) return null;
+  }, [open, suiviProspect, form]);
 
   return (
-    <Dialog open={open} onOpenChange={handleClose}>
-      <DialogContent className="sm:max-w-[525px]">
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
-          <DialogTitle>Modifier le suivi prospect</DialogTitle>
+          <DialogTitle className="flex items-center gap-2">
+            <CreditCard className="h-5 w-5" />
+            Modifier le suivi prospect
+          </DialogTitle>
           <DialogDescription>
-            Modifiez les informations du suivi prospect. Cliquez sur enregistrer quand vous avez terminé.
+            Modifiez les informations du suivi prospect.
           </DialogDescription>
         </DialogHeader>
         <Form {...form}>
@@ -130,12 +107,7 @@ export function UpdateSuiviProspectDialog({ suiviProspect, open, onClose, onSuiv
                 <FormItem>
                   <FormLabel>Référence *</FormLabel>
                   <FormControl>
-                    <Input 
-                      placeholder="Ex: SUIV001" 
-                      {...field} 
-                      disabled={true} // Reference should not be editable
-                      className="bg-gray-50"
-                    />
+                    <Input placeholder="Entrez la référence" {...field} disabled />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -148,11 +120,7 @@ export function UpdateSuiviProspectDialog({ suiviProspect, open, onClose, onSuiv
                 <FormItem>
                   <FormLabel>Libellé *</FormLabel>
                   <FormControl>
-                    <Input 
-                      placeholder="Ex: Suivi prospect entreprise ABC" 
-                      {...field} 
-                      disabled={isLoading}
-                    />
+                    <Input placeholder="Entrez le libellé" {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -167,36 +135,32 @@ export function UpdateSuiviProspectDialog({ suiviProspect, open, onClose, onSuiv
                     <Checkbox
                       checked={field.value}
                       onCheckedChange={field.onChange}
-                      disabled={isLoading}
                     />
                   </FormControl>
                   <div className="space-y-1 leading-none">
                     <FormLabel>
-                      Relance nécessaire
+                      Relance
                     </FormLabel>
                     <p className="text-sm text-muted-foreground">
-                      Cochez cette case si le prospect nécessite une relance
+                      Cochez cette case pour marquer comme relance
                     </p>
                   </div>
                 </FormItem>
               )}
             />
+         
             <DialogFooter>
-              <Button 
-                type="button" 
-                variant="outline" 
-                onClick={handleClose}
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => onOpenChange(false)}
                 disabled={isLoading}
               >
                 Annuler
               </Button>
-              <Button 
-                type="submit" 
-                disabled={isLoading}
-                className="gap-2"
-              >
-                {isLoading && <Loader2 className="h-4 w-4 animate-spin" />}
-                Enregistrer
+              <Button type="submit" disabled={isLoading}>
+                {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                Modifier
               </Button>
             </DialogFooter>
           </form>
@@ -204,4 +168,4 @@ export function UpdateSuiviProspectDialog({ suiviProspect, open, onClose, onSuiv
       </DialogContent>
     </Dialog>
   );
-} 
+}   
