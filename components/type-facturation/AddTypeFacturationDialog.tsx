@@ -11,7 +11,6 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
 } from "@/components/ui/dialog";
 import {
   Form,
@@ -29,11 +28,12 @@ import { useTypeFacturation } from "@/hooks/useTypeFacturation";
 import { addTypeFacturationSchema, AddTypeFacturationFormData } from "@/schemas/typeFacturationSchema";
 
 interface AddTypeFacturationDialogProps {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
   onSuccess?: () => void;
 }
 
-export function AddTypeFacturationDialog({ onSuccess }: AddTypeFacturationDialogProps) {
-  const [open, setOpen] = useState(false);
+export function AddTypeFacturationDialog({ open, onOpenChange, onSuccess }: AddTypeFacturationDialogProps) {
   const { addTypeFacturation, isLoading } = useTypeFacturation();
   const { toast } = useToast();
 
@@ -55,7 +55,7 @@ export function AddTypeFacturationDialog({ onSuccess }: AddTypeFacturationDialog
           description: "Type de facturation ajouté avec succès",
         });
         form.reset();
-        setOpen(false);
+        onOpenChange(false);
         onSuccess?.();
       }
     } catch (error) {
@@ -68,13 +68,7 @@ export function AddTypeFacturationDialog({ onSuccess }: AddTypeFacturationDialog
   };
 
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>
-        <Button className="gap-2">
-          <Plus className="h-4 w-4" />
-          Ajouter un type de facturation
-        </Button>
-      </DialogTrigger>
+    <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
@@ -138,7 +132,7 @@ export function AddTypeFacturationDialog({ onSuccess }: AddTypeFacturationDialog
               <Button
                 type="button"
                 variant="outline"
-                onClick={() => setOpen(false)}
+                onClick={() => onOpenChange(false)}
                 disabled={isLoading}
               >
                 Annuler

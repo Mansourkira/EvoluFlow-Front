@@ -1,6 +1,5 @@
 "use client";
 
-import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Button } from "@/components/ui/button";
@@ -25,23 +24,19 @@ import { Switch } from "@/components/ui/switch";
 import { Loader2, CreditCard } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useTypeFacturation } from "@/hooks/useTypeFacturation";
-import { 
-  updateTypeFacturationSchema, 
-  UpdateTypeFacturationFormData, 
-  TypeFacturation 
-} from "@/schemas/typeFacturationSchema";
+import { TypeFacturation, updateTypeFacturationSchema, UpdateTypeFacturationFormData } from "@/schemas/typeFacturationSchema";
 
 interface UpdateTypeFacturationDialogProps {
-  typeFacturation: TypeFacturation | null;
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  typeFacturation: TypeFacturation;
   onSuccess?: () => void;
 }
 
 export function UpdateTypeFacturationDialog({ 
-  typeFacturation, 
-  open, 
-  onOpenChange, 
+  open,
+  onOpenChange,
+  typeFacturation,
   onSuccess 
 }: UpdateTypeFacturationDialogProps) {
   const { updateTypeFacturation, isLoading } = useTypeFacturation();
@@ -50,25 +45,18 @@ export function UpdateTypeFacturationDialog({
   const form = useForm<UpdateTypeFacturationFormData>({
     resolver: zodResolver(updateTypeFacturationSchema),
     defaultValues: {
-      Reference: "",
-      Libelle: "",
-      Sous_Traitance: false,
+      Reference: typeFacturation.Reference,
+      Libelle: typeFacturation.Libelle,
+      Sous_Traitance: typeFacturation.Sous_Traitance,
     },
   });
 
-  useEffect(() => {
-    if (typeFacturation && open) {
-      form.reset({
-        Reference: typeFacturation.Reference,
-        Libelle: typeFacturation.Libelle || "",
-        Sous_Traitance: typeFacturation.Sous_Traitance || false,
-      });
-    }
-  }, [typeFacturation, open, form]);
-
   const onSubmit = async (data: UpdateTypeFacturationFormData) => {
     try {
-      const success = await updateTypeFacturation(data);
+      const success = await updateTypeFacturation({
+        ...data,
+        Reference: typeFacturation.Reference
+      });
       if (success) {
         toast({
           title: "Succès",
@@ -107,7 +95,7 @@ export function UpdateTypeFacturationDialog({
                 <FormItem>
                   <FormLabel>Référence *</FormLabel>
                   <FormControl>
-                    <Input {...field} disabled />
+                    <Input placeholder="Entrez la référence" {...field} disabled />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -158,7 +146,7 @@ export function UpdateTypeFacturationDialog({
               </Button>
               <Button type="submit" disabled={isLoading}>
                 {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                Enregistrer
+                Modifier
               </Button>
             </DialogFooter>
           </form>
