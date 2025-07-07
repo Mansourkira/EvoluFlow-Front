@@ -1,207 +1,164 @@
-import { useState, useEffect } from "react";
-import { useToast } from "@/components/ui/use-toast";
-import { ObjetReclamationFormValues } from "@/schemas/objetReclamationSchema";
-import { useRouter } from 'next/navigation';
+import { useState, useEffect, useCallback } from 'react'
+import { ObjetReclamation } from '@/schemas/objetReclamationSchema'
+const baseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000/api/v1';      
 
-interface ObjetReclamation {
-    Reference: string;
-    Libelle: string;
-    Utilisateur: string;
-    Heure: string;
-}
 
 export function useObjetReclamation() {
-    const [objetReclamations, setObjetReclamations] = useState<ObjetReclamation[]>([]);
-    const [loading, setLoading] = useState(false);
-    const { toast } = useToast();
-    const router = useRouter();
+    const [objetReclamations, setObjetReclamations] = useState<ObjetReclamation[]>([])
+    const [isLoading, setIsLoading] = useState(true)
+    const [error, setError] = useState<string | null>(null)
 
-    useEffect(() => {
-        fetchObjetReclamations();
-    }, []);
-
-    const fetchObjetReclamations = async () => {
+    const fetchObjetReclamations = useCallback(async () => {
         try {
-            setLoading(true);
-            const token = localStorage.getItem('token');
+            setIsLoading(true)
+            setError(null)
             
-            // Check if token exists
+            const token = localStorage.getItem('token')
             if (!token) {
-                router.push('/login');
-                return;
+                throw new Error('Token d\'authentification manquant')
             }
 
-            console.log('Fetching data with token:', token); // Debug log
-
-            const response = await fetch(`http://localhost:3000/api/v1/object-de-reclamation`, {
+            const response = await fetch(`${baseUrl}/object-reclamation/list`, {
+                method: 'GET',
                 headers: {
-                    'Content-Type': 'application/json',
                     'Authorization': `Bearer ${token}`,
-                }   
-            });
-
-            console.log('Response status:', response.status); // Debug log
-
-            if (response.status === 403 || response.status === 401) {
-                console.log('Auth error - redirecting to login'); // Debug log
-                localStorage.removeItem('token');
-                localStorage.removeItem('user');
-                router.push('/login');
-                return;
-            }
-
-            if (!response.ok) {
-                const errorData = await response.json().catch(() => ({}));
-                console.error('API Error:', {
-                    status: response.status,
-                    statusText: response.statusText,
-                    error: errorData
-                });
-                throw new Error(errorData.message || 'Failed to fetch objets de reclamation');
-            }
-
-            const data = await response.json();
-            console.log('API Response:', data); // Debug log
-
-            if (!Array.isArray(data)) {
-                console.error('Invalid data format:', data);
-                setObjetReclamations([]);
-                return;
-            }
-
-            // Map the data to match our interface
-            const formattedData = data.map(item => ({
-                Reference: item.Reference || '',
-                Libelle: item.Libelle || '',
-                Utilisateur: item.Utilisateur || '',
-                Heure: item.Heure || ''
-            }));
-
-            console.log('Formatted data:', formattedData); // Debug log
-            setObjetReclamations(formattedData);
-        } catch (error) {
-            console.error('Error fetching:', error);
-            toast({
-                title: "Error",
-                description: error instanceof Error ? error.message : "Failed to fetch objets de reclamation",
-                variant: "destructive",
-            });
-            setObjetReclamations([]);
-        } finally {
-            setLoading(false);
-        }
-    };
-
-    const createObjetReclamation = async (data: ObjetReclamationFormValues) => {
-        try {
-            setLoading(true);
-            const token = localStorage.getItem('token');
-            const response = await fetch(`http://localhost:3000/api/v1/object-de-reclamation/add`, {
-                method: "POST",
-                headers: {
                     'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${token}`,
                 },
-                body: JSON.stringify(data),
-            });
-            if (!response.ok) {
-                const errorData = await response.json().catch(() => ({}));
-                throw new Error(errorData.message || 'Failed to create objet de reclamation');
-            }
-            await fetchObjetReclamations(); // Refresh the list after creation
-            toast({
-                title: "Success",
-                description: "Objet de reclamation created successfully",
-            });
-            return true;
-        } catch (error) {
-            console.error('Error creating:', error);
-            toast({
-                title: "Error",
-                description: error instanceof Error ? error.message : "Failed to create objet de reclamation",
-                variant: "destructive",
-            });
-            return false;
-        } finally {
-            setLoading(false);
-        }
-    };
+            })
 
-    const updateObjetReclamation = async (reference: string, data: ObjetReclamationFormValues) => {
+            if (!response.ok) {
+                const errorData = await response.json()
+                throw new Error(errorData.error || 'Erreur lors de la récupération des objets de reclamation')
+            }
+
+            const data = await response.json()
+            setObjetReclamations(data)
+        } catch (err) {
+            console.error('Erreur lors de la récupération des objets de reclamation:', err)
+            setError(err instanceof Error ? err.message : 'Erreur inconnue')
+        } finally {
+            setIsLoading(false)
+        }
+    }, [])
+
+    const addObjetReclamation = async (objetReclamation: ObjetReclamation) => {
         try {
-            setLoading(true);
-            const token = localStorage.getItem('token');
-            const response = await fetch(`http://localhost:3000/api/v1/object-de-reclamation/${reference}`, {
-                method: "PUT",
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${token}`,
-                },
-                body: JSON.stringify(data),
-            });
-            if (!response.ok) {
-                const errorData = await response.json().catch(() => ({}));
-                throw new Error(errorData.message || 'Failed to update objet de reclamation');
+            const token = localStorage.getItem('token')
+            if (!token) {
+                throw new Error('Token d\'authentification manquant')
             }
-            await fetchObjetReclamations(); // Refresh the list after update
-            toast({
-                title: "Success",
-                description: "Objet de reclamation updated successfully",
-            });
-            return true;
-        } catch (error) {
-            console.error('Error updating:', error);
-            toast({
-                title: "Error",
-                description: error instanceof Error ? error.message : "Failed to update objet de reclamation",
-                variant: "destructive",
-            });
-            return false;
-        } finally {
-            setLoading(false);
-        }
-    };
 
+            const response = await fetch(`${baseUrl}/object-reclamation/add`, {
+                method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(objetReclamation),
+            })
+
+            if (!response.ok) {
+                const errorData = await response.json()
+                throw new Error(errorData.error || 'Erreur lors de l\'ajout de l\'objet de reclamation')
+            }
+
+            // Refresh the situations list after successful addition
+            await fetchObjetReclamations();
+            return true
+        } catch (err) {
+            console.error('Erreur lors de l\'ajout de l\'objet de reclamation:', err)
+            return false
+        }
+    }
+    const updateObjetReclamation = async (objetReclamation: ObjetReclamation) => {
+        try {
+            const token = localStorage.getItem('token')
+            if (!token) {
+                throw new Error('Token d\'authentification manquant')
+            }
+
+            const response = await fetch(`${baseUrl}/object-reclamation/update/${objetReclamation.Reference}`, {
+                method: 'PUT',
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(objetReclamation),
+            })
+
+            if (!response.ok) {
+                const errorData = await response.json()
+                throw new Error(errorData.error || 'Erreur lors de la mise à jour de l\'objet de reclamation')
+            }
+
+            // Refresh the list after successful update
+            await fetchObjetReclamations();
+            return true
+        } catch (err) {
+            console.error('Erreur lors de la mise à jour de l\'objet de reclamation:', err)
+            throw err
+        }
+    }
     const deleteObjetReclamation = async (reference: string) => {
         try {
-            setLoading(true);
-            const token = localStorage.getItem('token');
-            const response = await fetch(`http://localhost:3000/api/v1/object-de-reclamation/${reference}`, {
-                method: "DELETE",
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${token}`,
-                }
-            });
-            if (!response.ok) {
-                const errorData = await response.json().catch(() => ({}));
-                throw new Error(errorData.message || 'Failed to delete objet de reclamation');
+            const token = localStorage.getItem('token')
+            if (!token) {
+                throw new Error('Token d\'authentification manquant')
             }
-            await fetchObjetReclamations(); // Refresh the list after deletion
-            toast({
-                title: "Success",
-                description: "Objet de reclamation deleted successfully",
-            });
-            return true;
-        } catch (error) {
-            console.error('Error deleting:', error);
-            toast({
-                title: "Error",
-                description: error instanceof Error ? error.message : "Failed to delete objet de reclamation",
-                variant: "destructive",
-            });
-            return false;
-        } finally {
-            setLoading(false);
+
+            const response = await fetch(`${baseUrl}/object-reclamation/delete/${reference}`, {
+                method: 'DELETE',
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json',
+                }
+            })
+
+            if (!response.ok) {
+                const errorData = await response.json()
+                throw new Error(errorData.error || 'Erreur lors de la suppression de l\'objet de reclamation')
+            }
+
+            // Refresh the list after successful deletion
+            await fetchObjetReclamations();
+            return true
+        } catch (err) {
+            console.error('Erreur lors de la suppression de l\'objet de reclamation:', err)
+            throw err
         }
-    };
+    }
+
+    const getObjetReclamationByReference = async (reference: string) => {
+        const token = localStorage.getItem('token')
+        if (!token) {
+            throw new Error('Token d\'authentification manquant')
+        }
+
+
+        const response = await fetch(`${baseUrl}/object-reclamation/by-reference/${reference}`, {
+            method: 'GET',
+            headers: {
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json',
+            },
+        })
+
+        if (!response.ok) {
+            const errorData = await response.json()
+            throw new Error(errorData.error || 'Erreur lors de la récupération de la situation')
+        }
+
+        return await response.json()
+    }
 
     return {
         objetReclamations,
-        loading,
-        fetchObjetReclamations,
-        createObjetReclamation,
+        isLoading,
+        error,
+         fetchObjetReclamations,
+        addObjetReclamation,
         updateObjetReclamation,
         deleteObjetReclamation,
-    };
+        getObjetReclamationByReference
+    }
 } 

@@ -9,6 +9,7 @@ import { ViewTypeFacturationDialog } from "@/components/type-facturation/ViewTyp
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
+import { GenericDataTable } from "@/components/ui/GenericDataTable";
 import {
   Table,
   TableBody,
@@ -41,7 +42,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
-import { useToast } from "@/hooks/use-toast";
+import { toast } from "sonner";
 import {
   CreditCard,
   Search,
@@ -59,6 +60,7 @@ import {
   Columns,
   Plus,
   MoreHorizontal,
+  PlusCircle,
 } from "lucide-react";
 
 type SortField = 'Reference' | 'Libelle' | 'Sous_Traitance' | 'Heure';
@@ -80,7 +82,6 @@ interface ColumnVisibility {
 
 export default function TypeFacturationPage() {
   const { typeFacturations, isLoading, fetchTypeFacturations, deleteTypeFacturation } = useTypeFacturation();
-  const { toast } = useToast();
   
   // State management
   const [searchTerm, setSearchTerm] = useState("");
@@ -104,6 +105,7 @@ export default function TypeFacturationPage() {
   });
 
   // Dialog states
+  const [addDialogOpen, setAddDialogOpen] = useState(false);
   const [updateDialogOpen, setUpdateDialogOpen] = useState(false);
   const [viewDialogOpen, setViewDialogOpen] = useState(false);
   const [selectedTypeFacturation, setSelectedTypeFacturation] = useState<TypeFacturation | null>(null);
@@ -230,7 +232,7 @@ export default function TypeFacturationPage() {
     setUpdateDialogOpen(true);
   };
 
-  const handleDeleteClick = (reference: string) => {
+  const handleDeleteClick = async (reference: string): Promise<void> => {
     setTypeFacturationToDelete(reference);
     setDeleteDialogOpen(true);
   };
@@ -242,18 +244,11 @@ export default function TypeFacturationPage() {
     try {
       const success = await deleteTypeFacturation(typeFacturationToDelete);
       if (success) {
-        toast({
-          title: "Succès",
-          description: "Type de facturation supprimé avec succès",
-        });
+        toast.success("Type de facturation supprimé avec succès");
         clearSelection();
       }
     } catch (error) {
-      toast({
-        title: "Erreur", 
-        description: "Erreur lors de la suppression du type de facturation",
-        variant: "destructive",
-      });
+      toast.error("Erreur lors de la suppression du type de facturation");
     } finally {
       setIsDeleting(false);
       setDeleteDialogOpen(false);
@@ -297,368 +292,128 @@ export default function TypeFacturationPage() {
     setCurrentPage(page);
   };
 
+  const handleExport = async (format: string, selectedOnly = false) => {
+    try {
+      const { exportGenericData, createTypeFacturationExportConfig } = await import('@/lib/exportUtils')
+      const dataToExport = selectedOnly ? 
+        typeFacturations.filter(type => selectedTypeFacturations.includes(type.Reference)) : 
+        typeFacturations
+      
+      const config = createTypeFacturationExportConfig(dataToExport)
+      await exportGenericData(config, format as 'PDF' | 'Excel' | 'Word')
+      toast.success(`📄 Export réussi - ${dataToExport.length} type(s) de facturation exporté(s) en ${format}`)
+    } catch (error) {
+      console.error('Error exporting:', error)
+      toast.error(`❌ Erreur d'export - ${error instanceof Error ? error.message : 'Erreur inconnue'}`)
+    }
+  }
+
   return (
-    <div className="container mx-auto py-8">
-      <div className="space-y-6">
-        {/* Header */}
-        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-          <div>
-            <h1 className="text-3xl font-bold tracking-tight flex items-center gap-2">
-              <CreditCard className="h-8 w-8" />
-              Types de Facturation
-            </h1>
-            <p className="text-muted-foreground">
-              Gérez les types de facturation du système
-            </p>
-          </div>
-          <div className="flex items-center gap-2">
-            <AddTypeFacturationDialog onSuccess={fetchTypeFacturations} />
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={fetchTypeFacturations}
-              disabled={isLoading}
-            >
-              <RefreshCw className={`h-4 w-4 ${isLoading ? 'animate-spin' : ''}`} />
-            </Button>
-          </div>
-        </div>
-
-        {/* Search and Filters */}
-        <div className="space-y-4">
-          <div className="flex flex-col sm:flex-row gap-4">
-            <div className="relative flex-1">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
-              <Input
-                placeholder="Rechercher par référence, libellé ou sous-traitance..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-10"
-              />
-            </div>
-            <div className="flex items-center gap-2">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setShowAdvancedFilters(!showAdvancedFilters)}
-                className="gap-2"
-              >
-                <Filter className="h-4 w-4" />
-                Filtres avancés
-                {getActiveFiltersCount() > 0 && (
-                  <Badge variant="secondary" className="ml-1">
-                    {getActiveFiltersCount()}
-                  </Badge>
-                )}
-              </Button>
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button variant="outline" size="sm">
-                    <Columns className="h-4 w-4" />
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end">
-                  {Object.entries(columnVisibility).map(([column, visible]) => (
-                    <DropdownMenuItem
-                      key={column}
-                      onClick={() => toggleColumnVisibility(column as keyof ColumnVisibility)}
-                    >
-                      <Checkbox
-                        checked={visible}
-                        className="mr-2"
-                        disabled
-                      />
-                      {column === 'Reference' ? 'Référence' : 
-                       column === 'Libelle' ? 'Libellé' : 
-                       column === 'Sous_Traitance' ? 'Sous-traitance' :
-                       'Date de création'}
-                    </DropdownMenuItem>
-                  ))}
-                </DropdownMenuContent>
-              </DropdownMenu>
-            </div>
-          </div>
-
-          {/* Advanced Filters */}
-          {showAdvancedFilters && (
-            <div className="p-4 border rounded-lg bg-gray-50 space-y-4">
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                <div>
-                  <label className="text-sm font-medium mb-2 block">Référence</label>
-                  <Input
-                    placeholder="Filtrer par référence"
-                    value={fieldFilters.Reference}
-                    onChange={(e) => updateFieldFilter('Reference', e.target.value)}
-                  />
-                </div>
-                <div>
-                  <label className="text-sm font-medium mb-2 block">Libellé</label>
-                  <Input
-                    placeholder="Filtrer par libellé"
-                    value={fieldFilters.Libelle}
-                    onChange={(e) => updateFieldFilter('Libelle', e.target.value)}
-                  />
-                </div>
-                <div>
-                  <label className="text-sm font-medium mb-2 block">Sous-traitance</label>
-                  <Select
-                    value={fieldFilters.Sous_Traitance}
-                    onValueChange={(value) => updateFieldFilter('Sous_Traitance', value)}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Tous" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="tous">Tous</SelectItem>
-                      <SelectItem value="oui">Oui</SelectItem>
-                      <SelectItem value="non">Non</SelectItem>
-                      <SelectItem value="non défini">Non défini</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div>
-                  <label className="text-sm font-medium mb-2 block">Date de création</label>
-                  <Input
-                    placeholder="Filtrer par date"
-                    value={fieldFilters.Heure}
-                    onChange={(e) => updateFieldFilter('Heure', e.target.value)}
-                  />
-                </div>
-              </div>
-              <div className="flex justify-end">
-                <Button variant="outline" size="sm" onClick={clearAllFilters}>
-                  <X className="h-4 w-4 mr-2" />
-                  Effacer les filtres
-                </Button>
-              </div>
-            </div>
-          )}
-        </div>
-
-        {/* Selection Info */}
-        {selectedTypeFacturations.length > 0 && (
-          <div className="flex items-center justify-between p-3 bg-blue-50 border border-blue-200 rounded-lg">
-            <span className="text-sm font-medium text-blue-700">
-              {selectedTypeFacturations.length} élément(s) sélectionné(s)
-            </span>
-            <Button variant="outline" size="sm" onClick={clearSelection}>
-              Désélectionner tout
-            </Button>
-          </div>
-        )}
-
-        {/* Table */}
-        <div className="border rounded-lg overflow-hidden">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead className="w-[50px]">
-                  <Checkbox
-                    checked={
-                      paginatedTypeFacturations.length > 0 &&
-                      selectedTypeFacturations.length === paginatedTypeFacturations.length
-                    }
-                    onCheckedChange={handleSelectAll}
-                  />
-                </TableHead>
-                {columnVisibility.Reference && (
-                  <TableHead
-                    className="cursor-pointer hover:bg-gray-50"
-                    onClick={() => handleSort('Reference')}
-                  >
-                    <div className="flex items-center gap-2">
-                      Référence
-                      {renderSortIcon('Reference')}
-                    </div>
-                  </TableHead>
-                )}
-                {columnVisibility.Libelle && (
-                  <TableHead
-                    className="cursor-pointer hover:bg-gray-50"
-                    onClick={() => handleSort('Libelle')}
-                  >
-                    <div className="flex items-center gap-2">
-                      Libellé
-                      {renderSortIcon('Libelle')}
-                    </div>
-                  </TableHead>
-                )}
-                {columnVisibility.Sous_Traitance && (
-                  <TableHead
-                    className="cursor-pointer hover:bg-gray-50"
-                    onClick={() => handleSort('Sous_Traitance')}
-                  >
-                    <div className="flex items-center gap-2">
-                      Sous-traitance
-                      {renderSortIcon('Sous_Traitance')}
-                    </div>
-                  </TableHead>
-                )}
-                {columnVisibility.Heure && (
-                  <TableHead
-                    className="cursor-pointer hover:bg-gray-50"
-                    onClick={() => handleSort('Heure')}
-                  >
-                    <div className="flex items-center gap-2">
-                      Date de création
-                      {renderSortIcon('Heure')}
-                    </div>
-                  </TableHead>
-                )}
-                <TableHead className="w-[100px]">Actions</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {isLoading ? (
-                <TableRow>
-                  <TableCell colSpan={6} className="text-center py-8">
-                    <Loader2 className="h-6 w-6 animate-spin mx-auto" />
-                    <p className="mt-2 text-muted-foreground">Chargement...</p>
-                  </TableCell>
-                </TableRow>
-              ) : paginatedTypeFacturations.length === 0 ? (
-                <TableRow>
-                  <TableCell colSpan={6} className="text-center py-8">
-                    <CreditCard className="h-12 w-12 mx-auto text-gray-400 mb-4" />
-                    <p className="text-muted-foreground">Aucun type de facturation trouvé</p>
-                  </TableCell>
-                </TableRow>
-              ) : (
-                paginatedTypeFacturations.map((typeFacturation) => (
-                  <TableRow key={typeFacturation.Reference}>
-                    <TableCell>
-                      <Checkbox
-                        checked={selectedTypeFacturations.includes(typeFacturation.Reference)}
-                        onCheckedChange={(checked) =>
-                          handleSelectTypeFacturation(typeFacturation.Reference, checked as boolean)
-                        }
-                      />
-                    </TableCell>
-                    {columnVisibility.Reference && (
-                      <TableCell className="font-medium">
-                        {typeFacturation.Reference}
-                      </TableCell>
-                    )}
-                    {columnVisibility.Libelle && (
-                      <TableCell>{typeFacturation.Libelle || "Non défini"}</TableCell>
-                    )}
-                    {columnVisibility.Sous_Traitance && (
-                      <TableCell>
-                        <Badge 
-                          variant="secondary" 
-                          className={getSousTraitanceColor(typeFacturation.Sous_Traitance)}
-                        >
-                          {getSousTraitanceLabel(typeFacturation.Sous_Traitance)}
-                        </Badge>
-                      </TableCell>
-                    )}
-                    {columnVisibility.Heure && (
-                      <TableCell className="text-sm text-muted-foreground">
-                        {formatCreationDate(typeFacturation.Heure)}
-                      </TableCell>
-                    )}
-                    <TableCell>
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button variant="ghost" className="h-8 w-8 p-0">
-                            <MoreHorizontal className="h-4 w-4" />
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end">
-                          <DropdownMenuItem onClick={() => handleViewClick(typeFacturation)}>
-                            <Eye className="mr-2 h-4 w-4" />
-                            Voir
-                          </DropdownMenuItem>
-                          <DropdownMenuItem onClick={() => handleEditClick(typeFacturation)}>
-                            <Edit className="mr-2 h-4 w-4" />
-                            Modifier
-                          </DropdownMenuItem>
-                          <DropdownMenuItem 
-                            onClick={() => handleDeleteClick(typeFacturation.Reference)}
-                            className="text-red-600"
-                          >
-                            <Trash2 className="mr-2 h-4 w-4" />
-                            Supprimer
-                          </DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
-                    </TableCell>
-                  </TableRow>
-                ))
-              )}
-            </TableBody>
-          </Table>
-        </div>
-
-        {/* Pagination */}
-        {totalPages > 1 && (
-          <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
-            <div className="flex items-center gap-2">
-              <span className="text-sm text-muted-foreground">
-                Affichage de {startIndex + 1} à {Math.min(endIndex, filteredAndSortedTypeFacturations.length)} sur {filteredAndSortedTypeFacturations.length} entrées
-              </span>
-            </div>
-            <div className="flex items-center gap-4">
+    <div className="container mx-auto p-6 space-y-6">
+      <GenericDataTable
+        data={typeFacturations}
+        isLoading={isLoading}
+        title="Types de Facturation"
+        description="Gérez les types de facturation"
+        entityName="Type de Facturation"
+        entityNamePlural="Types de Facturation"
+        idField="Reference"
+        onView={handleViewClick}
+        onEdit={handleEditClick}
+        onDelete={handleDeleteClick}
+        onExport={handleExport}
+        selectedItems={selectedTypeFacturations}
+        onSelectedItemsChange={setSelectedTypeFacturations}
+        addButton={
+          <Button onClick={() => setAddDialogOpen(true)} size="sm">
+            <PlusCircle className="h-4 w-4 mr-2" />
+            Ajouter Type de Facturation 
+          </Button>
+        }
+        columns={[
+          {
+            key: 'Reference',
+            label: 'Référence',
+            sortable: true,
+            filterable: true,
+            render: (typeFacturation: TypeFacturation) => (
+              <span className="font-mono text-sm font-medium">{typeFacturation.Reference}</span>
+            )
+          },
+          {
+            key: 'Libelle',
+            label: 'Libellé',
+            sortable: true,
+            filterable: true,
+            render: (typeFacturation: TypeFacturation) => (
+              <span className="font-medium">{typeFacturation.Libelle}</span>
+            )
+          },
+          {
+            key: 'Sous_Traitance',
+            label: 'Sous-traitance',
+            sortable: true,
+            filterable: true,
+            render: (typeFacturation: TypeFacturation) => (
+              <Badge variant="outline" className={getSousTraitanceColor(typeFacturation.Sous_Traitance)}>
+                {getSousTraitanceLabel(typeFacturation.Sous_Traitance)}
+              </Badge>
+            )
+          },
+          {
+            key: 'Heure',
+            label: 'Date de création',
+            sortable: true,
+            filterable: true,
+            render: (typeFacturation: TypeFacturation) => (
               <div className="flex items-center gap-2">
-                <span className="text-sm">Lignes par page:</span>
-                <Select value={itemsPerPage.toString()} onValueChange={handleItemsPerPageChange}>
-                  <SelectTrigger className="w-[70px]">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="5">5</SelectItem>
-                    <SelectItem value="10">10</SelectItem>
-                    <SelectItem value="20">20</SelectItem>
-                    <SelectItem value="50">50</SelectItem>
-                  </SelectContent>
-                </Select>
+                <span>{formatCreationDate(typeFacturation.Heure)}</span>
               </div>
-              <div className="flex items-center gap-2">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => handlePageChange(currentPage - 1)}
-                  disabled={currentPage === 1}
-                >
-                  <ChevronLeft className="h-4 w-4" />
-                </Button>
-                <span className="text-sm">
-                  Page {currentPage} sur {totalPages}
-                </span>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => handlePageChange(currentPage + 1)}
-                  disabled={currentPage === totalPages}
-                >
-                  <ChevronRight className="h-4 w-4" />
-                </Button>
-              </div>
-            </div>
-          </div>
-        )}
-      </div>
-
-      {/* Dialogs */}
-      <UpdateTypeFacturationDialog
-        typeFacturation={selectedTypeFacturation}
-        open={updateDialogOpen}
-        onOpenChange={setUpdateDialogOpen}
-        onSuccess={fetchTypeFacturations}
+            )
+          }
+        ]}
       />
 
-      <ViewTypeFacturationDialog
-        typeFacturation={selectedTypeFacturation}
-        open={viewDialogOpen}
-        onOpenChange={setViewDialogOpen}
+      {/* Add Dialog */}
+      <AddTypeFacturationDialog 
+        open={addDialogOpen}
+        onOpenChange={setAddDialogOpen}
+        onSuccess={() => {
+          fetchTypeFacturations();
+          setAddDialogOpen(false);
+        }}
       />
 
+      {/* Update Dialog */}
+      {selectedTypeFacturation && (
+        <UpdateTypeFacturationDialog
+          open={updateDialogOpen}
+          onOpenChange={setUpdateDialogOpen}
+          typeFacturation={selectedTypeFacturation}
+          onSuccess={() => {
+            fetchTypeFacturations();
+            setUpdateDialogOpen(false);
+            setSelectedTypeFacturation(null);
+          }}
+        />
+      )}
+
+      {/* View Dialog */}
+      {selectedTypeFacturation && (
+        <ViewTypeFacturationDialog
+          open={viewDialogOpen}
+          onOpenChange={setViewDialogOpen}
+          typeFacturation={selectedTypeFacturation}
+        />
+      )}
+
+      {/* Delete Confirmation Dialog */}
       <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Confirmer la suppression</AlertDialogTitle>
+            <AlertDialogTitle>Êtes-vous sûr ?</AlertDialogTitle>
             <AlertDialogDescription>
-              Êtes-vous sûr de vouloir supprimer ce type de facturation ? Cette action est irréversible.
+              Cette action ne peut pas être annulée. Cela supprimera définitivement ce type de facturation.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
@@ -666,9 +421,13 @@ export default function TypeFacturationPage() {
             <AlertDialogAction 
               onClick={handleDeleteConfirm}
               disabled={isDeleting}
-              className="bg-red-600 hover:bg-red-700"
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
             >
-              {isDeleting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              {isDeleting ? (
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              ) : (
+                <Trash2 className="mr-2 h-4 w-4" />
+              )}
               Supprimer
             </AlertDialogAction>
           </AlertDialogFooter>

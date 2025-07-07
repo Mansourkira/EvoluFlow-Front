@@ -2,22 +2,22 @@
 
 import { useState, useCallback } from 'react';
 import { toast } from 'sonner';
-import { type SuiviProspect } from '@/schemas/suiviProspectSchema';
-import { type UpdateSuiviProspectFormData } from '@/schemas/suiviProspectSchema';
+import { type AvisProspect } from '@/schemas/avisProspectSchema';
+import { type UpdateAvisProspectFormData } from '@/schemas/avisProspectSchema';
 
-export const useSuiviProspects = () => {
-  const [suiviProspects, setSuiviProspects] = useState<SuiviProspect[]>([]);
+export const useAvisProspect = () => {
+  const [avisProspects, setAvisProspects] = useState<AvisProspect[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const baseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000/api/v1';
+  const baseUrl = 'http://localhost:3000/api/v1';
 
-  const fetchSuiviProspects = useCallback(async () => {
+  const fetchAvisProspects = useCallback(async () => {
     setIsLoading(true);
     setError(null);
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch(`${baseUrl}/suivi-prospects`, {
+      const response = await fetch(`${baseUrl}/avis-prospect/list`, {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json',
@@ -26,9 +26,9 @@ export const useSuiviProspects = () => {
 
       if (response.ok) {
         const data = await response.json();
-        setSuiviProspects(data);
+        setAvisProspects(data);
       } else {
-        throw new Error('Erreur lors de la récupération des suivi prospects');
+        throw new Error('Erreur lors de la récupération des avis prospects');
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Une erreur est survenue');
@@ -38,23 +38,22 @@ export const useSuiviProspects = () => {
     }
   }, []);
 
-  const addSuiviProspect = useCallback(async (suiviProspectData: any) => {
+  const addAvisProspect = useCallback(async (avisProspectData: any) => {
     setIsLoading(true);
     setError(null);
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch(`${baseUrl}/suivi-prospects/add`, {
+      const response = await fetch(`${baseUrl}/avis-prospect/add`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(suiviProspectData),
+        body: JSON.stringify(avisProspectData),
       });
 
       if (response.ok) {
-        await fetchSuiviProspects();
-        toast.success(`Le suivi prospect "${suiviProspectData.Libelle}" a été ajouté avec succès.`);
+          await fetchAvisProspects();
         return true;
       } else {
         const errorData = await response.json();
@@ -67,25 +66,25 @@ export const useSuiviProspects = () => {
     } finally {
       setIsLoading(false);
     }
-  }, [fetchSuiviProspects]);
+  }, [fetchAvisProspects]);
 
-  const updateSuiviProspect = useCallback(async (suiviProspectData: UpdateSuiviProspectFormData) => {
+  const updateAvisProspect = useCallback(async (avisProspectData: UpdateAvisProspectFormData) => {
     setIsLoading(true);
     setError(null);
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch(`${baseUrl}/suivi-prospects/update`, {
+      const response = await fetch(`${baseUrl}/avis-prospect/update`, {
         method: 'PUT',
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(suiviProspectData),
+        body: JSON.stringify(avisProspectData),
       });
 
       if (response.ok) {
-        await fetchSuiviProspects();
-        toast.success(`Le suivi prospect "${suiviProspectData.Libelle}" a été modifié avec succès.`);
+        await fetchAvisProspects();
+        toast.success(`Le Avis Prospect "${avisProspectData.Libelle}" a été modifié avec succès.`);
         return true;
       } else {
         const errorData = await response.json();
@@ -98,14 +97,14 @@ export const useSuiviProspects = () => {
     } finally {
       setIsLoading(false);
     }
-  }, [fetchSuiviProspects]);
+  }, [fetchAvisProspects]);
 
-  const deleteSuiviProspect = useCallback(async (reference: string, libelle?: string) => {
+  const deleteAvisProspect = useCallback(async (reference: string) => {
     setIsLoading(true);
     setError(null);
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch(`${baseUrl}/suivi-prospects/delete`, {
+      const response = await fetch(`${baseUrl}/avis-prospect/delete`, {
         method: 'DELETE',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -115,8 +114,8 @@ export const useSuiviProspects = () => {
       });
 
       if (response.ok) {
-        await fetchSuiviProspects();
-        toast.success(`Le suivi prospect "${libelle}" a été supprimé avec succès.`);
+        await fetchAvisProspects();
+        toast.success(`Le Avis Prospect "${reference}" a été supprimé avec succès.`);
         return true;
       } else {
         const errorData = await response.json();
@@ -129,29 +128,30 @@ export const useSuiviProspects = () => {
     } finally {
       setIsLoading(false);
     }
-  }, [fetchSuiviProspects]);
+    }, [fetchAvisProspects]);
 
-  const getSuiviProspectByReference = useCallback(async (reference: string) => {
+  const getAvisProspectByReference = useCallback(async (reference: string) => {
     setIsLoading(true);
     setError(null);
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch(`${baseUrl}/suivi-prospects/${reference}`, {
-        method: 'GET',
+        const response = await fetch(`${baseUrl}/avis-prospect/by-reference`, {
+        method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json',
         },
+        body: JSON.stringify({ Reference: reference }),
       });
 
       if (response.ok) {
         return await response.json();
       } else {
-        throw new Error("Suivi prospect non trouvé");
+        throw new Error("Avis Prospect non trouvé");
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Une erreur est survenue');
-      toast.error(err instanceof Error ? err.message : "Erreur lors de la récupération du suivi prospect");
+      toast.error(err instanceof Error ? err.message : "Erreur lors de la récupération du Avis Prospect");
       return null;
     } finally {
       setIsLoading(false);
@@ -159,13 +159,14 @@ export const useSuiviProspects = () => {
   }, []);
 
   return {
-    suiviProspects,
+    avisProspects,
     isLoading,
     error,
-    fetchSuiviProspects,
-    addSuiviProspect,
-    updateSuiviProspect,
-    deleteSuiviProspect,
-    getSuiviProspectByReference,
+    fetchAvisProspects,
+    addAvisProspect,
+    updateAvisProspect,
+    deleteAvisProspect,
+    getAvisProspectByReference,
+    refetch: fetchAvisProspects,
   };
 }; 

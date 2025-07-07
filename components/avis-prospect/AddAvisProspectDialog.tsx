@@ -1,5 +1,3 @@
-"use client";
-
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -11,7 +9,6 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
 } from "@/components/ui/dialog";
 import {
   Form,
@@ -22,63 +19,58 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import { addSituationSchema, Situation } from "@/schemas/situationSchema";
-import { toast } from "sonner";
-import { Loader2, Plus, RefreshCw } from "lucide-react";
-import { useSituations } from "@/hooks/useSituations";
+import { addAvisProspectSchema, type AddAvisProspectFormData } from "@/schemas/avisProspectSchema";
+import { RefreshCw } from "lucide-react";
+import { useAvisProspect } from "@/hooks/useAvisProspect";
 
-interface AddSituationDialogProps {
-  onSituationAdded?: () => void;
+interface AddAvisProspectDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  onAvisProspectAdded: () => void;
 }
 
-export function AddSituationDialog({ onSituationAdded, open, onOpenChange }: AddSituationDialogProps) {
-  const [isLoading, setIsLoading] = useState(false);
-  const { addSituation } = useSituations();
+export function AddAvisProspectDialog({
+  open,
+  onOpenChange,
+  onAvisProspectAdded,
+}: AddAvisProspectDialogProps) {
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const { addAvisProspect } = useAvisProspect();
 
-  const form = useForm<Situation>({
-        resolver: zodResolver(addSituationSchema),
+  const form = useForm<AddAvisProspectFormData>({
+    resolver: zodResolver(addAvisProspectSchema),
     defaultValues: {
       Reference: "",
       Libelle: "",
     },
   });
 
-        const onSubmit = async (data: Situation) => {
-    setIsLoading(true);
+        const onSubmit = async (data: AddAvisProspectFormData) => {
+    setIsSubmitting(true);
     try {
-        const success = await addSituation(data);
-        if (success) {
-            toast.success(`La situation "${data.Libelle}" a été ajoutée avec succès`);
-            form.reset();
-            onOpenChange(false);
-            onSituationAdded?.();
-        } else {
-            toast.error("Erreur lors de l'ajout de la situation");
+      const success = await addAvisProspect(data);
+      if (success) {
+        form.reset();
+        onOpenChange(false);
+        onAvisProspectAdded();
         }
-    } catch (error) {
-        console.error('Erreur création situation:', error);
-        toast.error(error instanceof Error ? error.message : "Une erreur est survenue lors de l'ajout de la situation");
     } finally {
-        setIsLoading(false);
+      setIsSubmitting(false);
     }
   };
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogTrigger asChild>
-      </DialogTrigger>
-      <DialogContent className="sm:max-w-[525px]">
+      <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
-          <DialogTitle>Ajouter une situation</DialogTitle>
-          <DialogDescription>
-            Remplissez les informations de la situation. Cliquez sur enregistrer quand vous avez terminé.
-          </DialogDescription>
+          <DialogTitle>Ajouter un Avis Prospect</DialogTitle>
         </DialogHeader>
+        <DialogDescription>
+          Créez un nouveau Avis Prospect en remplissant les champs ci-dessous.
+        </DialogDescription>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-            <FormField
+          <FormField
               control={form.control}
               name="Reference"
               render={({ field }) => (
@@ -87,9 +79,9 @@ export function AddSituationDialog({ onSituationAdded, open, onOpenChange }: Add
                   <FormControl>
                     <div className="flex gap-2">
                       <Input 
-                        placeholder="Ex: SIT001" 
+                        placeholder="Ex: AVIS001" 
                         {...field} 
-                        disabled={isLoading}
+                        disabled={isSubmitting}
                       />
                       <Button
                         type="button"
@@ -98,10 +90,10 @@ export function AddSituationDialog({ onSituationAdded, open, onOpenChange }: Add
                         onClick={() => {
                           const timestamp = Date.now().toString().slice(-6);
                           const randomSuffix = Math.random().toString(36).substring(2, 5).toUpperCase();
-                          const generatedReference = `SIT${timestamp}${randomSuffix}`;
+                            const generatedReference = `AVIS${timestamp}${randomSuffix}`;
                           field.onChange(generatedReference);
                         }}
-                        disabled={isLoading}
+                              disabled={isSubmitting}
                         title="Générer une référence automatique"
                       >
                         <RefreshCw className="h-4 w-4" />
@@ -117,34 +109,24 @@ export function AddSituationDialog({ onSituationAdded, open, onOpenChange }: Add
               name="Libelle"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Libellé *</FormLabel>
+                  <FormLabel>Libellé</FormLabel>
                   <FormControl>
-                    <Input 
-                          placeholder="Ex: Situation entreprise ABC" 
-                      {...field} 
-                      disabled={isLoading}
-                    />
+                    <Input placeholder="Entrez le libellé" {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
               )}
             />
             <DialogFooter>
-              <Button 
-                type="button" 
-                variant="outline" 
+              <Button
+                type="button"
+                variant="outline"
                 onClick={() => onOpenChange(false)}
-                disabled={isLoading}
               >
                 Annuler
               </Button>
-              <Button 
-                type="submit" 
-                disabled={isLoading}
-                className="gap-2"
-              >
-                {isLoading && <Loader2 className="h-4 w-4 animate-spin" />}
-                Enregistrer
+              <Button type="submit" disabled={isSubmitting}>
+                {isSubmitting ? "Ajout en cours..." : "Ajouter"}
               </Button>
             </DialogFooter>
           </form>

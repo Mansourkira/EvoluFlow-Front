@@ -1,29 +1,29 @@
 import { z } from "zod";
 
-// Situation Schema
-export const situationSchema = z.object({
+// Avis Prospect Schema
+export const avisProspectSchema = z.object({
   Reference: z.string().min(1, "La référence est obligatoire"),
   Libelle: z.string().min(1, "Le libellé est obligatoire"),
   Utilisateur: z.string().optional().nullable(),
-  Heure: z.string().optional().nullable(),
+  Heure: z.date().optional().nullable(),
 });
 
-// Add Situation Schema
-export const addSituationSchema = z.object({
+// Add Avis Prospect Schema
+export const addAvisProspectSchema = z.object({
   Reference: z.string().min(1, "La référence est obligatoire"),
   Libelle: z.string().min(1, "Le libellé est obligatoire"),
 });
 
-// Update Situation Schema
-export const updateSituationSchema = z.object({
+// Update Avis Prospect Schema
+export const updateAvisProspectSchema = z.object({
   Reference: z.string().min(1, "La référence est obligatoire"),
   Libelle: z.string().min(1, "Le libellé est obligatoire"),
 });
 
 // Types
-  export type Situation = z.infer<typeof situationSchema>;
-export type AddSituationFormData = z.infer<typeof addSituationSchema>;
-export type UpdateSituationFormData = z.infer<typeof updateSituationSchema>;
+export type AvisProspect = z.infer<typeof avisProspectSchema>;
+export type AddAvisProspectFormData = z.infer<typeof addAvisProspectSchema>;
+export type UpdateAvisProspectFormData = z.infer<typeof updateAvisProspectSchema>;
 
 // Utility function for date formatting
 export const formatCreationDate = (date: Date | string | null | undefined): string => {
@@ -41,4 +41,4 @@ export const formatCreationDate = (date: Date | string | null | undefined): stri
   } catch (error) {
     return "Date invalide";
   }
-}; 
+};  

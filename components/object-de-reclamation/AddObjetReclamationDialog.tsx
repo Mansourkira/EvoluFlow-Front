@@ -22,37 +22,38 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import { objetReclamationSchema, type ObjetReclamationFormValues } from "@/schemas/objetReclamationSchema";
+import { addObjetReclamationSchema, type AddObjetReclamationFormData } from "@/schemas/objetReclamationSchema";
 import { toast } from "sonner";
 import { Loader2, Plus, RefreshCw } from "lucide-react";
 import { useObjetReclamation } from "@/hooks/useObjetReclamation";
 
 interface AddObjetReclamationDialogProps {
-  onObjetReclamationAdded?: () => void;
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  onSuccess?: () => void;
 }
 
-export function AddObjetReclamationDialog({ onObjetReclamationAdded }: AddObjetReclamationDialogProps) {
-  const [open, setOpen] = useState(false);
+export function AddObjetReclamationDialog({ open, onOpenChange, onSuccess }: AddObjetReclamationDialogProps) {
   const [isLoading, setIsLoading] = useState(false);
-  const { createObjetReclamation } = useObjetReclamation();
+  const { addObjetReclamation } = useObjetReclamation();
 
-  const form = useForm<ObjetReclamationFormValues>({
-    resolver: zodResolver(objetReclamationSchema),
+  const form = useForm<AddObjetReclamationFormData>({
+    resolver: zodResolver(addObjetReclamationSchema),
     defaultValues: {
       Reference: "",
       Libelle: "",
     },
   });
 
-  const onSubmit = async (data: ObjetReclamationFormValues) => {
+  const onSubmit = async (data: AddObjetReclamationFormData) => {
     setIsLoading(true);
     try {
-      const success = await createObjetReclamation(data);
+      const success = await addObjetReclamation(data);
       if (success) {
         toast.success(`✅ Objet de réclamation créé - ${data.Libelle} a été ajouté avec succès.`);
         form.reset();
-        setOpen(false);
-        onObjetReclamationAdded?.();
+        onOpenChange(false);
+        onSuccess?.();
       }
     } catch (error) {
       console.error('Erreur création objet de réclamation:', error);
@@ -63,13 +64,7 @@ export function AddObjetReclamationDialog({ onObjetReclamationAdded }: AddObjetR
   };
 
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>
-        <Button className="gap-2">
-          <Plus className="h-4 w-4" />
-          Ajouter un objet de réclamation
-        </Button>
-      </DialogTrigger>
+    <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[525px]">
         <DialogHeader>
           <DialogTitle>Ajouter un nouveau objet de réclamation</DialogTitle>
@@ -134,7 +129,7 @@ export function AddObjetReclamationDialog({ onObjetReclamationAdded }: AddObjetR
               <Button 
                 type="button" 
                 variant="outline" 
-                onClick={() => setOpen(false)}
+                onClick={() => onOpenChange(false)}
                 disabled={isLoading}
               >
                 Annuler

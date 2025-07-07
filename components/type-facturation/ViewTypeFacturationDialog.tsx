@@ -1,6 +1,5 @@
 "use client";
 
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -10,22 +9,21 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { CreditCard, Check, X, Calendar, User } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { CreditCard, User, Calendar } from "lucide-react";
 import { TypeFacturation, getSousTraitanceLabel, getSousTraitanceColor, formatCreationDate } from "@/schemas/typeFacturationSchema";
 
 interface ViewTypeFacturationDialogProps {
-  typeFacturation: TypeFacturation | null;
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  typeFacturation: TypeFacturation;
 }
 
 export function ViewTypeFacturationDialog({ 
-  typeFacturation, 
-  open, 
-  onOpenChange 
+  open,
+  onOpenChange,
+  typeFacturation 
 }: ViewTypeFacturationDialogProps) {
-  if (!typeFacturation) return null;
-
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[425px]">
@@ -35,55 +33,48 @@ export function ViewTypeFacturationDialog({
             Détails du type de facturation
           </DialogTitle>
           <DialogDescription>
-            Informations détaillées du type de facturation.
+            Informations détaillées sur le type de facturation.
           </DialogDescription>
         </DialogHeader>
+        
+        {/* Main Information */}
         <div className="space-y-4">
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="text-sm font-medium text-gray-500">Référence</label>
+              <h4 className="text-sm font-medium text-gray-500">Référence</h4>
               <p className="mt-1 text-sm font-semibold">{typeFacturation.Reference}</p>
             </div>
             <div>
-              <label className="text-sm font-medium text-gray-500">Libellé</label>
+              <h4 className="text-sm font-medium text-gray-500">Libellé</h4>
               <p className="mt-1 text-sm">{typeFacturation.Libelle || "Non défini"}</p>
             </div>
           </div>
           
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label className="text-sm font-medium text-gray-500">Sous-traitance</label>
-              <div className="mt-1">
-                <Badge 
-                  variant="secondary" 
-                  className={getSousTraitanceColor(typeFacturation.Sous_Traitance)}
-                >
-                  <div className="flex items-center gap-1">
-                    {typeFacturation.Sous_Traitance ? (
-                      <Check className="h-3 w-3" />
-                    ) : (
-                      <X className="h-3 w-3" />
-                    )}
-                    {getSousTraitanceLabel(typeFacturation.Sous_Traitance)}
-                  </div>
-                </Badge>
-              </div>
+          <div>
+            <h4 className="text-sm font-medium text-gray-500">Sous-traitance</h4>
+            <div className="mt-1">
+              <Badge 
+                variant="secondary" 
+                className={getSousTraitanceColor(typeFacturation.Sous_Traitance)}
+              >
+                {getSousTraitanceLabel(typeFacturation.Sous_Traitance)}
+              </Badge>
             </div>
           </div>
 
-          {/* Informations système */}
+          {/* System Information */}
           <div className="border-t pt-4 space-y-3">
             <h3 className="text-sm font-semibold text-gray-700">Informations système</h3>
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="text-sm font-medium text-gray-500">Créé par</label>
+                <h4 className="text-sm font-medium text-gray-500">Créé par</h4>
                 <div className="mt-1 flex items-center gap-1">
                   <User className="h-3 w-3 text-gray-400" />
                   <p className="text-sm">{typeFacturation.Utilisateur || "Non défini"}</p>
                 </div>
               </div>
               <div>
-                <label className="text-sm font-medium text-gray-500">Date de création</label>
+                <h4 className="text-sm font-medium text-gray-500">Date de création</h4>
                 <div className="mt-1 flex items-center gap-1">
                   <Calendar className="h-3 w-3 text-gray-400" />
                   <p className="text-sm">{formatCreationDate(typeFacturation.Heure)}</p>
@@ -92,6 +83,7 @@ export function ViewTypeFacturationDialog({
             </div>
           </div>
         </div>
+
         <DialogFooter>
           <Button variant="outline" onClick={() => onOpenChange(false)}>
             Fermer

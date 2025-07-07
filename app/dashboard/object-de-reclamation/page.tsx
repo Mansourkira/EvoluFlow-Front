@@ -1,249 +1,418 @@
-"use client"
+"use client";
 
-import React, { useState } from 'react'
-import { GenericDataTable } from '@/components/ui/data-table/GenericDataTable'
-import { AlertTriangle, CheckCircle, CalendarDays, User } from 'lucide-react'
-import { toast } from 'sonner'
-import { useObjetReclamation } from '@/hooks/useObjetReclamation'
-import { ObjetReclamationFormValues } from '@/schemas/objetReclamationSchema'
-import { AddObjetReclamationDialog } from '@/components/object-de-reclamation/AddObjetReclamationDialog'
-import { UpdateObjetReclamationDialog } from '@/components/object-de-reclamation/UpdateObjetReclamationDialog'
-import { ViewObjetReclamationDialog } from '@/components/object-de-reclamation/ViewObjetReclamationDialog'
-import { format } from 'date-fns'
-import { fr } from 'date-fns/locale'
-import { createObjetReclamationExportConfig, exportGenericData } from '@/lib/exportUtils'
-import { DataTableConfig } from '@/components/ui/data-table/DataTableConfig'
-import { Button } from '@/components/ui/button'
+import { useEffect, useState } from "react";
+import { useTypeFacturation } from "@/hooks/useTypeFacturation";
+import { TypeFacturation, getSousTraitanceLabel, getSousTraitanceColor, formatCreationDate } from "@/schemas/typeFacturationSchema";
+import { AddTypeFacturationDialog } from "@/components/type-facturation/AddTypeFacturationDialog";
+import { UpdateTypeFacturationDialog } from "@/components/type-facturation/UpdateTypeFacturationDialog";
+import { ViewTypeFacturationDialog } from "@/components/type-facturation/ViewTypeFacturationDialog";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Badge } from "@/components/ui/badge";
+import { GenericDataTable } from "@/components/ui/GenericDataTable";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Checkbox } from "@/components/ui/checkbox";
+import { toast } from "sonner";
+import {
+  CreditCard,
+  Search,
+  Eye,
+  Edit,
+  Trash2,
+  ChevronLeft,
+  ChevronRight,
+  ChevronUp,
+  ChevronDown,
+  Filter,
+  X,
+  Loader2,
+  RefreshCw,
+  Columns,
+  Plus,
+  MoreHorizontal,
+  PlusCircle,
+} from "lucide-react";
 
-interface ObjetReclamation {
+import { ObjetReclamation } from "@/schemas/objetReclamationSchema";
+import { useObjetReclamation } from "@/hooks/useObjetReclamation";
+        import { AddObjetReclamationDialog } from "@/components/object-de-reclamation/AddObjetReclamationDialog";
+import { UpdateObjetReclamationDialog } from "@/components/object-de-reclamation/UpdateObjetReclamationDialog";
+import { ViewObjetReclamationDialog } from "@/components/object-de-reclamation/ViewObjetReclamationDialog";
+
+type SortField = 'Reference' | 'Libelle' | 'Heure';
+type SortDirection = 'asc' | 'desc' | null;
+
+interface FieldFilters {
   Reference: string;
   Libelle: string;
-  Utilisateur: string;
   Heure: string;
 }
 
+interface ColumnVisibility {
+  Reference: boolean;
+  Libelle: boolean;
+  Heure: boolean;
+}
+
 export default function ObjectDeReclamationPage() {
-  const { 
-    objetReclamations, 
-    loading,
-    createObjetReclamation,
-    updateObjetReclamation,
-    deleteObjetReclamation,
-    fetchObjetReclamations
-  } = useObjetReclamation()
+        const { objetReclamations, isLoading, fetchObjetReclamations, deleteObjetReclamation } = useObjetReclamation();
   
-  const [viewDialogOpen, setViewDialogOpen] = useState(false)
-  const [objetReclamationToView, setObjetReclamationToView] = useState<ObjetReclamation | null>(null)
-  const [updateDialogOpen, setUpdateDialogOpen] = useState(false)
-  const [objetReclamationToUpdate, setObjetReclamationToUpdate] = useState<ObjetReclamation | null>(null)
+  // State management
+  const [searchTerm, setSearchTerm] = useState("");
+  const [selectedSituations, setSelectedSituations] = useState<string[]>([]);
+  const [sortField, setSortField] = useState<SortField>('Reference');
+  const [sortDirection, setSortDirection] = useState<SortDirection>('asc');
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState(10);
+  const [fieldFilters, setFieldFilters] = useState<FieldFilters>({
+    Reference: "",
+    Libelle: "",
+    Heure: "",
+  });
+  const [showAdvancedFilters, setShowAdvancedFilters] = useState(false);
+  const [columnVisibility, setColumnVisibility] = useState<ColumnVisibility>({
+    Reference: true,
+    Libelle: true,  
+    Heure: true,
+  });
 
-  // Define columns for the table
-  const columns = [
-    {
-      key: 'Reference',
-      label: 'Référence',
-      sortable: true,
-      filterable: true,
-      render: (item: ObjetReclamation) => (
-        <div className="flex items-center gap-2">
-          <span className="font-mono text-sm font-medium">{item.Reference}</span>
-        </div>
-      )
-    },
-    {
-      key: 'Libelle',
-      label: 'Libellé',
-      sortable: true,
-      filterable: true,
-      render: (item: ObjetReclamation) => (
-        <div className="flex items-center gap-2">
-          <span className="font-medium">{item.Libelle}</span>
-        </div>
-      )
-    },
- 
-    {
-      key: 'Heure',
-      label: 'Date et heure',
-      sortable: true,
-      filterable: true,
-      render: (item: ObjetReclamation) => (
-        <div className="flex items-center gap-2">
-          <CalendarDays className="h-4 w-4 text-gray-500" />
-          <span className="font-medium">
-            {format(new Date(item.Heure), "PPpp", { locale: fr })}
-          </span>
-        </div>
-      )
-    }
-  ]
+  // Dialog states
+  const [addDialogOpen, setAddDialogOpen] = useState(false);
+  const [updateDialogOpen, setUpdateDialogOpen] = useState(false);
+  const [viewDialogOpen, setViewDialogOpen] = useState(false);
+  const [selectedObjetReclamation, setSelectedObjetReclamation] = useState<ObjetReclamation | null>(null);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [objetReclamationToDelete, setObjetReclamationToDelete] = useState<string>("");
+  const [isDeleting, setIsDeleting] = useState(false);
 
-  const handleExport = async (format: string, selectedData?: ObjetReclamation[]) => {
-    try {
-      const dataToExport = selectedData || objetReclamations;
-      const exportConfig = createObjetReclamationExportConfig(dataToExport);
+  // Fetch data only on mount
+  useEffect(() => {
+    fetchObjetReclamations();
+  }, []); // Empty dependency array since refetch is now memoized
+
+  // Filtering and sorting logic
+  const filteredAndSortedObjectDeReclamations = objetReclamations
+    .filter((objetReclamation: ObjetReclamation) => {
+      const matchesSearch = !searchTerm || 
+        objetReclamation.Reference.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        (objetReclamation.Libelle && objetReclamation.Libelle.toLowerCase().includes(searchTerm.toLowerCase())) ||
+          formatCreationDate(objetReclamation.Heure).toLowerCase().includes(searchTerm.toLowerCase());
+
+      const matchesFilters = 
+        (!fieldFilters.Reference || objetReclamation.Reference.toLowerCase().includes(fieldFilters.Reference.toLowerCase())) &&
+        (!fieldFilters.Libelle || (objetReclamation.Libelle && objetReclamation.Libelle.toLowerCase().includes(fieldFilters.Libelle.toLowerCase()))) &&
+        (!fieldFilters.Heure || formatCreationDate(objetReclamation.Heure).toLowerCase().includes(fieldFilters.Heure.toLowerCase()));
+
+      return matchesSearch && matchesFilters;
+    })
+    .sort((a: ObjetReclamation, b: ObjetReclamation) => {
+      if (!sortDirection) return 0;
       
-      let exportFormat: 'PDF' | 'Excel' | 'Word';
-      switch (format.toLowerCase()) {
-        case 'excel':
-          exportFormat = 'Excel';
-          break;
-        case 'word':
-          exportFormat = 'Word';
-          break;
-        case 'pdf':
-        default:
-          exportFormat = 'PDF';
-          break;
-      }
-
-      const success = await exportGenericData(
-        exportConfig,
-        exportFormat
-      );
-
-      if (!success) {
-        throw new Error(`Échec de l'export en ${format.toUpperCase()}`);
-      }
-
-      toast.success(`✅ Export en ${format.toUpperCase()} réussi`);
-    } catch (error) {
-      console.error('Erreur export:', error);
-      let errorMessage = "Impossible d'exporter les données";
+      let aValue: any = a[sortField];
+      let bValue: any = b[sortField];
       
-      if (error instanceof Error) {
-        if (error.message.includes('utilisé par un autre utilisateur') || 
-            error.message.includes('being used by another')) {
-          errorMessage = "Le fichier est actuellement utilisé par une autre application. Veuillez fermer toute application qui pourrait utiliser ce fichier et réessayer.";
+      if (sortField === 'Heure') {
+        // Sort by date - convert to Date objects for proper date sorting
+        aValue = aValue ? new Date(aValue).getTime() : 0;
+        bValue = bValue ? new Date(bValue).getTime() : 0;
+      }
+      
+      if (aValue == null) aValue = '';
+      if (bValue == null) bValue = '';
+      
+      // For date fields (Heure), use numeric comparison
+      if (sortField === 'Heure') {
+        if (sortDirection === 'asc') {
+          return (aValue as number) - (bValue as number);
         } else {
-          errorMessage = error.message;
+          return (bValue as number) - (aValue as number);
         }
       }
       
-      toast.error(`❌ Erreur d'export - ${errorMessage}`, {
-        duration: 5000,
-        description: "Si le problème persiste, essayez de fermer et rouvrir l'application."
-      });
+      // For text fields, use string comparison
+      aValue = aValue.toString().toLowerCase();
+      bValue = bValue.toString().toLowerCase();
+      
+      if (sortDirection === 'asc') {
+        return aValue.localeCompare(bValue);
+      } else {
+        return bValue.localeCompare(aValue);
+      }
+    });
+
+  // Pagination
+    const totalPages = Math.ceil(filteredAndSortedObjectDeReclamations.length / itemsPerPage);
+  const startIndex = (currentPage - 1) * itemsPerPage;
+
+  // Handlers
+  const handleSort = (field: SortField) => {
+    if (sortField === field) {
+      setSortDirection(sortDirection === 'asc' ? 'desc' : sortDirection === 'desc' ? null : 'asc');
+    } else {
+      setSortField(field);
+      setSortDirection('asc');
     }
   };
 
-  // Handle actions
-  const handleView = (objetReclamation: ObjetReclamation) => {
-    setObjetReclamationToView(objetReclamation)
-    setViewDialogOpen(true)
-  }
+  const renderSortIcon = (field: SortField) => {
+    if (sortField !== field) return null;
+    if (sortDirection === 'asc') return <ChevronUp className="h-4 w-4" />;
+    if (sortDirection === 'desc') return <ChevronDown className="h-4 w-4" />;
+    return null;
+  };
 
-  const handleEdit = (objetReclamation: ObjetReclamation) => {
-    setObjetReclamationToUpdate(objetReclamation)
-    setUpdateDialogOpen(true)
-  }
+  const toggleColumnVisibility = (column: keyof ColumnVisibility) => {
+    setColumnVisibility(prev => ({
+      ...prev,
+      [column]: !prev[column]
+    }));
+  };
 
-  const handleDelete = async (reference: string) => {
-    try {
-      await deleteObjetReclamation(reference)
-      toast.success('Objet de réclamation supprimé avec succès')
-      fetchObjetReclamations()
-    } catch (error) {
-      toast.error("Erreur lors de la suppression de l'objet de réclamation")
-      console.error("Error deleting objet de reclamation:", error)
+  const handleSelectAll = (checked: boolean) => {
+    if (checked) {
+        setSelectedSituations(filteredAndSortedObjectDeReclamations.map((s: ObjetReclamation) => s.Reference));
+    } else {
+      setSelectedSituations([]);
     }
-  }
+  };
 
-  const handleBulkDelete = async (references: string[]) => {
+  const handleSelectTypeFacturation = (reference: string, checked: boolean) => {
+    if (checked) {
+        setSelectedSituations(prev => [...prev, reference]);
+    } else {
+      setSelectedSituations(prev => prev.filter(ref => ref !== reference));
+    }
+  };
+
+  const clearSelection = () => {
+    setSelectedSituations([]);
+  };
+
+  const handleViewClick = (objetReclamation: ObjetReclamation) => {
+    setSelectedObjetReclamation(objetReclamation);
+    setViewDialogOpen(true);
+  };
+
+  const handleEditClick = (objetReclamation: ObjetReclamation) => {
+    setSelectedObjetReclamation(objetReclamation);
+    setUpdateDialogOpen(true);
+  };
+
+  const handleDeleteClick = async (reference: string): Promise<void> => {
+    setObjetReclamationToDelete(reference);
+    setDeleteDialogOpen(true);
+  };
+
+  const handleDeleteConfirm = async () => {
+    if (!objetReclamationToDelete) return;
+    
+    setIsDeleting(true);
     try {
-      const promises = references.map(ref => deleteObjetReclamation(ref));
-      await Promise.all(promises);
-      toast.success('Objets de réclamation supprimés avec succès');
+      await deleteObjetReclamation(objetReclamationToDelete);
+      toast.success("Objet de réclamation supprimé avec succès");
+      clearSelection();
       fetchObjetReclamations();
     } catch (error) {
-      toast.error("Erreur lors de la suppression des objets de réclamation");
-      console.error("Error deleting objets de reclamation:", error);
+      console.error('Error deleting objet de reclamation:', error);
+      toast.error(error instanceof Error ? error.message : "Erreur lors de la suppression de l'objet de réclamation");
+    } finally {
+      setIsDeleting(false);
+      setDeleteDialogOpen(false);
+      setObjetReclamationToDelete("");
+    }
+  };
+
+  const updateFieldFilter = (field: keyof FieldFilters, value: string) => {
+    setFieldFilters(prev => ({
+      ...prev,
+      [field]: value
+    }));
+    setCurrentPage(1);
+  };
+
+  const clearAllFilters = () => {
+    setFieldFilters({
+      Reference: "",
+      Libelle: "",
+      Heure: "",
+    });
+    setSearchTerm("");
+    setCurrentPage(1);
+  };
+
+  const getActiveFiltersCount = () => {
+    const filters = Object.entries(fieldFilters).filter(([key, value]) => {
+      return Boolean(value);
+    });
+    return filters.length + (searchTerm ? 1 : 0);
+  };
+
+  const handleItemsPerPageChange = (value: string) => {
+    setItemsPerPage(parseInt(value));
+    setCurrentPage(1);
+  };
+
+  const handlePageChange = (page: number) => {
+    setCurrentPage(page);
+  };
+
+  const handleExport = async (format: string, selectedOnly = false) => {
+    try {
+      const { exportGenericData, createSituationExportConfig } = await import('@/lib/exportUtils')
+      const dataToExport = selectedOnly ? 
+          objetReclamations.filter((s: ObjetReclamation) => selectedSituations.includes(s.Reference)) : 
+        objetReclamations
+      
+      const config = createSituationExportConfig(dataToExport)
+      await exportGenericData(config, format as 'PDF' | 'Excel' | 'Word')
+      toast.success(`📄 Export réussi - ${dataToExport.length} situation(s) exporté(s) en ${format}`)
+    } catch (error) {
+      console.error('Error exporting:', error)
+      toast.error(`❌ Erreur d'export - ${error instanceof Error ? error.message : 'Erreur inconnue'}`)
     }
   }
-
-  const tableConfig: DataTableConfig<ObjetReclamation> = {
-    data: objetReclamations,
-    columns: columns,
-    isLoading: loading,
-    title: "Objets de Réclamation",
-    description: "Gérez et suivez vos objets de réclamation efficacement",
-    entityName: "Objet de Réclamation",
-    entityNamePlural: "Objets de Réclamation",
-    getItemId: (item: ObjetReclamation) => item.Reference,
-    getItemDisplayName: (item: ObjetReclamation) => `${item.Reference} - ${item.Libelle}`,
-    enableSearch: true,
-    enableAdvancedFilters: true,
-    enableBulkSelect: true,
-    enableColumnToggle: true,
-    enableRefresh: true,
-    enableExport: true,
-    exportConfig: {
-      formats: ['PDF', 'Excel', 'Word']
-    },
-    onDelete: handleDelete,
-    onBulkDelete: handleBulkDelete,
-    onExport: handleExport,
-    refetch: fetchObjetReclamations,
-    actions: [
-      {
-        key: 'view',
-        label: 'Voir les détails',
-        icon: CheckCircle,
-        onClick: (item: ObjetReclamation) => handleView(item),
-        variant: 'ghost'
-      },
-      {
-        key: 'edit',
-        label: 'Modifier',
-        icon: AlertTriangle,
-        onClick: (item: ObjetReclamation) => handleEdit(item),
-        variant: 'ghost'
-      }
-    ]
-  };
 
   return (
     <div className="container mx-auto p-6 space-y-6">
-      <GenericDataTable<ObjetReclamation>
-        config={tableConfig}
-        addDialog={
-          <AddObjetReclamationDialog 
-            onObjetReclamationAdded={() => {
-              fetchObjetReclamations()
-              setViewDialogOpen(false)
-              setObjetReclamationToView(null)
-            }} 
-          />
+      <GenericDataTable
+        data={objetReclamations}
+        isLoading={isLoading}
+        title="Objets de Réclamation"
+        entityName="Objet de Réclamation"
+        description="Gérez et suivez vos objets de réclamation efficacement"
+        entityNamePlural="Objets de Réclamation"
+        idField="Reference"
+        onView={handleViewClick}
+        onEdit={handleEditClick}
+        onDelete={handleDeleteClick}
+        onExport={handleExport}
+        selectedItems={selectedSituations}
+        onSelectedItemsChange={setSelectedSituations}
+        addButton={
+          <Button onClick={() => setAddDialogOpen(true)} size="sm">
+            <PlusCircle className="h-4 w-4 mr-2" />
+            Ajouter un Objet de Réclamation
+          </Button>
         }
+        columns={[
+          {
+            key: 'Reference',
+            label: 'Référence',
+            sortable: true,
+            filterable: true,
+            render: (objetReclamation: ObjetReclamation) => (
+              <span className="font-mono text-sm font-medium">{objetReclamation.Reference}</span>
+            )
+          },
+          {
+            key: 'Libelle',
+            label: 'Libellé',
+            sortable: true,
+            filterable: true,
+            render: (objetReclamation: ObjetReclamation) => (
+              <span className="font-medium">{objetReclamation.Libelle}</span>
+            )
+          },
+          {   
+            key: 'Heure',
+            label: 'Date de création',
+            sortable: true,
+            filterable: true,
+            render: (objetReclamation: ObjetReclamation) => (
+              <div className="flex items-center gap-2">
+                <span>{formatCreationDate(objetReclamation.Heure)}</span>
+              </div>
+            )
+          }
+        ]}
       />
 
-      {objetReclamationToView && (
-        <ViewObjetReclamationDialog
-          objetReclamation={objetReclamationToView}
-          open={viewDialogOpen}
-          onClose={() => {
-            setViewDialogOpen(false)
-            setObjetReclamationToView(null)
+      {/* Add Dialog */}
+      <AddObjetReclamationDialog 
+        open={addDialogOpen}
+        onOpenChange={setAddDialogOpen}
+                onSuccess={fetchObjetReclamations}
+      />
+
+      {/* Update Dialog */}
+      {selectedObjetReclamation && (
+            <UpdateObjetReclamationDialog
+          open={updateDialogOpen}
+          onOpenChange={setUpdateDialogOpen}
+            objetReclamation={selectedObjetReclamation}
+          onSuccess={() => {
+            fetchObjetReclamations();
+            setUpdateDialogOpen(false);
+            setSelectedObjetReclamation(null);
           }}
         />
       )}
 
-      {objetReclamationToUpdate && (
-        <UpdateObjetReclamationDialog
-          objetReclamation={objetReclamationToUpdate}
-          open={updateDialogOpen}
-          onClose={() => {
-            setUpdateDialogOpen(false)
-            setObjetReclamationToUpdate(null)
-          }}
-          onSubmit={updateObjetReclamation}
-          onObjetReclamationUpdated={() => {
-            fetchObjetReclamations()
-            setUpdateDialogOpen(false)
-            setObjetReclamationToUpdate(null)
-          }}
+      {/* View Dialog */}
+      {selectedObjetReclamation && (
+        <ViewObjetReclamationDialog
+          open={viewDialogOpen}
+          onOpenChange={setViewDialogOpen}
+          objetReclamation={selectedObjetReclamation}
         />
       )}
+
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Êtes-vous sûr ?</AlertDialogTitle>
+            <AlertDialogDescription>
+                Cette action ne peut pas être annulée. Cela supprimera définitivement cet objet de réclamation.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={isDeleting}>Annuler</AlertDialogCancel>
+            <AlertDialogAction 
+              onClick={handleDeleteConfirm}
+              disabled={isDeleting}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {isDeleting ? (
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              ) : (
+                <Trash2 className="mr-2 h-4 w-4" />
+              )}
+              Supprimer
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
-  )
+  );
 } 
