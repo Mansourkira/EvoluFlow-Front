@@ -70,18 +70,41 @@ export default function ResetPasswordPage() {
       return
     }
 
-    const success = await resetPassword(newPassword, confirmPassword)
+    const result = await resetPassword(newPassword, confirmPassword)
     
-    if (success) {
+    if (result?.expired) {
       toast({
-        title: "Succès",
+        title: "Action expirée",
+        description: "Le lien de réinitialisation a expiré (délai de 1 heure dépassé)",
+        variant: "destructive"
+      })
+      
+      // Clear token and redirect to login after a short delay
+      setTimeout(() => {
+        localStorage.removeItem('token')
+        router.push('/login')
+      }, 2000)
+      return
+    }
+    
+    if (result?.success) {
+      toast({
+        title: "✅ Succès",
         description: "Mot de passe réinitialisé avec succès. Connexion automatique en cours...",
+        variant: "default"
       })
       
       // Redirect to dashboard after successful reset
       setTimeout(() => {
         router.push('/dashboard')
       }, 1500)
+    } else {
+      // If there's an error but not expired
+      toast({
+        title: "❌ Erreur",
+        description: error || "Une erreur est survenue lors de la réinitialisation du mot de passe",
+        variant: "destructive"
+      })
     }
   }
 

@@ -84,6 +84,7 @@ interface ExtendedUser {
   reinitialisation?: boolean
   sexe?: 'Homme' | 'Femme'
   etatCivil?: 'Célibataire' | 'Marié(e)' | 'Divorcé(e)' | 'Veuf(ve)'
+  Derniere_connexion?: string
 }
 
 export default function ProfilePage() {
@@ -101,25 +102,25 @@ export default function ProfilePage() {
   const [showNewPassword, setShowNewPassword] = useState(false)
   const [showConfirmPassword, setShowConfirmPassword] = useState(false)
   const [passwordStrength, setPasswordStrength] = useState<'weak' | 'medium' | 'strong'>('weak')
-
-  // Profile form
+      console.log("user", user)
+    // Profile form
   const form = useForm<ProfileUpdateFormData>({
     resolver: zodResolver(profileUpdateSchema),
-    defaultValues: {
-      Nom_Prenom: "",
-      E_mail: "",
-      Telephone: "",
-      Adresse: "",
-      Complement_adresse: "",
-      Code_Postal: "",
-      Ville: "",
-      Gouvernorat: "",
-      Pays: "Tunisie",
-      Couleur: "",
-      Temp_Raffraichissement: "",
-      Image: null,
-      Etat_Civil: undefined,
-    },
+          defaultValues: {
+        Nom_Prenom: "",
+        E_mail: "",
+        Telephone: "",
+        Adresse: "",
+        Complement_adresse: "",
+        Code_Postal: "",
+        Ville: "",
+        Gouvernorat: "",
+        Pays: "Tunisie",
+        Couleur: "",
+        Temp_Raffraichissement: "",
+        Image: null,
+        Etat_Civil: undefined,
+      },
   })
 
   useEffect(() => {
@@ -278,6 +279,7 @@ export default function ProfilePage() {
     )
   }
 
+  console.log("Dernieur connextion " , user)
   return (
     <div className="container mx-auto py-8 px-4 max-w-6xl">
       {/* Header */}
@@ -726,7 +728,15 @@ export default function ProfilePage() {
                       <span className="text-sm font-medium">Dernière connexion</span>
                     </div>
                     <span className="text-sm font-medium">
-                      {user.heure ? new Date(user.heure).toLocaleDateString('fr-FR') : 'Inconnue'}
+                      {user.Derniere_connexion 
+                        ? new Date(user.Derniere_connexion).toLocaleString('fr-FR', {
+                            day: '2-digit',
+                            month: '2-digit',
+                            year: 'numeric',
+                            hour: '2-digit',
+                            minute: '2-digit'
+                          })
+                        : 'Inconnue'}
                     </span>
                   </div>
                 </div>

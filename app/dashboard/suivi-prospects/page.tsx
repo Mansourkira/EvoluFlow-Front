@@ -1,15 +1,11 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useTypeFacturation } from "@/hooks/useTypeFacturation";
-import { TypeFacturation, getSousTraitanceLabel, getSousTraitanceColor, formatCreationDate } from "@/schemas/typeFacturationSchema";
-import { AddTypeFacturationDialog } from "@/components/type-facturation/AddTypeFacturationDialog";
-import { UpdateTypeFacturationDialog } from "@/components/type-facturation/UpdateTypeFacturationDialog";
-import { ViewTypeFacturationDialog } from "@/components/type-facturation/ViewTypeFacturationDialog";
+import { formatCreationDate } from "@/schemas/suiviProspectSchema";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { GenericDataTable } from "@/components/ui/GenericDataTable";
+import { GenericDataTable } from "@/components/ui/data-table/GenericDataTable";
 import {
   Table,
   TableBody,
@@ -25,18 +21,8 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
-import {
   Select,
-  SelectContent,
+  SelectContent,  
   SelectItem,
   SelectTrigger,
   SelectValue,
@@ -61,17 +47,14 @@ import {
   Plus,
   MoreHorizontal,
   PlusCircle,
+  Download,
 } from "lucide-react";
-import { useSituations } from "@/hooks/useSituations";
-import { AddSituationDialog } from "@/components/situations/AddSituationDialog";
-import { UpdateSituationDialog } from "@/components/situations/UpdateSituationDialog";
-import { ViewSituationDialog } from "@/components/situations/ViewSituationDialog";
-import { Situation } from "@/schemas/situationSchema";
 import { useSuiviProspects } from "@/hooks/useSuiviProspects";
 import { SuiviProspect } from "@/schemas/suiviProspectSchema";
 import { AddSuiviProspectDialog } from "@/components/suivi-prospects/AddSuiviProspectDialog";
 import { UpdateSuiviProspectDialog } from "@/components/suivi-prospects/UpdateSuiviProspectDialog";
 import { ViewSuiviProspectDialog } from "@/components/suivi-prospects/ViewSuiviProspectDialog";
+import { DataTableConfig } from '@/components/ui/data-table/DataTableConfig';
 type SortField = 'Reference' | 'Libelle' | 'Heure';
 type SortDirection = 'asc' | 'desc' | null;
 
@@ -92,7 +75,6 @@ export default function SuiviProspectsPage() {
   
   // State management
   const [searchTerm, setSearchTerm] = useState("");
-  const [selectedSuiviProspects, setSelectedSuiviProspects] = useState<string[]>([]);
   const [sortField, setSortField] = useState<SortField>('Reference');
   const [sortDirection, setSortDirection] = useState<SortDirection>('asc');
   const [currentPage, setCurrentPage] = useState(1);
@@ -102,7 +84,6 @@ export default function SuiviProspectsPage() {
     Libelle: "",
     Heure: "",
   });
-  const [showAdvancedFilters, setShowAdvancedFilters] = useState(false);
   const [columnVisibility, setColumnVisibility] = useState<ColumnVisibility>({
     Reference: true,
     Libelle: true,  
@@ -114,8 +95,6 @@ export default function SuiviProspectsPage() {
   const [updateDialogOpen, setUpdateDialogOpen] = useState(false);
   const [viewDialogOpen, setViewDialogOpen] = useState(false);
   const [selectedSuiviProspect, setSelectedSuiviProspect] = useState<SuiviProspect | null>(null);
-  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
-  const [suiviProspectToDelete, setSuiviProspectToDelete] = useState<string>("");
   const [isDeleting, setIsDeleting] = useState(false);
 
   // Fetch data only on mount
@@ -204,23 +183,15 @@ export default function SuiviProspectsPage() {
   };
 
   const handleSelectAll = (checked: boolean) => {
-    if (checked) {
-      setSelectedSuiviProspects(paginatedSuiviProspects.map(s => s.Reference));
-    } else {
-      setSelectedSuiviProspects([]);
-    }
+    // This function is no longer needed as GenericDataTable manages its own selection
   };
 
   const handleSelectTypeFacturation = (reference: string, checked: boolean) => {
-    if (checked) {
-        setSelectedSuiviProspects(prev => [...prev, reference]);
-    } else {
-      setSelectedSuiviProspects(prev => prev.filter(ref => ref !== reference));
-    }
+    // This function is no longer needed as GenericDataTable manages its own selection
   };
 
   const clearSelection = () => {
-    setSelectedSuiviProspects([]);
+    // This function is no longer needed as GenericDataTable manages its own selection
   };
 
   const handleViewClick = (suiviProspect: SuiviProspect) => {
@@ -234,26 +205,17 @@ export default function SuiviProspectsPage() {
   };
 
   const handleDeleteClick = async (reference: string): Promise<void> => {
-    setSuiviProspectToDelete(reference);
-    setDeleteDialogOpen(true);
-  };
-
-  const handleDeleteConfirm = async () => {
-    if (!suiviProspectToDelete) return;
-    
     setIsDeleting(true);
     try {
-      const success = await deleteSuiviProspect(suiviProspectToDelete);
+      const success = await deleteSuiviProspect(reference);
       if (success) {
         toast.success("Suivi prospect supprimé avec succès");
-        clearSelection();
       }
     } catch (error) {
+      console.error("Error deleting suivi prospect:", error);
       toast.error("Erreur lors de la suppression du suivi prospect");
     } finally {
       setIsDeleting(false);
-      setDeleteDialogOpen(false);
-      setSuiviProspectToDelete("");
     }
   };
 
@@ -291,153 +253,133 @@ export default function SuiviProspectsPage() {
     setCurrentPage(page);
   };
 
-  const handleExport = async (format: string, selectedOnly = false) => {
+  const handleExport = async (format: string, data: SuiviProspect[]) => {
     try {
-      const { exportGenericData, createSuiviProspectExportConfig } = await import('@/lib/exportUtils')
-      const dataToExport = selectedOnly ? 
-          suiviProspects.filter(s => selectedSuiviProspects.includes(s.Reference)) : 
-        suiviProspects
-      
-      const config = createSuiviProspectExportConfig(dataToExport)
+      const { exportGenericData, createProspectExportConfig } = await import('@/lib/exportUtils')
+      const config = createProspectExportConfig(data)
       await exportGenericData(config, format as 'PDF' | 'Excel' | 'Word')
-      toast.success(`📄 Export réussi - ${dataToExport.length} suivi prospect(s) exporté(s) en ${format}`)
+      toast.success(`📄 Export réussi - ${data.length} suivi prospect(s) exporté(s) en ${format}`)
     } catch (error) {
       console.error('Error exporting:', error)
       toast.error(`❌ Erreur d'export - ${error instanceof Error ? error.message : 'Erreur inconnue'}`)
     }
   }
 
+  const tableConfig: DataTableConfig<SuiviProspect> = {
+    data: suiviProspects,
+    isLoading,
+    title: "Gestion des Suivi Prospects",
+    description: "Gérez vos suivi prospects",
+    entityName: "Suivi Prospect",
+    entityNamePlural: "Suivi Prospects",
+    getItemId: (item: SuiviProspect) => item.Reference,
+    onDelete: handleDeleteClick,
+    enableRefresh: true,
+    enableBulkSelect: true,
+    enableExport: true,
+    enableSearch: true,
+    enableAdvancedFilters: true,
+    enableColumnToggle: true,
+    refetch: fetchSuiviProspects,
+    onExport: handleExport,
+    columns: [
+      {
+        key: 'Reference',
+        label: 'Référence',
+        sortable: true,
+        filterable: true,
+        searchable: true,
+        render: (item) => (
+          <span className="font-mono text-sm font-medium">{item.Reference}</span>
+        )
+      },
+      {
+        key: 'Libelle',
+        label: 'Libellé',
+        sortable: true,
+        filterable: true,
+        searchable: true
+      },
+      {
+        key: 'Relance',
+        label: 'Relance',
+        sortable: true,
+        render: (item) => (
+          <Badge variant={item.Relance ? "default" : "secondary"}>
+            {item.Relance ? "Oui" : "Non"}
+          </Badge>
+        )
+      },
+      {
+        key: 'Heure',
+        label: 'Date',
+        sortable: true,
+        render: (item) => formatCreationDate(item.Heure)
+      }
+    ],
+    actions: [
+      {
+        key: 'view',
+        label: 'Voir',
+        icon: Eye,
+        onClick: handleViewClick
+      },
+      {
+        key: 'edit',
+        label: 'Modifier',
+        icon: Edit,
+        onClick: handleEditClick
+      }
+    ],
+    exportConfig: {
+      formats: ['Excel', 'PDF', 'Word']
+    }
+  };
+
   return (
-    <div className="container mx-auto p-6 space-y-6">
-      <GenericDataTable
-        data={suiviProspects}
-        isLoading={isLoading}
-        title="Suivi des opérations des prospects"
-        description="Gérez les suivi des opérations des prospects"
-        entityName="Suivi Prospect"
-        entityNamePlural="Suivi Prospects"
-        idField="Reference"
-        onView={handleViewClick}
-        onEdit={handleEditClick}
-        onDelete={handleDeleteClick}
-        onExport={handleExport}
-        selectedItems={selectedSuiviProspects}
-        onSelectedItemsChange={setSelectedSuiviProspects}
-        addButton={
-          <Button onClick={() => setAddDialogOpen(true)} size="sm">
-            <PlusCircle className="h-4 w-4 mr-2" />
-            Ajouter Suivi Prospect 
+    <div className="container mx-auto py-8 px-4">
+      <div className="max-w-7xl mx-auto">
+        <div className="flex justify-between items-center mb-6">
+          <div className="flex gap-2">
+           
+
+           
+          </div>
+
+          <Button onClick={() => setAddDialogOpen(true)} size="sm" variant="default">
+            <Plus className="h-4 w-4 mr-2" />
+            Ajouter Suivi Prospect
           </Button>
-        }
-        columns={[
-          {
-            key: 'Reference',
-            label: 'Référence',
-            sortable: true,
-            filterable: true,
-            render: (suiviProspect: SuiviProspect) => (
-              <span className="font-mono text-sm font-medium">{suiviProspect.Reference}</span>
-            )
-          },
-          {
-            key: 'Libelle',
-            label: 'Libellé',
-            sortable: true,
-            filterable: true,
-            render: (suiviProspect: SuiviProspect) => (
-              <span className="font-medium">{suiviProspect.Libelle}</span>
-            )
-          },
-          {
-            key: 'Relance',
-            label: 'Relance', 
-            sortable: true,
-            filterable: true,
-            render: (suiviProspect: SuiviProspect) => (
-              <div className="flex items-center">
-                <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                  suiviProspect.Relance 
-                    ? "bg-green-100 text-green-800"
-                    : "bg-red-100 text-red-800"
-                }`}>
-                  {suiviProspect.Relance ? "Oui" : "Non"}
-                </span>
-              </div>
-            )
-          },
-          {   
-            key: 'Heure',
-            label: 'Date de création',
-            sortable: true,
-            filterable: true,
-              render: (suiviProspect: SuiviProspect) => (
-              <div className="flex items-center gap-2">
-                <span>{formatCreationDate(suiviProspect.Heure)}</span>
-              </div>
-            )
-          }
-        ]}
-      />
+        </div>
 
-      {/* Add Dialog */}
-      <AddSuiviProspectDialog 
-        open={addDialogOpen}
-        onOpenChange={setAddDialogOpen}
-        onSuccess={() => {
-          fetchSuiviProspects();
-          setAddDialogOpen(false);
-        }}
-      />
-
-      {/* Update Dialog */}
-      {selectedSuiviProspect && (
-        <UpdateSuiviProspectDialog
-          open={updateDialogOpen}
-          onOpenChange={setUpdateDialogOpen}
-          suiviProspect={selectedSuiviProspect!}
-          onSuccess={() => {
-              fetchSuiviProspects();
-            setUpdateDialogOpen(false);
-            setSelectedSuiviProspect(null);
-          }}
+        <GenericDataTable
+          config={tableConfig}
         />
-      )}
 
-      {/* View Dialog */}
+        {/* Add Dialog */}
+        <AddSuiviProspectDialog
+          open={addDialogOpen}
+          onOpenChange={setAddDialogOpen}
+        />
+
+        {/* View Dialog */}
         {selectedSuiviProspect && (
-        <ViewSuiviProspectDialog
-          open={viewDialogOpen}
-          onOpenChange={setViewDialogOpen}
-          suiviProspect={selectedSuiviProspect}
-        />
-      )}
+          <ViewSuiviProspectDialog
+            open={viewDialogOpen}
+            onOpenChange={setViewDialogOpen}
+            suiviProspect={selectedSuiviProspect}
+          />
+        )}
 
-      {/* Delete Confirmation Dialog */}
-      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Êtes-vous sûr ?</AlertDialogTitle>
-            <AlertDialogDescription>
-                  Cette action ne peut pas être annulée. Cela supprimera définitivement ce suivi prospect.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel disabled={isDeleting}>Annuler</AlertDialogCancel>
-            <AlertDialogAction 
-              onClick={handleDeleteConfirm}
-              disabled={isDeleting}
-              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-            >
-              {isDeleting ? (
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-              ) : (
-                <Trash2 className="mr-2 h-4 w-4" />
-              )}
-              Supprimer
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+        {/* Update Dialog */}
+        {selectedSuiviProspect && (
+          <UpdateSuiviProspectDialog
+            open={updateDialogOpen}
+            onOpenChange={setUpdateDialogOpen}
+            suiviProspect={selectedSuiviProspect}
+          />
+        )}
+      </div>
     </div>
   );
-} 
+}

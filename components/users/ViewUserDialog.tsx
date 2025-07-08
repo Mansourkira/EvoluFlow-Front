@@ -48,8 +48,9 @@ export function ViewUserDialog({ user, open, onOpenChange }: ViewUserDialogProps
 
       setIsLoading(true);
       try {
+        const baseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000';
         const token = localStorage.getItem('token');
-        const response = await fetch('/api/users/get', {
+        const response = await fetch(`${baseUrl}/api/users/get`, {
           method: 'POST',
           headers: {
             'Authorization': `Bearer ${token}`,
@@ -269,14 +270,30 @@ export function ViewUserDialog({ user, open, onOpenChange }: ViewUserDialogProps
                         <p className="font-medium">{displayUser.Type_Utilisateur}</p>
                       </div>
                     </div>
-
                     {displayUser.Heure && (
+                      <div className="flex items-center gap-3">
+                        <Clock className="h-4 w-4 text-gray-500" />
+                        <div>
+                          <p className="text-sm font-medium text-gray-500">Date de création</p>
+                          <p className="font-medium">
+                            {new Date(displayUser?.Heure || '').toLocaleDateString('fr-FR', {
+                              year: 'numeric',
+                              month: 'long',
+                              day: 'numeric',
+                              hour: '2-digit',
+                              minute: '2-digit'
+                            })}
+                          </p>
+                        </div>
+                      </div>
+                    )}
+                    {displayUser.Derniere_connexion && (
                       <div className="flex items-center gap-3">
                         <Clock className="h-4 w-4 text-gray-500" />
                         <div>
                           <p className="text-sm font-medium text-gray-500">Dernière connexion</p>
                           <p className="font-medium">
-                            {new Date(displayUser.Heure).toLocaleDateString('fr-FR', {
+                            {new Date(displayUser?.Derniere_connexion || '').toLocaleDateString('fr-FR', {
                               year: 'numeric',
                               month: 'long',
                               day: 'numeric',

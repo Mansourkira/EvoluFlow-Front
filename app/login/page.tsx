@@ -13,6 +13,7 @@ import Image from "next/image"
 import { useLogin, useAuthStatus } from "@/hooks/useAuth"
 import { useRouter } from "next/navigation"
 import Navbar from "@/components/navbar"
+import { useToast } from "@/hooks/use-toast"
 
 export default function LoginPage() {
   const [showPassword, setShowPassword] = useState(false)
@@ -20,6 +21,7 @@ export default function LoginPage() {
   const [password, setPassword] = useState("")
   const [isMenuOpen, setIsMenuOpen] = useState(false)
   const router = useRouter()
+  const { toast } = useToast()
   
   // Use custom hook for login
   const { login, isLoading, error } = useLogin()
@@ -54,6 +56,16 @@ export default function LoginPage() {
       setTimeout(() => {
         router.push('/dashboard')
       }, 100)
+    } else {
+      // Check if it's an expired reset password request
+      if (error && error.includes('expiré')) {
+        toast({
+          title: "⚠️ Demande expirée",
+          description: error,
+          variant: "destructive",
+          duration: 6000
+        })
+      }
     }
     // Error handling is done by the hook and displayed in the UI
   }

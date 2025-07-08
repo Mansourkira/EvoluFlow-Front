@@ -49,11 +49,16 @@ export function ViewSiteDialog({ site, open, onOpenChange }: ViewSiteDialogProps
           {/* Header avec logo si disponible */}
           {site.Sigle && (
             <div className="flex justify-center">
-              <img
-                src={`data:image/jpeg;base64,${site.Sigle}`}
-                alt={`Logo de ${site.Raison_Sociale}`}
-                className="w-24 h-24 object-cover rounded-lg border"
-              />
+              <div className="relative">
+                <img
+                  src={site.Sigle.startsWith('data:') ? site.Sigle : `data:image/jpeg;base64,${site.Sigle}`}
+                  alt={`Logo de ${site.Raison_Sociale}`}
+                  className="w-24 h-24 object-cover rounded-lg border shadow-sm"
+                  onError={(e) => {
+                    e.currentTarget.style.display = 'none';
+                  }}
+                />
+              </div>
             </div>
           )}
 

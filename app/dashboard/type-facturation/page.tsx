@@ -24,16 +24,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
+
 import {
   Select,
   SelectContent,
@@ -55,7 +46,7 @@ import {
   ChevronDown,
   Filter,
   X,
-  Loader2,
+
   RefreshCw,
   Columns,
   Plus,
@@ -109,9 +100,7 @@ export default function TypeFacturationPage() {
   const [updateDialogOpen, setUpdateDialogOpen] = useState(false);
   const [viewDialogOpen, setViewDialogOpen] = useState(false);
   const [selectedTypeFacturation, setSelectedTypeFacturation] = useState<TypeFacturation | null>(null);
-  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
-  const [typeFacturationToDelete, setTypeFacturationToDelete] = useState<string>("");
-  const [isDeleting, setIsDeleting] = useState(false);
+
 
   useEffect(() => {
     fetchTypeFacturations();
@@ -233,26 +222,14 @@ export default function TypeFacturationPage() {
   };
 
   const handleDeleteClick = async (reference: string): Promise<void> => {
-    setTypeFacturationToDelete(reference);
-    setDeleteDialogOpen(true);
-  };
-
-  const handleDeleteConfirm = async () => {
-    if (!typeFacturationToDelete) return;
-    
-    setIsDeleting(true);
     try {
-      const success = await deleteTypeFacturation(typeFacturationToDelete);
+      const success = await deleteTypeFacturation(reference);
       if (success) {
         toast.success("Type de facturation supprimé avec succès");
         clearSelection();
       }
     } catch (error) {
       toast.error("Erreur lors de la suppression du type de facturation");
-    } finally {
-      setIsDeleting(false);
-      setDeleteDialogOpen(false);
-      setTypeFacturationToDelete("");
     }
   };
 
@@ -322,8 +299,6 @@ export default function TypeFacturationPage() {
         onEdit={handleEditClick}
         onDelete={handleDeleteClick}
         onExport={handleExport}
-        selectedItems={selectedTypeFacturations}
-        onSelectedItemsChange={setSelectedTypeFacturations}
         addButton={
           <Button onClick={() => setAddDialogOpen(true)} size="sm">
             <PlusCircle className="h-4 w-4 mr-2" />
@@ -407,32 +382,7 @@ export default function TypeFacturationPage() {
         />
       )}
 
-      {/* Delete Confirmation Dialog */}
-      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Êtes-vous sûr ?</AlertDialogTitle>
-            <AlertDialogDescription>
-              Cette action ne peut pas être annulée. Cela supprimera définitivement ce type de facturation.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel disabled={isDeleting}>Annuler</AlertDialogCancel>
-            <AlertDialogAction 
-              onClick={handleDeleteConfirm}
-              disabled={isDeleting}
-              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-            >
-              {isDeleting ? (
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-              ) : (
-                <Trash2 className="mr-2 h-4 w-4" />
-              )}
-              Supprimer
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+
     </div>
   );
 } 

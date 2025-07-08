@@ -85,6 +85,7 @@ export interface ViewUserData {
   Profil_Libelle?: string;
   Heure?: string;
   Temp_Raffraichissement?: string;
+  Derniere_connexion?: string;
   Couleur?: string;
   Image: string | null;
   Sexe?: 'Homme' | 'Femme';
@@ -106,6 +107,8 @@ export const profileUpdateSchema = z.object({
   Temp_Raffraichissement: z.string().optional(),
   Image: z.string().nullable().optional(),
   Etat_Civil: z.enum(['Célibataire', 'Marié(e)', 'Divorcé(e)', 'Veuf(ve)']).optional(),
+  Derniere_connexion: z.string().optional(),
+  Heure: z.string().optional(),
 });
 
 export type ProfileUpdateFormData = z.infer<typeof profileUpdateSchema>;
