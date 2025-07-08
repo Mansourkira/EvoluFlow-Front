@@ -53,7 +53,8 @@ export async function GET(request: NextRequest) {
       tempRaffraichissement: data.user.Temp_Raffraichissement,
       couleur: data.user.Couleur,
       image: data.user.Image,
-      reinitialisation: data.user.Reinitialisation_mot_de_passe
+      reinitialisation: data.user.Reinitialisation_mot_de_passe,
+      Derniere_connexion: data.user.Derniere_connexion
     }
 
     return NextResponse.json({

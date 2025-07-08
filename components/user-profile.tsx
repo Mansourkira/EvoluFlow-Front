@@ -4,7 +4,7 @@ import { useEffect } from 'react'
 import { useCurrentUser } from '@/hooks/useAuth'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
-import { User, Mail, Shield } from 'lucide-react'
+import { User, Mail, Shield, Clock } from 'lucide-react'
 
 export default function UserProfile() {
   const { getCurrentUser, user, isLoading, error } = useCurrentUser()
@@ -82,6 +82,24 @@ export default function UserProfile() {
           <div>
             <p className="text-sm font-medium text-gray-900">Rôle</p>
             <p className="text-sm text-gray-600 capitalize">{user.role}</p>
+          </div>
+        </div>
+        
+        <div className="flex items-center space-x-3">
+          <Clock className="h-5 w-5 text-gray-400" />
+          <div>
+            <p className="text-sm font-medium text-gray-900">Dernière connexion</p>
+            <p className="text-sm text-gray-600">
+              {user.Derniere_connexion 
+                ? new Date(user.Derniere_connexion).toLocaleString('fr-FR', {
+                    day: '2-digit',
+                    month: '2-digit',
+                    year: 'numeric',
+                    hour: '2-digit',
+                    minute: '2-digit'
+                  })
+                : 'Inconnue'}
+            </p>
           </div>
         </div>
         

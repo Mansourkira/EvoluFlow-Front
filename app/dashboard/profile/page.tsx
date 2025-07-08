@@ -102,25 +102,25 @@ export default function ProfilePage() {
   const [showNewPassword, setShowNewPassword] = useState(false)
   const [showConfirmPassword, setShowConfirmPassword] = useState(false)
   const [passwordStrength, setPasswordStrength] = useState<'weak' | 'medium' | 'strong'>('weak')
-    console.log("user", user)
+      console.log("user", user)
     // Profile form
   const form = useForm<ProfileUpdateFormData>({
     resolver: zodResolver(profileUpdateSchema),
-    defaultValues: {
-      Nom_Prenom: "",
-      E_mail: "",
-      Telephone: "",
-      Adresse: "",
-      Complement_adresse: "",
-      Code_Postal: "",
-      Ville: "",
-      Gouvernorat: "",
-      Pays: "Tunisie",
-      Couleur: "",
-      Temp_Raffraichissement: "",
-      Image: null,
-      Etat_Civil: undefined,
-    },
+          defaultValues: {
+        Nom_Prenom: "",
+        E_mail: "",
+        Telephone: "",
+        Adresse: "",
+        Complement_adresse: "",
+        Code_Postal: "",
+        Ville: "",
+        Gouvernorat: "",
+        Pays: "Tunisie",
+        Couleur: "",
+        Temp_Raffraichissement: "",
+        Image: null,
+        Etat_Civil: undefined,
+      },
   })
 
   useEffect(() => {
@@ -140,8 +140,6 @@ export default function ProfilePage() {
         Gouvernorat: user.gouvernorat || "",
         Pays: user.pays || "Tunisie",
         Couleur: user.couleur || "",
-        Derniere_connexion: user.Derniere_connexion || "",
-        Heure: user.heure || "",
         Temp_Raffraichissement: user.tempRaffraichissement || "",
         Image: user.image || null,
         Etat_Civil: (user as any).etatCivil || undefined,
