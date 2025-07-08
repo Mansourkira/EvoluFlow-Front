@@ -246,6 +246,11 @@ const getNavigationByRole = (role: UserRole, user: any) => {
               title:"Niveaux de Langue",
               url:"/dashboard/niveaux-langue",
               icon:Languages,
+            },
+            {
+              title:"Etat Civil",
+              url:"/dashboard/etat-civil",
+              icon:User,
             }
           ],
         },

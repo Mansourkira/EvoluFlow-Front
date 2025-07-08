@@ -443,6 +443,27 @@ export const createProspectExportConfig = (prospects: any[]): ExportConfig => ({
   data: prospects
 })
 
+export const createEtatCivilExportConfig = (etatCivils: any[]): ExportConfig => ({  
+  title: 'Liste des Etat Civil',
+  filename: 'etat_civil',
+  data: etatCivils,
+  columns: [
+    { key: 'Reference', label: 'Référence', width: 20, pdfWidth: 30, excelWidth: 20 },
+    { key: 'Libelle', label: 'Libellé', width: 40, pdfWidth: 50, excelWidth: 40 },
+    { key: 'Utilisateur', label: 'Utilisateur', width: 30, pdfWidth: 40, excelWidth: 30 },
+    {
+      key: 'Heure',
+      label: 'Date de Création',
+      width: 20,
+      pdfWidth: 30,
+      excelWidth: 20,
+      formatter: (value) =>
+        value ? new Date(value).toLocaleDateString('fr-FR') : '-',
+    },
+  ]
+})
+
+
 // Legacy functions for backward compatibility
 export const exportToPDF = (users: any[], filename: string = 'utilisateurs') => {
   const config = createUserExportConfig(users)

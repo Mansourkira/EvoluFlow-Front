@@ -1,0 +1,151 @@
+"use client";
+
+import { useState } from "react";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form";
+import { Input } from "@/components/ui/input";    
+import { toast } from "sonner";
+import { Loader2, RefreshCw } from "lucide-react";
+import { useEtatCivil } from "@/hooks/use-etat-civil";
+import { addEtatCivilSchema, AddEtatCivilFormData } from "@/schemas/etatCivilSchema";
+
+interface AddEtatCivilDialogProps {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  onSuccess?: () => void;
+}
+
+export function AddEtatCivilDialog({ open, onOpenChange, onSuccess }: AddEtatCivilDialogProps) {
+  const [isLoading, setIsLoading] = useState(false);
+    const { addEtatCivil } = useEtatCivil();
+
+  const form = useForm<AddEtatCivilFormData>({
+    resolver: zodResolver(addEtatCivilSchema),
+    defaultValues: {
+      Reference: "",
+      Libelle: "",
+    },
+  });
+
+  const onSubmit = async (data: AddEtatCivilFormData) => {
+    setIsLoading(true);
+    try {
+      const success = await addEtatCivil(data);
+      if (success) {
+        toast.success(`✅ Etat civil créé - ${data.Libelle} a été ajouté avec succès.`);
+        form.reset();
+        onOpenChange(false);
+        onSuccess?.();
+      }
+    } catch (error) {
+      console.error('Erreur création état civil:', error);
+      toast.error(`❌ Erreur de création - ${error instanceof Error ? error.message : "Impossible de créer l'état civil. Veuillez réessayer."}`);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="sm:max-w-[525px]">
+        <DialogHeader>
+          <DialogTitle>Ajouter un nouveau état civil</DialogTitle>
+          <DialogDescription>
+            Remplissez les informations de l'état civil. Cliquez sur enregistrer quand vous avez terminé.
+          </DialogDescription>
+        </DialogHeader>
+        <Form {...form}>
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+            <FormField
+              control={form.control}
+              name="Reference"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Référence *</FormLabel>
+                  <FormControl>
+                    <div className="flex gap-2">
+                      <Input 
+                        placeholder="Ex: OBJ001" 
+                        {...field} 
+                        disabled={isLoading}
+                      />
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="icon"
+                        onClick={() => {
+                          const timestamp = Date.now().toString().slice(-6);
+                          const randomSuffix = Math.random().toString(36).substring(2, 5).toUpperCase();
+                          const generatedReference = `OBJ${timestamp}${randomSuffix}`;
+                          field.onChange(generatedReference);
+                        }}
+                        disabled={isLoading}
+                        title="Générer une référence automatique"
+                      >
+                        <RefreshCw className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="Libelle"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Libellé *</FormLabel>
+                  <FormControl>
+                    <Input 
+                      placeholder="Ex: Célibataire" 
+                      {...field} 
+                      disabled={isLoading}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <DialogFooter>
+              <Button 
+                type="button" 
+                variant="outline" 
+                onClick={() => onOpenChange(false)}
+                disabled={isLoading}
+              >
+                Annuler
+              </Button>
+              <Button 
+                type="submit" 
+                disabled={isLoading}
+                className="gap-2"
+              >
+                {isLoading && <Loader2 className="h-4 w-4 animate-spin" />}
+                Enregistrer
+              </Button>
+            </DialogFooter>
+          </form>
+        </Form>
+      </DialogContent>
+    </Dialog>
+  );
+} 
