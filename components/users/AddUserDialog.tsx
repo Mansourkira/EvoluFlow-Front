@@ -154,6 +154,10 @@ export function AddUserDialog({ onUserAdded }: AddUserDialogProps) {
         Reinitialisation_mot_de_passe: data.Reinitialisation_mot_de_passe, // Use form value
       };
 
+      // Debug: Log the value being sent
+      console.log('Sending user data:', userData);
+      console.log('Reinitialisation_mot_de_passe value:', data.Reinitialisation_mot_de_passe, 'type:', typeof data.Reinitialisation_mot_de_passe);
+
       // Remove Image field if it's null to avoid backend issues
       if (userData.Image === null || userData.Image === undefined) {
         delete userData.Image;
@@ -175,7 +179,10 @@ export function AddUserDialog({ onUserAdded }: AddUserDialogProps) {
         const result = await response.json();
         toast({
           title: "✅ Utilisateur créé",
-          description: `${userData.Nom_Prenom} a été ajouté avec succès.${userData.Reinitialisation_mot_de_passe ? ' Il devra changer son mot de passe lors de sa première connexion.' : ' Il peut utiliser le mot de passe temporaire directement.'}`,
+          description: `${userData.Nom_Prenom} a été ajouté avec succès.${userData.Reinitialisation_mot_de_passe ? 
+            ` Mot de passe temporaire: 123456. L'utilisateur devra le changer dans l'heure qui suit sa première connexion.` : 
+            ' Il peut utiliser le mot de passe temporaire directement.'}`,
+          duration: 6000, // Show for 6 seconds to give time to read
         });
         
         // Reset form and close dialog
@@ -633,8 +640,8 @@ export function AddUserDialog({ onUserAdded }: AddUserDialogProps) {
                           Forcer la réinitialisation du mot de passe
                         </FormLabel>
                         <FormDescription className="text-sm text-gray-600">
-                          L'utilisateur sera obligé de changer son mot de passe lors de sa première connexion. 
-                          Recommandé pour la sécurité.
+                          L'utilisateur sera obligé de changer son mot de passe dans l'heure qui suit sa première connexion. 
+                          Après 1 heure, la demande expirera. Recommandé pour la sécurité.
                         </FormDescription>
                       </div>
                     </FormItem>
@@ -649,7 +656,7 @@ export function AddUserDialog({ onUserAdded }: AddUserDialogProps) {
                   <p className="text-blue-700 text-sm mt-1">
                     Un mot de passe temporaire (123456) sera assigné automatiquement. 
                     {form.watch("Reinitialisation_mot_de_passe") ? (
-                      <strong> L'utilisateur sera obligé de changer son mot de passe lors de sa première connexion</strong>
+                      <strong> L'utilisateur sera obligé de changer son mot de passe dans l'heure qui suit sa première connexion. Après 1 heure, la demande expirera</strong>
                     ) : (
                       " L'utilisateur peut utiliser ce mot de passe directement"
                     )} pour des raisons de sécurité.

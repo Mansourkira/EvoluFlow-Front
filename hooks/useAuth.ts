@@ -38,6 +38,7 @@ interface User {
   couleur?: string
   image?: string | null
   reinitialisation?: boolean
+  Derniere_connexion?: string
 }
 
 interface LoginApiResponse {
@@ -49,6 +50,7 @@ interface LoginApiResponse {
     Profil: string
     Profil_Libelle: string
     Reinitialisation_mot_de_passe?: boolean
+    Derniere_connexion?: string
   }
   message?: string
 }
@@ -72,6 +74,7 @@ interface UserApiResponse {
   Temp_Raffraichissement?: string
   Couleur?: string
   Image?: string | null
+  Derniere_connexion?: string
 }
 
 interface LoginResponse {
@@ -118,7 +121,8 @@ export const useLogin = () => {
             profil: data.user.Profil,
             profilLabel: data.user.Profil_Libelle || PROFILE_MAPPING[data.user.Profil as keyof typeof PROFILE_MAPPING] || data.user.Profil,
             typeUtilisateur: data.user.Type_Utilisateur,
-            reinitialisation: true
+            reinitialisation: true,
+            Derniere_connexion: data.user.Derniere_connexion
           }
           
           // Store token for password reset process
@@ -142,7 +146,8 @@ export const useLogin = () => {
           profil: data.user.Profil,
           profilLabel: data.user.Profil_Libelle || PROFILE_MAPPING[data.user.Profil as keyof typeof PROFILE_MAPPING] || data.user.Profil,
           typeUtilisateur: data.user.Type_Utilisateur,
-          reinitialisation: data.user.Reinitialisation_mot_de_passe || false
+          reinitialisation: data.user.Reinitialisation_mot_de_passe || false,
+          Derniere_connexion: data.user.Derniere_connexion
         }
 
         const loginResponse: LoginResponse = {
@@ -161,6 +166,13 @@ export const useLogin = () => {
         return loginResponse
       } else {
         const errorData = await response.json().catch(() => ({}))
+        
+        // Handle expired reset password case
+        if (errorData.expired && response.status === 403) {
+          setError(errorData.error || 'La demande de réinitialisation du mot de passe a expiré')
+          return null
+        }
+        
         setError(errorData.error || 'Email ou mot de passe incorrect')
         return null
       }
@@ -348,7 +360,8 @@ export const useUsers = () => {
           joinDate: new Date().toISOString().split('T')[0], // Default to today
           telephone: apiUser.Telephone,
           adresse: apiUser.Adresse,
-          image: apiUser.Image
+          image: apiUser.Image,
+          Derniere_connexion: apiUser.Derniere_connexion
         }))
 
         setUsers(transformedUsers)
@@ -451,86 +464,52 @@ export const usePasswordReset = () => {
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
-  const resetPassword = async (newPassword: string, confirmPassword: string): Promise<boolean> => {
-    setIsLoading(true)
-    setError(null)
+  const resetPassword = async (newPassword: string, confirmPassword: string) => {
+    setIsLoading(true);
+    setError(null);
 
     try {
-      if (newPassword !== confirmPassword) {
-        setError('Les mots de passe ne correspondent pas')
-        return false
-      }
-
-      if (newPassword.length < 6) {
-        setError('Le mot de passe doit contenir au moins 6 caractères')
-        return false
-      }
-
-      // Get user email from temporary user data or URL params
-      let userEmail = ''
-      const tempUser = localStorage.getItem('tempUser')
-      if (tempUser) {
-        const parsedTempUser = JSON.parse(tempUser)
-        userEmail = parsedTempUser.email
-      } else {
-        // Fallback to URL params if tempUser is not available
-        const urlParams = new URLSearchParams(window.location.search)
-        userEmail = urlParams.get('email') || ''
-      }
+      // Get user email from URL params
+      const urlParams = new URLSearchParams(window.location.search);
+      const userEmail = urlParams.get('email');
 
       if (!userEmail) {
-        setError('Email utilisateur non trouvé')
-        return false
+        setError('Email utilisateur non trouvé');
+        return { success: false, expired: false };
       }
 
-      // Call the backend reset-and-login endpoint
+      // Use the correct API URL with environment variable
       const response = await fetch('http://localhost:3000/api/v1/users/reset-and-login', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ 
+        body: JSON.stringify({
           E_mail: userEmail,
           New_Password: newPassword
-        }),
-      })
+        })
+      });
 
-      const data = await response.json()
+      const data = await response.json();
 
-      if (response.ok) {
-        // The backend returns token and user info for auto-login
-        
-        // Transform API response to our User format
-        const user: User = {
-          email: data.user.E_mail,
-          name: data.user.Nom_Prenom,
-          role: data.user.Type_Utilisateur,
-          profil: data.user.Profil,
-          profilLabel: data.user.Profil_Libelle || PROFILE_MAPPING[data.user.Profil as keyof typeof PROFILE_MAPPING] || data.user.Profil,
-          typeUtilisateur: data.user.Type_Utilisateur,
-          reinitialisation: false // Password has been reset
-        }
-
-        // Store user data and token for successful login
-        localStorage.setItem('user', JSON.stringify(user))
-        localStorage.setItem('token', data.token)
-        
-        // Clean up temporary data
-        localStorage.removeItem('tempUser')
-        
-        return true
-      } else {
-        setError(data.error || 'Erreur lors de la réinitialisation du mot de passe')
-        return false
+      if (!response.ok) {
+        setError(data.error);
+        return { success: false, expired: data.expired || false };
       }
+
+      // Store the new token
+      localStorage.setItem('token', data.token);
+      
+      return { success: true, expired: false };
+
     } catch (err) {
-      setError('Erreur de connexion au serveur')
-      console.error('Password reset error:', err)
-      return false
+      console.error('Reset password error:', err);
+      setError('Une erreur est survenue lors de la réinitialisation');
+      return { success: false, expired: false };
     } finally {
-      setIsLoading(false)
+      setIsLoading(false);
     }
-  }
+  };
 
   return { resetPassword, isLoading, error }
 }

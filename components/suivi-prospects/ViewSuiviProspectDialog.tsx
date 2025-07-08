@@ -46,7 +46,11 @@ export function ViewSuiviProspectDialog({
             </div>
             <div>
               <h4 className="text-sm font-medium text-gray-500">Libellé</h4>
-              <p className="mt-1 text-sm">{suiviProspect.Libelle || "Non défini"}</p>
+              <p className="mt-1 text-sm font-semibold">{suiviProspect.Libelle}</p>
+            </div>
+            <div>
+              <h4 className="text-sm font-medium text-gray-500">Relance</h4>
+              <p className="mt-1 text-sm font-semibold">{suiviProspect.Relance ? "Oui" : "Non"}</p>
             </div>
           </div>
           

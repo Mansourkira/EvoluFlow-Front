@@ -98,8 +98,12 @@ export function UpdateSiteDialog({ site, open, onOpenChange, onSiteUpdated }: Up
       });
 
       // Set image preview if site has logo
-      if (site.Sigle) {
-        setImagePreview(site.Sigle);
+      if (site.Sigle && typeof site.Sigle === 'string') {
+        // Remove data URL prefix if it exists to avoid double-prefixing
+        const base64Data = site.Sigle.startsWith('data:') 
+          ? site.Sigle.split(',')[1] 
+          : site.Sigle;
+        setImagePreview(base64Data);
       } else {
         setImagePreview(null);
       }

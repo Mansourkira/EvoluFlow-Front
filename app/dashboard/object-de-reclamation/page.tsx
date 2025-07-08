@@ -24,16 +24,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
+
 import {
   Select,
   SelectContent,
@@ -55,7 +46,7 @@ import {
   ChevronDown,
   Filter,
   X,
-  Loader2,
+
   RefreshCw,
   Columns,
   Plus,
@@ -111,9 +102,7 @@ export default function ObjectDeReclamationPage() {
   const [updateDialogOpen, setUpdateDialogOpen] = useState(false);
   const [viewDialogOpen, setViewDialogOpen] = useState(false);
   const [selectedObjetReclamation, setSelectedObjetReclamation] = useState<ObjetReclamation | null>(null);
-  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
-  const [objetReclamationToDelete, setObjetReclamationToDelete] = useState<string>("");
-  const [isDeleting, setIsDeleting] = useState(false);
+
 
   // Fetch data only on mount
   useEffect(() => {
@@ -229,26 +218,14 @@ export default function ObjectDeReclamationPage() {
   };
 
   const handleDeleteClick = async (reference: string): Promise<void> => {
-    setObjetReclamationToDelete(reference);
-    setDeleteDialogOpen(true);
-  };
-
-  const handleDeleteConfirm = async () => {
-    if (!objetReclamationToDelete) return;
-    
-    setIsDeleting(true);
     try {
-      await deleteObjetReclamation(objetReclamationToDelete);
+      await deleteObjetReclamation(reference);
       toast.success("Objet de réclamation supprimé avec succès");
       clearSelection();
       fetchObjetReclamations();
     } catch (error) {
       console.error('Error deleting objet de reclamation:', error);
       toast.error(error instanceof Error ? error.message : "Erreur lors de la suppression de l'objet de réclamation");
-    } finally {
-      setIsDeleting(false);
-      setDeleteDialogOpen(false);
-      setObjetReclamationToDelete("");
     }
   };
 
@@ -316,8 +293,6 @@ export default function ObjectDeReclamationPage() {
         onEdit={handleEditClick}
         onDelete={handleDeleteClick}
         onExport={handleExport}
-        selectedItems={selectedSituations}
-        onSelectedItemsChange={setSelectedSituations}
         addButton={
           <Button onClick={() => setAddDialogOpen(true)} size="sm">
             <PlusCircle className="h-4 w-4 mr-2" />
@@ -387,32 +362,7 @@ export default function ObjectDeReclamationPage() {
         />
       )}
 
-      {/* Delete Confirmation Dialog */}
-      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Êtes-vous sûr ?</AlertDialogTitle>
-            <AlertDialogDescription>
-                Cette action ne peut pas être annulée. Cela supprimera définitivement cet objet de réclamation.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel disabled={isDeleting}>Annuler</AlertDialogCancel>
-            <AlertDialogAction 
-              onClick={handleDeleteConfirm}
-              disabled={isDeleting}
-              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-            >
-              {isDeleting ? (
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-              ) : (
-                <Trash2 className="mr-2 h-4 w-4" />
-              )}
-              Supprimer
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+
     </div>
   );
 } 

@@ -49,7 +49,7 @@ interface GenericDataTableProps<T> {
   addDialog?: React.ReactNode
 }
 
-export function GenericDataTable<T>({ config, addDialog }: GenericDataTableProps<T>) {
+function GenericDataTableComponent<T extends Record<string, any>>({ config, addDialog }: GenericDataTableProps<T>) {
   const {
     data,
     filteredData,
@@ -667,4 +667,6 @@ export function GenericDataTable<T>({ config, addDialog }: GenericDataTableProps
       </div>
     </div>
   )
-} 
+}
+
+export const GenericDataTable = GenericDataTableComponent; 

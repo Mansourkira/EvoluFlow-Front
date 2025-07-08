@@ -50,9 +50,12 @@ export function ViewSiteDialog({ site, open, onOpenChange }: ViewSiteDialogProps
           {site.Sigle && (
             <div className="flex justify-center">
               <img
-                src={`data:image/jpeg;base64,${site.Sigle}`}
+                src={typeof site.Sigle === 'string' && site.Sigle.startsWith('data:') ? site.Sigle : `data:image/jpeg;base64,${site.Sigle}`}
                 alt={`Logo de ${site.Raison_Sociale}`}
                 className="w-24 h-24 object-cover rounded-lg border"
+                onError={(e) => {
+                  e.currentTarget.style.display = 'none';
+                }}
               />
             </div>
           )}

@@ -14,6 +14,7 @@ import {
 import {
   Form,
   FormControl,
+  FormDescription,
   FormField,
   FormItem,
   FormLabel,
@@ -24,6 +25,7 @@ import { Loader2, CreditCard, Shuffle } from "lucide-react";
 import { toast } from "sonner";
 import { useSuiviProspects } from "@/hooks/useSuiviProspects";
 import { addSuiviProspectSchema, type AddSuiviProspectFormData } from "@/schemas/suiviProspectSchema";
+import { Switch } from "@/components/ui/switch";
 
 interface AddSuiviProspectDialogProps {
   open: boolean;
@@ -122,6 +124,27 @@ export function AddSuiviProspectDialog({
                     <Input placeholder="Entrez le libellé" {...field} disabled={isLoading} />
                   </FormControl>
                   <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="Relance"
+              render={({ field }) => (
+                <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
+                  <div className="space-y-0.5">
+                    <FormLabel className="text-base">Relance</FormLabel>
+                    <FormDescription> 
+                      Activer/Désactiver la relance pour ce suivi prospect
+                    </FormDescription>
+                  </div>
+                  <FormControl>
+                    <Switch
+                      checked={field.value}
+                      onCheckedChange={field.onChange}
+                      disabled={isLoading}
+                    />
+                  </FormControl>
                 </FormItem>
               )}
             />

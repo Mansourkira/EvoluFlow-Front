@@ -34,6 +34,9 @@ import { useRouter, usePathname } from "next/navigation"
 import { useEffect, useState, useRef } from "react"
 import { useSocieteDialog } from "@/hooks/useSocieteDialog"
 import { ViewSocieteDialog } from "@/components/societes/ViewSocieteDialog"
+import { useToast } from "@/hooks/use-toast"
+import { Toaster } from "@/components/ui/toaster"
+import { getDynamicLogoUrl, getFallbackLogoUrl, getLogoAltText, getLogoKey } from '@/lib/logoUtils'
 import { 
   Search, 
   Bell, 
@@ -108,7 +111,8 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
   const [filteredOptions, setFilteredOptions] = useState<any[]>([])
   const [highlightedIndex, setHighlightedIndex] = useState(-1)
   const searchRef = useRef<HTMLDivElement>(null)
-  const { isOpen, societe, isLoading: societeLoading, error, openDialog, closeDialog } = useSocieteDialog()
+  const { isOpen, societe, isLoading: societeLoading, error, openDialog, closeDialog, updateSociete } = useSocieteDialog()
+  const { toast } = useToast()
 
   useEffect(() => {
     if (!isLoading && !isAuthenticated) {
@@ -222,6 +226,8 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
     return segments[segments.length - 1].charAt(0).toUpperCase() + segments[segments.length - 1].slice(1)
   }
 
+
+
   return (
     <SidebarProvider>
       <AppSidebar />
@@ -232,11 +238,25 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
           <div className="flex items-center gap-4">
             <SidebarTrigger className="-ml-1 h-8 w-8 hover:bg-gray-100 rounded-md transition-colors" />
             <Separator orientation="vertical" className="h-6 bg-gray-300" />
-            <img 
-              src="/admission1.png" 
-              alt="Logo" 
-              className="w-48 h-16 object-contain"
-            />
+            <button
+              onClick={openDialog}
+              className="hover:opacity-80 transition-opacity"
+              title="Cliquez pour modifier les informations de la société"
+            >
+              <img 
+                key={getLogoKey(societe)}
+                src={getDynamicLogoUrl(societe)}
+                alt={getLogoAltText(societe)} 
+                className="w-48 h-16 object-contain cursor-pointer transition-opacity duration-200"
+                onError={(e) => {
+                  const target = e.target as HTMLImageElement;
+                  const fallbackUrl = getFallbackLogoUrl(societe);
+                  if (target.src !== fallbackUrl) {
+                    target.src = fallbackUrl;
+                  }
+                }}
+              />
+            </button>
           </div>
           
           {/* Center Section: Search Bar */}
@@ -321,16 +341,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
 
           {/* Right Section: Société, Notifications & User Menu */}
           <div className="flex items-center gap-3">
-            {/* Société Info */}
-            <Button
-              variant="ghost"
-              size="sm"
-              className="h-9 w-9 p-0 hover:bg-gray-100"
-              onClick={openDialog}
-              title="Informations de la société"
-            >
-              <Building2 className="h-5 w-5 text-gray-600" />
-            </Button>
+          
 
             {/* Notifications */}
             <Button
@@ -415,7 +426,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
                 <DropdownMenuSeparator />
                 <DropdownMenuItem 
                   className="p-3 cursor-pointer hover:bg-red-50 text-red-600 focus:bg-red-50 focus:text-red-600"
-                  onClick={handleLogout}
+                  onClick={handleLogout}  
                 >
                   <LogOut className="mr-3 h-4 w-4" />
                   <span>Se déconnecter</span>
@@ -435,7 +446,12 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
         societe={societe}
         open={isOpen}
         onOpenChange={closeDialog}
+        onUpdateSociete={updateSociete}
+        onShowToast={toast}
       />
+      
+      {/* Toast Notifications */}
+      <Toaster />
     </SidebarProvider>
   )
 } 

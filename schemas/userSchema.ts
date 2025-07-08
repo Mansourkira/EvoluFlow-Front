@@ -85,6 +85,7 @@ export interface ViewUserData {
   Profil_Libelle?: string;
   Heure?: string;
   Temp_Raffraichissement?: string;
+  Derniere_connexion?: string;
   Couleur?: string;
   Image: string | null;
   Sexe?: 'Homme' | 'Femme';

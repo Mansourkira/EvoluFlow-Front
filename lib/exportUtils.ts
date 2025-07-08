@@ -95,6 +95,7 @@ export const exportToGenericPDF = (config: ExportConfig): boolean => {
   }
 }
 
+
 export const createObjetReclamationExportConfig = (objetReclamations: any[]): ExportConfig => ({
   title: 'Liste des Objets de Réclamation',
   filename: 'objets_reclamation',
@@ -369,9 +370,34 @@ export const createSiteExportConfig = (sites: any[]): ExportConfig => ({
   filename: 'sites',
   data: sites,
   columns: [
-    { key: 'Reference', label: 'Référence', width: 20, pdfWidth: 25, excelWidth: 20 },
-    { key: 'Libelle', label: 'Libellé', width: 30, pdfWidth: 35, excelWidth: 30 },
-    { key: 'Adresse', label: 'Adresse', width: 50, pdfWidth: 60, excelWidth: 50 }
+    { key: 'Reference', label: 'Référence', width: 15, pdfWidth: 20, excelWidth: 15 },
+    { key: 'Raison_Sociale', label: 'Raison Sociale', width: 30, pdfWidth: 35, excelWidth: 30 },
+    { key: 'Adresse', label: 'Adresse', width: 25, pdfWidth: 30, excelWidth: 25 },
+    { key: 'Ville', label: 'Ville', width: 15, pdfWidth: 20, excelWidth: 15 },
+    { key: 'Code_Postal', label: 'Code Postal', width: 12, pdfWidth: 15, excelWidth: 12 },
+    { key: 'Pays', label: 'Pays', width: 15, pdfWidth: 20, excelWidth: 15 },
+    { key: 'Telephone', label: 'Téléphone', width: 15, pdfWidth: 20, excelWidth: 15 },
+    { key: 'E_Mail_Commercial', label: 'Email Commercial', width: 25, pdfWidth: 30, excelWidth: 25 },
+    { key: 'Site_Web', label: 'Site Web', width: 25, pdfWidth: 30, excelWidth: 25 },
+    { key: 'Activite', label: 'Activité', width: 20, pdfWidth: 25, excelWidth: 20 },
+    { key: 'Matricule_Fiscal', label: 'Matricule Fiscal', width: 18, pdfWidth: 22, excelWidth: 18 },
+    { key: 'Capital', label: 'Capital', width: 15, pdfWidth: 20, excelWidth: 15 },
+    { 
+      key: 'Heure', 
+      label: 'Date de création', 
+      width: 18,
+      pdfWidth: 22,
+      excelWidth: 18,
+      formatter: (value: string) => value 
+        ? new Date(value).toLocaleDateString('fr-FR', {
+            day: '2-digit',
+            month: '2-digit',
+            year: 'numeric',
+            hour: '2-digit',
+            minute: '2-digit'
+          })
+        : 'Non spécifiée'
+    }
   ]
 })
 

@@ -50,6 +50,7 @@ import { useSites } from "@/hooks/useSites"
 import { AddSiteDialog } from "@/components/sites/AddSiteDialog"
 import { ViewSiteDialog } from "@/components/sites/ViewSiteDialog"
 import { UpdateSiteDialog } from "@/components/sites/UpdateSiteDialog"
+import { createSiteExportConfig, exportGenericData } from "@/lib/exportUtils"
 import type { Site } from "@/hooks/useSites"
 
 // Types de tri
@@ -367,20 +368,21 @@ export default function SitesPage() {
     }
   }
 
-  const handleBulkExport = async (format: string) => {
+  const handleBulkExport = async (format: 'PDF' | 'Excel' | 'Word') => {
     try {
-      // Simulate export functionality
       const selectedSitesData = sites.filter(site => selectedSites.includes(site.Reference))
-      const dataStr = JSON.stringify(selectedSitesData, null, 2)
-      const dataUri = 'data:application/json;charset=utf-8,'+ encodeURIComponent(dataStr)
-      const exportFileDefaultName = `sites_export.${format.toLowerCase()}`
-      const linkElement = document.createElement('a')
-      linkElement.setAttribute('href', dataUri)
-      linkElement.setAttribute('download', exportFileDefaultName)
-      linkElement.click()
       
-      toast.success(`📁 Export ${format} réalisé avec succès - ${selectedSites.length} site(s) exporté(s)`)
+      const config = createSiteExportConfig(selectedSitesData)
+      config.filename = 'sites_selectionnes'
+      const success = await exportGenericData(config, format)
+      
+      if (success) {
+        toast.success(`📁 Export ${format} réalisé avec succès - ${selectedSites.length} site(s) exporté(s)`)
+      } else {
+        toast.error(`❌ Erreur lors de l'export ${format}`)
+      }
     } catch (error) {
+      console.error('Erreur export sites sélectionnés:', error)
       toast.error('❌ Erreur lors de l\'export des sites')
     }
   }
@@ -459,18 +461,18 @@ export default function SitesPage() {
     }
   }
 
-  const handleExport = async (format: string) => {
+  const handleExport = async (format: 'PDF' | 'Excel' | 'Word') => {
     try {
-      const dataStr = JSON.stringify(filteredAndSortedSites, null, 2)
-      const dataUri = 'data:application/json;charset=utf-8,'+ encodeURIComponent(dataStr)
-      const exportFileDefaultName = `tous_les_sites.${format.toLowerCase()}`
-      const linkElement = document.createElement('a')
-      linkElement.setAttribute('href', dataUri)
-      linkElement.setAttribute('download', exportFileDefaultName)
-      linkElement.click()
+      const config = createSiteExportConfig(filteredAndSortedSites)
+      const success = await exportGenericData(config, format)
       
-      toast.success(`📁 Export ${format} réalisé avec succès - ${filteredAndSortedSites.length} site(s) exporté(s)`)
+      if (success) {
+        toast.success(`📁 Export ${format} réalisé avec succès - ${filteredAndSortedSites.length} site(s) exporté(s)`)
+      } else {
+        toast.error(`❌ Erreur lors de l'export ${format}`)
+      }
     } catch (error) {
+      console.error('Erreur export sites:', error)
       toast.error('❌ Erreur lors de l\'export des sites')
     }
   }
@@ -571,13 +573,17 @@ export default function SitesPage() {
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent>
-                  <DropdownMenuItem onClick={() => handleExport('JSON')}>
+                  <DropdownMenuItem onClick={() => handleExport('PDF')}>
                     <FileText className="mr-2 h-4 w-4" />
-                    JSON
+                    PDF
                   </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => handleExport('CSV')}>
+                  <DropdownMenuItem onClick={() => handleExport('Excel')}>
                     <FileSpreadsheet className="mr-2 h-4 w-4" />
-                    CSV
+                    Excel
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => handleExport('Word')}>
+                    <FileText className="mr-2 h-4 w-4" />
+                    Word
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
@@ -709,13 +715,17 @@ export default function SitesPage() {
                     </Button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent>
-                    <DropdownMenuItem onClick={() => handleBulkExport('JSON')}>
+                    <DropdownMenuItem onClick={() => handleBulkExport('PDF')}>
                       <FileText className="mr-2 h-4 w-4" />
-                      JSON
+                      PDF
                     </DropdownMenuItem>
-                    <DropdownMenuItem onClick={() => handleBulkExport('CSV')}>
+                    <DropdownMenuItem onClick={() => handleBulkExport('Excel')}>
                       <FileSpreadsheet className="mr-2 h-4 w-4" />
-                      CSV
+                      Excel
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => handleBulkExport('Word')}>
+                      <FileText className="mr-2 h-4 w-4" />
+                      Word
                     </DropdownMenuItem>
                   </DropdownMenuContent>
                 </DropdownMenu>
@@ -861,8 +871,15 @@ export default function SitesPage() {
                       {columnVisibility.logo && (
                         <TableCell>
                           <Avatar className="h-8 w-8">
-                            {site.Sigle ? (
-                              <AvatarImage src={`data:image/jpeg;base64,${site.Sigle}`} alt={site.Raison_Sociale} />
+                            {site.Sigle && typeof site.Sigle === 'string' ? (
+                              <AvatarImage 
+                                src={site.Sigle.startsWith('data:') ? site.Sigle : `data:image/jpeg;base64,${site.Sigle}`} 
+                                alt={site.Raison_Sociale}
+                                onError={(e) => {
+                                  // Hide the image and show fallback on error
+                                  e.currentTarget.style.display = 'none';
+                                }}
+                              />
                             ) : null}
                             <AvatarFallback>
                               <Building className="h-4 w-4" />
