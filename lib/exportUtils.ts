@@ -776,4 +776,14 @@ export const createSalleExportConfig = (salles: any[]): ExportConfig => ({
     },
   ],
 });
-// =====================
+export const createProfilUtilisateurExportConfig = (profils: any[]): ExportConfig => ({
+  title: "Liste des Profils Utilisateurs",
+  filename: "profils_utilisateur",
+  data: profils,
+  columns: [
+    { key: "Reference",     label: "Référence",      width: 20, pdfWidth: 30, excelWidth: 20 },
+    { key: "Libelle",       label: "Libellé",        width: 40, pdfWidth: 50, excelWidth: 40 },
+    { key: "Couleur_Badge", label: "Couleur Badge",  width: 30, pdfWidth: 35, excelWidth: 30 },
+  ],
+});
+
