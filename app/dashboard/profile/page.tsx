@@ -62,37 +62,71 @@ import {
 import { Separator } from "@/components/ui/separator"
 
 interface ExtendedUser {
-  id?: string
-  email: string
-  name: string
-  role: string
-  profil: string
-  profilLabel: string
-  typeUtilisateur: string
-  telephone?: string
-  adresse?: string
-  complementAdresse?: string
-  codePostal?: string
-  ville?: string
-  gouvernorat?: string
-  pays?: string
-  siteDefaut?: string
-  heure?: string
-  tempRaffraichissement?: string
-  couleur?: string
-  image?: string
-  reinitialisation?: boolean
-  sexe?: 'Homme' | 'Femme'
-  etatCivil?: 'Célibataire' | 'Marié(e)' | 'Divorcé(e)' | 'Veuf(ve)'
+  Reference: string
+  Nom_Prenom: string
+  E_mail: string
+  Adresse?: string
+  Complement_adresse?: string
+  Code_Postal?: string
+  Ville?: string
+  Gouvernorat?: string
+  Pays?: string
+  Telephone?: string
+  Type_Utilisateur: string
+  Profil: string
+  Site_Defaut?: string
+  Temp_Raffraichissement?: string
+  Couleur?: string
+  Image?: string
+  Reinitialisation_mot_de_passe?: boolean
+  Sexe?: 'Homme' | 'Femme'
+  Etat_Civil?: 'Célibataire' | 'Marié(e)' | 'Divorcé(e)' | 'Veuf(ve)'
   Derniere_connexion?: string
+  Heure?: string
+  Utilisateur?: string
 }
 
 export default function ProfilePage() {
-  const { getCurrentUser, user, isLoading, error } = useCurrentUser()
   const { changePassword, isLoading: isPasswordLoading, error: passwordError } = usePasswordChange()
   const [isEditing, setIsEditing] = useState(false)
   const [isSaving, setIsSaving] = useState(false)
-  
+  const [user, setUser] = useState<ExtendedUser | null>(null)
+  const [isLoading, setIsLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+
+  useEffect(() => {
+    const fetchUser = async () => {
+      try { 
+        const token = localStorage.getItem('token')
+        if (!token) {
+          setError('Token d\'authentification non trouvé')
+          setIsLoading(false)
+          return
+        }
+
+        const response = await fetch('http://localhost:3000/api/v1/users/me', {
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        })
+
+        if (!response.ok) {
+          throw new Error('Erreur lors du chargement du profil')
+        }
+
+        const data = await response.json()
+        console.log("data", data)
+        setUser(data.user) // Update this line to access the user object from the response
+        setIsLoading(false)
+      } catch (error) {
+        console.error('Profile fetch error:', error)
+        setError('Erreur lors du chargement du profil') 
+        setIsLoading(false)
+      }
+    }
+    fetchUser()
+  }, [])
+
   // Password change states
   const [isChangingPassword, setIsChangingPassword] = useState(false)
   const [currentPassword, setCurrentPassword] = useState('')
@@ -102,50 +136,44 @@ export default function ProfilePage() {
   const [showNewPassword, setShowNewPassword] = useState(false)
   const [showConfirmPassword, setShowConfirmPassword] = useState(false)
   const [passwordStrength, setPasswordStrength] = useState<'weak' | 'medium' | 'strong'>('weak')
-      console.log("user", user)
     // Profile form
   const form = useForm<ProfileUpdateFormData>({
     resolver: zodResolver(profileUpdateSchema),
-          defaultValues: {
-        Nom_Prenom: "",
-        E_mail: "",
-        Telephone: "",
-        Adresse: "",
-        Complement_adresse: "",
-        Code_Postal: "",
-        Ville: "",
-        Gouvernorat: "",
-        Pays: "Tunisie",
-        Couleur: "",
-        Temp_Raffraichissement: "",
-        Image: null,
-        Etat_Civil: undefined,
-      },
+    defaultValues: {
+      Nom_Prenom: user?.Nom_Prenom || "",
+      E_mail: user?.E_mail || "",
+      Telephone: user?.Telephone || "",
+      Adresse: user?.Adresse || "",
+      Complement_adresse: user?.Complement_adresse || "",
+      Code_Postal: user?.Code_Postal || "",
+      Ville: user?.Ville || "",
+      Gouvernorat: user?.Gouvernorat || "",
+      Pays: user?.Pays || "Tunisie",
+      Couleur: user?.Couleur || "",
+      Image: user?.Image || null,
+      Etat_Civil: user?.Etat_Civil || undefined,
+    },
   })
 
+  // Update form values when user data is loaded or when editing is toggled
   useEffect(() => {
-    getCurrentUser()
-  }, [])
-
-  useEffect(() => {
-    if (user) {
+    if (user && isEditing) {
       form.reset({
-        Nom_Prenom: user.name || "",
-        E_mail: user.email || "",
-        Telephone: user.telephone || "",
-        Adresse: user.adresse || "",
-        Complement_adresse: user.complementAdresse || "",
-        Code_Postal: user.codePostal || "",
-        Ville: user.ville || "",
-        Gouvernorat: user.gouvernorat || "",
-        Pays: user.pays || "Tunisie",
-        Couleur: user.couleur || "",
-        Temp_Raffraichissement: user.tempRaffraichissement || "",
-        Image: user.image || null,
-        Etat_Civil: (user as any).etatCivil || undefined,
+        Nom_Prenom: user.Nom_Prenom || "",
+        E_mail: user.E_mail || "",
+        Telephone: user.Telephone || "",
+        Adresse: user.Adresse || "",
+        Complement_adresse: user.Complement_adresse || "",
+        Code_Postal: user.Code_Postal || "",
+        Ville: user.Ville || "",
+        Gouvernorat: user.Gouvernorat || "",
+        Pays: user.Pays || "Tunisie",
+        Couleur: user.Couleur || "",
+        Image: user.Image || null,
+        Etat_Civil: user.Etat_Civil || undefined,
       })
     }
-  }, [user, form])
+  }, [user, isEditing, form])
 
   // Password strength validation
   useEffect(() => {
@@ -169,33 +197,69 @@ export default function ProfilePage() {
         return
       }
 
-      const response = await fetch('/api/users/update', {
+      const response = await fetch('http://localhost:3000/api/v1/users/update', {
         method: 'PUT',
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(data)
+        body: JSON.stringify({
+          E_mail: data.E_mail,
+          Nom_Prenom: data.Nom_Prenom,
+          Adresse: data.Adresse,
+          Complement_adresse: data.Complement_adresse,
+          Code_Postal: data.Code_Postal,
+          Ville: data.Ville,
+          Gouvernorat: data.Gouvernorat,
+          Pays: data.Pays,
+          Telephone: data.Telephone,
+          Image: data.Image,
+          Couleur: data.Couleur,
+          Etat_Civil: data.Etat_Civil,
+          // Keep existing values for fields we don't want to change
+          Type_Utilisateur: user?.Type_Utilisateur,
+          Profil: user?.Profil,
+          Site_Defaut: user?.Site_Defaut,
+          Sexe: user?.Sexe,
+          Utilisateur: user?.Utilisateur,
+          Reinitialisation_mot_de_passe: user?.Reinitialisation_mot_de_passe,
+        })
       })
 
-      if (response.ok) {
-        toast.success('✅ Profil mis à jour avec succès')
-        setIsEditing(false)
-        getCurrentUser() // Refresh user data
-      } else {
+      if (!response.ok) {
         const errorData = await response.json()
-        toast.error(`❌ Erreur de mise à jour - ${errorData.error || 'Impossible de mettre à jour le profil'}`)
+        throw new Error(errorData.error || 'Erreur lors de la mise à jour')
       }
+
+      const result = await response.json()
+      setUser(result.utilisateur)
+      toast.success('✅ Profil mis à jour avec succès')
+      setIsEditing(false)
     } catch (error) {
       console.error('Profile update error:', error)
-      toast.error('❌ Erreur de connexion - Impossible de contacter le serveur')
+      toast.error(`❌ Erreur de mise à jour - ${error instanceof Error ? error.message : 'Impossible de mettre à jour le profil'}`)
     } finally {
       setIsSaving(false)
     }
   }
 
   const handleCancel = () => {
-    form.reset()
+    if (user) {
+      form.reset({
+        Nom_Prenom: user.Nom_Prenom || "",
+        E_mail: user.E_mail || "",
+        Telephone: user.Telephone || "",
+        Adresse: user.Adresse || "",
+        Complement_adresse: user.Complement_adresse || "",
+        Code_Postal: user.Code_Postal || "",
+        Ville: user.Ville || "",
+        Gouvernorat: user.Gouvernorat || "",
+        Pays: user.Pays || "Tunisie",
+        Couleur: user.Couleur || "",
+        Image: user.Image || null,
+        Etat_Civil: user.Etat_Civil || undefined,
+      })
+    }
     setIsEditing(false)
   }
 
@@ -293,11 +357,11 @@ export default function ProfilePage() {
         <div className="flex items-center gap-3">
           <Badge variant="default" className="gap-2">
             <Shield className="h-4 w-4" />
-            {user.profilLabel}
+            {user.Profil}
           </Badge>
           <Badge variant="secondary" className="gap-2">
             <User className="h-4 w-4" />
-            {user.typeUtilisateur}
+            {user.Type_Utilisateur}
           </Badge>
         </div>
       </div>
@@ -342,22 +406,22 @@ export default function ProfilePage() {
               {/* Avatar Section */}
               <div className="flex items-center space-x-6 p-4 bg-gray-50 rounded-lg">
                 <Avatar className="h-24 w-24 ring-4 ring-white shadow-lg">
-                  <AvatarImage src={user.image || undefined} alt={user.name} />
+                  <AvatarImage src={user.Image || undefined} alt={user.Nom_Prenom} />
                   <AvatarFallback className="text-2xl font-semibold bg-gradient-to-br from-blue-500 to-purple-600 text-white">
-                    {user.name?.charAt(0)?.toUpperCase() || 'U'}
+                    {user.Nom_Prenom?.charAt(0)?.toUpperCase() || 'U'}
                   </AvatarFallback>
                 </Avatar>
                 <div>
-                  <h3 className="text-2xl font-semibold">{user.name}</h3>
-                  <p className="text-muted-foreground">{user.email}</p>
+                  <h3 className="text-2xl font-semibold">{user.Nom_Prenom}</h3>
+                  <p className="text-muted-foreground">{user.E_mail}</p>
                   <div className="flex items-center gap-2 mt-3">
                     <Badge variant="outline" className="text-xs">
-                      {user.role}
+                      {user.Type_Utilisateur}
                     </Badge>
-                    {(user as any).sexe && (
+                    {user.Sexe && (
                       <Badge variant="outline" className="text-xs gap-1">
                         <Heart className="h-3 w-3" />
-                        {(user as any).sexe}
+                        {user.Sexe}
                       </Badge>
                     )}
                   </div>
@@ -455,7 +519,11 @@ export default function ProfilePage() {
                           render={({ field }) => (
                             <FormItem>
                               <FormLabel>État Civil</FormLabel>
-                              <Select onValueChange={field.onChange} value={field.value}>
+                              <Select 
+                                onValueChange={field.onChange} 
+                                defaultValue={field.value}
+                                value={field.value}
+                              >
                                 <FormControl>
                                   <SelectTrigger>
                                     <SelectValue placeholder="Sélectionner l'état civil" />
@@ -594,20 +662,6 @@ export default function ProfilePage() {
                             </FormItem>
                           )}
                         />
-
-                        <FormField
-                          control={form.control}
-                          name="Temp_Raffraichissement"
-                          render={({ field }) => (
-                            <FormItem>
-                              <FormLabel>Temps de rafraîchissement</FormLabel>
-                              <FormControl>
-                                <Input {...field} placeholder="Temps en secondes" />
-                              </FormControl>
-                              <FormMessage />
-                            </FormItem>
-                          )}
-                        />
                       </div>
                     </div>
 
@@ -648,44 +702,44 @@ export default function ProfilePage() {
                         <Label className="text-sm font-medium text-muted-foreground">Email</Label>
                         <div className="flex items-center gap-2 p-2 bg-gray-50 rounded">
                           <Mail className="h-4 w-4 text-muted-foreground" />
-                          <span>{user.email}</span>
+                          <span>{user.E_mail}</span>
                         </div>
                       </div>
                       
-                      {user.telephone && (
+                      {user.Telephone && (
                         <div className="space-y-2">
                           <Label className="text-sm font-medium text-muted-foreground">Téléphone</Label>
                           <div className="flex items-center gap-2 p-2 bg-gray-50 rounded">
                             <Phone className="h-4 w-4 text-muted-foreground" />
-                            <span>{user.telephone}</span>
+                            <span>{user.Telephone}</span>
                           </div>
                         </div>
                       )}
 
-                      {(user as any).etatCivil && (
+                      {user.Etat_Civil && (
                         <div className="space-y-2">
                           <Label className="text-sm font-medium text-muted-foreground">État Civil</Label>
                           <div className="flex items-center gap-2 p-2 bg-gray-50 rounded">
                             <Heart className="h-4 w-4 text-muted-foreground" />
-                            <span>{(user as any).etatCivil}</span>
+                            <span>{user.Etat_Civil}</span>
                           </div>
                         </div>
                       )}
                     </div>
 
                     <div className="space-y-4">
-                      {user.adresse && (
+                      {user.Adresse && (
                         <div className="space-y-2">
                           <Label className="text-sm font-medium text-muted-foreground">Adresse</Label>
                           <div className="flex items-start gap-2 p-2 bg-gray-50 rounded">
                             <MapPin className="h-4 w-4 text-muted-foreground mt-0.5" />
                             <div>
-                              <div>{user.adresse}</div>
-                              {user.complementAdresse && <div className="text-sm text-muted-foreground">{user.complementAdresse}</div>}
+                              <div>{user.Adresse}</div>
+                              {user.Complement_adresse && <div className="text-sm text-muted-foreground">{user.Complement_adresse}</div>}
                               <div className="text-sm text-muted-foreground">
-                                {user.codePostal} {user.ville}
-                                {user.gouvernorat && `, ${user.gouvernorat}`}
-                                {user.pays && `, ${user.pays}`}
+                                {user.Code_Postal} {user.Ville}
+                                {user.Gouvernorat && `, ${user.Gouvernorat}`}
+                                {user.Pays && `, ${user.Pays}`}
                               </div>
                             </div>
                           </div>
@@ -719,7 +773,7 @@ export default function ProfilePage() {
                       <Building className="h-4 w-4 text-muted-foreground" />
                       <span className="text-sm font-medium">Site par défaut</span>
                     </div>
-                    <span className="text-sm font-medium">{user.siteDefaut || 'Non défini'}</span>
+                    <span className="text-sm font-medium">{user.Site_Defaut || 'Non défini'}</span>
                   </div>
                   
                   <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
@@ -739,6 +793,14 @@ export default function ProfilePage() {
                         : 'Inconnue'}
                     </span>
                   </div>
+
+                  <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                    <div className="flex items-center gap-2">
+                      <Shield className="h-4 w-4 text-muted-foreground" />
+                      <span className="text-sm font-medium">Type d'utilisateur</span>
+                    </div>
+                    <span className="text-sm font-medium">{user.Type_Utilisateur || 'Non défini'}</span>
+                  </div>
                 </div>
 
                 <div className="space-y-4">
@@ -747,7 +809,7 @@ export default function ProfilePage() {
                       <Palette className="h-4 w-4 text-muted-foreground" />
                       <span className="text-sm font-medium">Thème</span>
                     </div>
-                    <span className="text-sm font-medium">{user.couleur || 'Par défaut'}</span>
+                    <span className="text-sm font-medium">{user.Couleur || 'Par défaut'}</span>
                   </div>
 
                   <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
@@ -755,7 +817,15 @@ export default function ProfilePage() {
                       <Clock className="h-4 w-4 text-muted-foreground" />
                       <span className="text-sm font-medium">Rafraîchissement</span>
                     </div>
-                    <span className="text-sm font-medium">{user.tempRaffraichissement || 'Automatique'}</span>
+                    <span className="text-sm font-medium">{user.Temp_Raffraichissement || 'Automatique'}</span>
+                  </div>
+
+                  <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                    <div className="flex items-center gap-2">
+                      <User className="h-4 w-4 text-muted-foreground" />
+                      <span className="text-sm font-medium">Profil</span>
+                    </div>
+                    <span className="text-sm font-medium">{user.Profil || 'Non défini'}</span>
                   </div>
                 </div>
               </div>

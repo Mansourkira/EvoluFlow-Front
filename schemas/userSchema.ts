@@ -102,22 +102,30 @@ export interface ViewUserData {
 
 // Profile Update Schema - for profile section
 export const profileUpdateSchema = z.object({
-  Nom_Prenom: z.string().min(1, 'Nom complet est requis').max(255, 'Nom doit être inférieur à 255 caractères'),
-  E_mail: z.string().min(1, 'Email est requis').email('Format email invalide').max(255, 'Email doit être inférieur à 255 caractères'),
-  Telephone: z.string().max(255, 'Numéro de téléphone doit être inférieur à 255 caractères').optional(),
-  Adresse: z.string().max(255, 'Adresse doit être inférieure à 255 caractères').optional(),
-  Complement_adresse: z.string().max(255, 'Complément d\'adresse doit être inférieur à 255 caractères').optional(),
-  Code_Postal: z.string().max(30, 'Code postal doit être inférieur à 30 caractères').optional(),
-  Ville: z.string().max(255, 'Ville doit être inférieure à 255 caractères').optional(),
-  Gouvernorat: z.string().max(255, 'Gouvernorat doit être inférieur à 255 caractères').optional(),
-  Pays: z.string().max(255, 'Pays doit être inférieur à 255 caractères').optional(),
+  Nom_Prenom: z.string().min(1, "Le nom est requis"),
+  E_mail: z.string().email("Email invalide").min(1, "L'email est requis"),
+  Telephone: z.string().optional(),
+  Adresse: z.string().optional(),
+  Complement_adresse: z.string().optional(),
+  Code_Postal: z.string().optional(),
+  Ville: z.string().optional(),
+  Gouvernorat: z.string().optional(),
+  Pays: z.string().optional(),
   Couleur: z.string().optional(),
-  Temp_Raffraichissement: z.string().optional(),
-  Image: z.string().nullable().optional(),
-  Etat_Civil: z.enum(['Célibataire', 'Marié(e)', 'Divorcé(e)', 'Veuf(ve)']).optional(),
-  Derniere_connexion: z.string().optional(),
-  Heure: z.string().optional(),
-});
+  Temp_Raffraichissement: z.string()
+    .optional()
+    .transform((val) => (val ? parseInt(val) : undefined))
+    .refine((val) => !val || (Number.isInteger(val) && val >= 0), {
+      message: "Le temps de rafraîchissement doit être un nombre entier positif"
+    }),
+  Image: z.any().optional(), // Handle file upload separately
+  Etat_Civil: z.enum([
+    EtatCivilOptions.CELIBATAIRE,
+    EtatCivilOptions.MARIE,
+    EtatCivilOptions.DIVORCE,
+    EtatCivilOptions.VEUF
+  ]).optional(),
+})
 
 export type ProfileUpdateFormData = z.infer<typeof profileUpdateSchema>;
 
