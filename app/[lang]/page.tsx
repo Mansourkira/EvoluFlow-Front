@@ -6,6 +6,41 @@ import { Badge } from "@/components/ui/badge"
 import { Users, Target, BarChart3, Shield, Zap, CheckCircle, ArrowRight, Globe, Award, BookOpen, MapPin } from "lucide-react"
 import Link from "next/link"
 import Navbar from "@/components/navbar"
+import {getTranslations} from 'next-intl/server';
+import { getDictionary } from '@/locales/messages/dictionnaries/en.json';
+import { useTranslations } from 'next-intl';
+import LocaleSwitcher from '@/components/localeswitcher';
+
+export  async function IndexPage() {
+  // Utilisation de getTranslations pour les composants serveur
+  const t = await getTranslations('Index'); // 'Index' fait référence à la clé dans votre JSON
+
+  return (
+    <div>
+      <h1>{t('title')}</h1>
+      <p>{t('description')}</p>
+      <LocaleSwitcher /> {/* Un composant pour basculer la langue */}
+    </div>
+  );
+}
+
+export  async function Page({
+  params,
+}: {
+  params: Promise<{ lang: 'en' | 'fr' }>
+}) {
+  const { lang } = await params
+  const dict = await getDictionary(lang) // en
+  return <button>{dict.products.cart}</button> // Add to Cart
+} 
+
+
+
+export  async function HomePage() {
+  const t = await getTranslations('HomePage');
+  return <h1>{t('title')}</h1>;
+}
+
 
 export default function Component() {
   return (
