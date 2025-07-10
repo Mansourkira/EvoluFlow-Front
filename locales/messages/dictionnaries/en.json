@@ -1,0 +1,10 @@
+{
+  "Index": {
+    "title": "Hello from Next.js!",
+    "description": "This is an internationalized application."
+  },
+  "LocaleSwitcher": {
+    "label": "Change language",
+    "locale": "{locale, select, en {English} fr {French} ar {Arabic} other {Unknown}}"
+  }
+}
