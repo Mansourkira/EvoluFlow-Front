@@ -37,7 +37,7 @@ import { addUserSchema, type AddUserFormData, SexeOptions, EtatCivilOptions, Typ
 import { useToast } from "@/hooks/use-toast";
 import { ImageUpload } from "@/components/ui/ImageUpload";
 import { TUNISIA_GOVERNORATES, USER_TYPES, safeMapWithUniqueKeys, deduplicateArray } from "@/lib/constants";
-import { Loader2, Plus, Shield, User, Eye, EyeOff, RefreshCw, X, Image as ImageIcon } from "lucide-react";
+import { Loader2, Plus, Shield, User, Eye, EyeOff, RefreshCw, X, Image as ImageIcon, Wand2 } from "lucide-react";
 
 interface Profile {
   Reference: string;
@@ -60,14 +60,32 @@ const generatePassword = () => {
   return password;
 };
 
+// Add this helper function to generate email
+const generateEmail = (fullName: string) => {
+  const normalizedName = fullName
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '') // Remove accents
+    .replace(/[^a-z\s]/g, ''); // Keep only letters and spaces
+  
+  const [firstName, ...lastNameParts] = normalizedName.split(' ');
+  const lastName = lastNameParts.join('');
+  
+  if (!firstName || !lastName) return '';
+  
+  return `${firstName}.${lastName}@evolucampus.com`;
+};
+
 export function AddUserDialog({ onUserAdded }: AddUserDialogProps) {
   const [open, setOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [profiles, setProfiles] = useState<Profile[]>([]);
   const [loadingProfiles, setLoadingProfiles] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+  const [currentUser, setCurrentUser] = useState<any>(null);
   const { sites, isLoading: loadingSites } = useSites();
   const { toast } = useToast();
+  const baseUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3000";
 
   const form = useForm<AddUserFormData>({
     resolver: zodResolver(addUserSchema),
@@ -82,8 +100,8 @@ export function AddUserDialog({ onUserAdded }: AddUserDialogProps) {
       Gouvernorat: "",
       Pays: "Tunisie",
       Telephone: "",
-      Type_Utilisateur: "",
-      Mot_de_passe: generatePassword(), 
+      Type_Utilisateur: "Utilisateur avec pouvoir",
+      Mot_de_passe: "123456", 
       Site_Defaut: "",
       Profil: "",
       Image: null,
@@ -93,13 +111,65 @@ export function AddUserDialog({ onUserAdded }: AddUserDialogProps) {
     },
   });
 
+  // Add this to log form errors
+  useEffect(() => {
+    const subscription = form.watch(() => {
+      const errors = form.formState.errors;
+      if (Object.keys(errors).length > 0) {
+        console.log('Form validation errors:', errors);
+      }
+    });
+    return () => subscription.unsubscribe();
+  }, [form]);
+
+  // Add this function to handle email generation
+  const handleGenerateEmail = () => {
+    const fullName = form.getValues('Nom_Prenom');
+    if (!fullName) {
+      toast({
+        title: "Erreur",
+        description: "Veuillez d'abord remplir le champ 'Nom Complet'",
+        variant: "destructive",
+      });
+      return;
+    }
+    const generatedEmail = generateEmail(fullName);
+    form.setValue('E_mail', generatedEmail);
+  };
+
+  // Fetch current user information
+  useEffect(() => {
+    const fetchCurrentUser = async () => {
+      try {
+        const token = localStorage.getItem('token');
+        const response = await fetch(`${baseUrl}/api/v1/users/me`, {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json',
+          },
+        });
+
+        if (response.ok) {
+          const userData = await response.json();
+          setCurrentUser(userData.user);
+        }
+      } catch (error) {
+        console.error('Error fetching current user:', error);
+      }
+    };
+
+    if (open) {
+      fetchCurrentUser();
+    }
+  }, [open]);
+
   // Fetch profiles when component mounts
   useEffect(() => {
     const fetchProfiles = async () => {
       setLoadingProfiles(true);
       try {
         const token = localStorage.getItem('token');
-        const response = await fetch('/api/profiles', {
+        const response = await fetch(`${baseUrl}/api/v1/profiles`, {
           headers: {
             'Authorization': `Bearer ${token}`,
             'Content-Type': 'application/json',
@@ -133,7 +203,31 @@ export function AddUserDialog({ onUserAdded }: AddUserDialogProps) {
     }
   }, [open, toast]);
 
+  // Check if current user can modify user types
+  const canModifyUserType = currentUser && 
+    (currentUser.Type_Utilisateur === 'admin' || 
+     currentUser.Type_Utilisateur === 'Admin' ||
+     currentUser.Profil_Libelle?.toLowerCase().includes('admin'));
+
   const onSubmit = async (data: AddUserFormData) => {
+    console.log("Form submission started", data);
+
+    // Validate required fields
+    if (!data.Nom_Prenom || !data.E_mail || !data.Site_Defaut || !data.Profil) {
+      console.log("Missing required fields:", {
+        name: !data.Nom_Prenom,
+        email: !data.E_mail,
+        site: !data.Site_Defaut,
+        profile: !data.Profil
+      });
+      toast({
+        title: "⚠️ Champs requis",
+        description: "Veuillez remplir tous les champs obligatoires.",
+        variant: "destructive",
+      });
+      return;
+    }
+
     // Validate that profile is not a placeholder value
     if (!data.Profil || data.Profil === "loading" || data.Profil === "no-profiles") {
       toast({
@@ -151,12 +245,12 @@ export function AddUserDialog({ onUserAdded }: AddUserDialogProps) {
         ...data,
         Reference: data.Reference || `U${String(Date.now()).slice(-3)}`,
         Mot_de_passe: "123456", // Ensure fixed password
-        Reinitialisation_mot_de_passe: data.Reinitialisation_mot_de_passe, // Use form value
+        Reinitialisation_mot_de_passe: data.Reinitialisation_mot_de_passe ?? true, // Default to true if undefined
+        Type_Utilisateur: data.Type_Utilisateur || "Utilisateur avec pouvoir" // Ensure default type
       };
 
       // Debug: Log the value being sent
       console.log('Sending user data:', userData);
-      console.log('Reinitialisation_mot_de_passe value:', data.Reinitialisation_mot_de_passe, 'type:', typeof data.Reinitialisation_mot_de_passe);
 
       // Remove Image field if it's null to avoid backend issues
       if (userData.Image === null || userData.Image === undefined) {
@@ -165,8 +259,12 @@ export function AddUserDialog({ onUserAdded }: AddUserDialogProps) {
 
       // Get the authentication token from localStorage
       const token = localStorage.getItem('token');
+      if (!token) {
+        throw new Error('Token d\'authentification non trouvé');
+      }
       
-      const response = await fetch('/api/users/add', {
+      console.log('Making API request to:', `${baseUrl}/api/v1/users/add`);
+      const response = await fetch(`${baseUrl}/api/v1/users/add`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -175,23 +273,33 @@ export function AddUserDialog({ onUserAdded }: AddUserDialogProps) {
         body: JSON.stringify(userData),
       });
 
+      console.log('API Response status:', response.status);
+      
       if (response.ok) {
         const result = await response.json();
+        console.log('API Response data:', result);
+        
         toast({
           title: "✅ Utilisateur créé",
           description: `${userData.Nom_Prenom} a été ajouté avec succès.${userData.Reinitialisation_mot_de_passe ? 
             ` Mot de passe temporaire: 123456. L'utilisateur devra le changer dans l'heure qui suit sa première connexion.` : 
             ' Il peut utiliser le mot de passe temporaire directement.'}`,
-          duration: 6000, // Show for 6 seconds to give time to read
+          duration: 6000,
         });
         
         // Reset form and close dialog
         form.reset();
         setOpen(false);
-        onUserAdded?.();
+        
+        // Call the callback after successful creation
+        console.log('Calling onUserAdded callback');
+        if (onUserAdded) {
+          onUserAdded();
+        }
       } else {
         const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData.error || 'Erreur lors de la création de l\'utilisateur');
+        console.error('API Error:', errorData);
+        throw new Error(errorData.error || errorData.message || 'Erreur lors de la création de l\'utilisateur');
       }
     } catch (error) {
       console.error('Erreur création utilisateur:', error);
@@ -205,6 +313,32 @@ export function AddUserDialog({ onUserAdded }: AddUserDialogProps) {
     }
   };
 
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    console.log("Form submitted, current values:", form.getValues());
+    
+    // Check form validity
+    const isValid = await form.trigger();
+    console.log("Form is valid:", isValid);
+    
+    if (!isValid) {
+      const errors = form.formState.errors;
+      console.log("Validation errors:", errors);
+      
+      // Show error toast with field names that have errors
+      const errorFields = Object.keys(errors).join(', ');
+      toast({
+        title: "⚠️ Validation échouée",
+        description: `Veuillez vérifier les champs suivants: ${errorFields}`,
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // If valid, submit the form
+    form.handleSubmit(onSubmit)(e);
+  };
+
   const handleCancel = () => {
     form.reset();
     setOpen(false);
@@ -213,7 +347,13 @@ export function AddUserDialog({ onUserAdded }: AddUserDialogProps) {
 
 
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
+    <Dialog open={open} onOpenChange={(newOpen) => {
+      if (!newOpen) {
+        // Reset form when dialog is closed
+        form.reset();
+      }
+      setOpen(newOpen);
+    }}>
       <DialogTrigger asChild>
         <Button size="sm">
           <Plus className="h-4 w-4 mr-2" />
@@ -232,7 +372,7 @@ export function AddUserDialog({ onUserAdded }: AddUserDialogProps) {
         </DialogHeader>
 
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+          <form onSubmit={handleSubmit} className="space-y-6">
             {/* Basic Information */}
             <div className="space-y-4">
               <h3 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
@@ -262,9 +402,20 @@ export function AddUserDialog({ onUserAdded }: AddUserDialogProps) {
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>Email *</FormLabel>
-                      <FormControl>
-                        <Input type="email" placeholder="Entrer l'adresse email" {...field} />
-                      </FormControl>
+                      <div className="flex gap-2">
+                        <FormControl>
+                          <Input placeholder="email@example.com" {...field} />
+                        </FormControl>
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="icon"
+                          onClick={handleGenerateEmail}
+                          title="Générer l'email à partir du nom complet"
+                        >
+                          <Wand2 className="h-4 w-4" />
+                        </Button>
+                      </div>
                       <FormMessage />
                     </FormItem>
                   )}
@@ -460,30 +611,47 @@ export function AddUserDialog({ onUserAdded }: AddUserDialogProps) {
               </h3>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 {/* User Type */}
-                <FormField
-                  control={form.control}
-                  name="Type_Utilisateur"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Type d'Utilisateur *</FormLabel>
-                      <Select onValueChange={field.onChange} defaultValue={field.value}>
-                        <FormControl>
-                          <SelectTrigger>
-                            <SelectValue placeholder="Sélectionner le type" />
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                          {USER_TYPES.map((type, index) => (
-                            <SelectItem key={`user-type-${type}-${index}`} value={type}>
-                              {type}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
+                {canModifyUserType ? (
+                  <FormField
+                    control={form.control}
+                    name="Type_Utilisateur"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Type d'Utilisateur *</FormLabel>
+                        <Select 
+                          onValueChange={field.onChange}
+                          value={field.value || "Utilisateur avec pouvoir"}
+                        >
+                          <FormControl>
+                            <SelectTrigger>
+                              <SelectValue placeholder="Sélectionner le type" />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            {USER_TYPES.map((type, index) => (
+                              <SelectItem key={`user-type-${type}-${index}`} value={type}>
+                                {type}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                ) : (
+                  <FormField
+                    control={form.control}
+                    name="Type_Utilisateur"
+                    render={({ field }) => (
+                      <input 
+                        type="hidden" 
+                        {...field} 
+                        value="Utilisateur avec pouvoir"
+                      />
+                    )}
+                  />
+                )}
 
                 {/* Default Site */}
                 <FormField

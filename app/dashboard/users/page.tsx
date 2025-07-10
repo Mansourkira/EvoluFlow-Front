@@ -287,6 +287,7 @@ export default function UsersPage() {
         idField="email"
         onView={handleView}
         onEdit={handleEdit}
+      
         onDelete={handleDelete}
         onBulkDelete={handleBulkDelete}
         onExport={handleExport}

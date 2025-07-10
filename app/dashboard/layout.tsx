@@ -114,6 +114,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
   const { isOpen, societe, isLoading: societeLoading, error, openDialog, closeDialog, updateSociete } = useSocieteDialog()
   const { toast } = useToast()
 
+  console.log(user)
   useEffect(() => {
     if (!isLoading && !isAuthenticated) {
       router.push('/login')
@@ -395,14 +396,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
                   <div className="flex flex-col space-y-1">
                     <p className="text-sm font-semibold text-gray-900">{user.name}</p>
                     <p className="text-xs text-gray-500">{user.email}</p>
-                    <div className="flex gap-2 mt-2">
-                      <Badge variant="outline" className="text-xs">
-                        {user.profil}
-                      </Badge>
-                      <Badge className="text-xs bg-[#3A90DA] text-white">
-                        {user.typeUtilisateur}
-                      </Badge>
-                    </div>
+                   
                   </div>
                 </DropdownMenuLabel>
                 <DropdownMenuSeparator />
@@ -414,14 +408,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
                     <User className="mr-3 h-4 w-4" />
                     <span>Mon profil</span>
                   </DropdownMenuItem>
-                  <DropdownMenuItem className="p-3 cursor-pointer hover:bg-gray-50">
-                    <Settings className="mr-3 h-4 w-4" />
-                    <span>Paramètres</span>
-                  </DropdownMenuItem>
-                  <DropdownMenuItem className="p-3 cursor-pointer hover:bg-gray-50">
-                    <FileText className="mr-3 h-4 w-4" />
-                    <span>Documentation</span>
-                  </DropdownMenuItem>
+                 
                 </DropdownMenuGroup>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem 

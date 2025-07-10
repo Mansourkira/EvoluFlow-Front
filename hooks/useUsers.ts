@@ -6,7 +6,7 @@ export interface User {
   Adresse?: string;
   Telephone?: string;
   E_mail?: string;
-  Type_Utilisateur?: string;
+    Type_Utilisateur?: string;
   Heure?: string;
   // ajoute ici d'autres champs si nécessaire
 }

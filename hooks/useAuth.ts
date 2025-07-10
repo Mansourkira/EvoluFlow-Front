@@ -37,6 +37,10 @@ interface User {
   tempRaffraichissement?: string
   couleur?: string
   image?: string | null
+  sexe?: string
+  etatCivil?: string
+  utilisateur?: string
+  utilisateurNom?: string
   reinitialisation?: boolean
   Derniere_connexion?: string
 }
@@ -74,6 +78,10 @@ interface UserApiResponse {
   Temp_Raffraichissement?: string
   Couleur?: string
   Image?: string | null
+  Sexe?: string
+  Etat_Civil?: string
+  Utilisateur?: string
+  Utilisateur_Nom?: string
   Derniere_connexion?: string
 }
 
@@ -238,7 +246,7 @@ export const useCurrentUser = () => {
   const getCurrentUser = async (): Promise<User | null> => {
     setIsLoading(true)
     setError(null)
-
+    
     try {
       const token = localStorage.getItem('token')
       
@@ -247,7 +255,7 @@ export const useCurrentUser = () => {
         return null
       }
 
-      const response = await fetch('/api/auth/me', {
+      const response = await fetch('http://localhost:3000/api/auth/me', {
         method: 'GET',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -256,10 +264,40 @@ export const useCurrentUser = () => {
       })
 
       const data = await response.json()
+      console.log("data", data)
+      if (response.ok) {
+        // Transform the API response to match our User interface
+        const apiUser = data.user
+        const transformedUser: User = {
+          id: apiUser.Reference,
+          email: apiUser.E_mail,
+          name: apiUser.Nom_Prenom,
+          role: apiUser.Type_Utilisateur || 'User',
+          profil: apiUser.Profil,
+          profilLabel: apiUser.Profil_Libelle || apiUser.Profil,
+          typeUtilisateur: apiUser.Type_Utilisateur || 'User',
+          status: 'Active',
+          telephone: apiUser.Telephone,
+          adresse: apiUser.Adresse,
+          complementAdresse: apiUser.Complement_adresse,
+          codePostal: apiUser.Code_Postal,
+          ville: apiUser.Ville,
+          gouvernorat: apiUser.Gouvernorat,
+          pays: apiUser.Pays,
+          siteDefaut: apiUser.Site_Defaut,
+          heure: apiUser.Heure,
+          tempRaffraichissement: apiUser.Temp_Raffraichissement,
+          couleur: apiUser.Couleur,
+          image: apiUser.Image,
+          sexe: apiUser.Sexe,
+          etatCivil: apiUser.Etat_Civil,
+          reinitialisation: apiUser.Reinitialisation_mot_de_passe,
+          Derniere_connexion: apiUser.Derniere_connexion
+        }
 
-      if (response.ok && data.success) {
-        setUser(data.user)
-        return data.user
+        console.log('Current user data:', transformedUser)
+        setUser(transformedUser)
+        return transformedUser
       } else {
         setError(data.error || 'Erreur lors de la récupération des données utilisateur')
         // If token is invalid, clear storage
@@ -354,13 +392,26 @@ export const useUsers = () => {
           name: apiUser.Nom_Prenom,
           role: apiUser.Type_Utilisateur || 'User',
           profil: apiUser.Profil,
-          profilLabel: PROFILE_MAPPING[apiUser.Profil as keyof typeof PROFILE_MAPPING] || apiUser.Profil,
+          profilLabel: apiUser.Profil_Libelle || apiUser.Profil,
           typeUtilisateur: apiUser.Type_Utilisateur || 'User',
           status: 'Active', // Default status since API doesn't provide this
-          joinDate: new Date().toISOString().split('T')[0], // Default to today
+          joinDate: apiUser.Heure ? new Date(apiUser.Heure).toISOString().split('T')[0] : new Date().toISOString().split('T')[0],
           telephone: apiUser.Telephone,
           adresse: apiUser.Adresse,
+          complementAdresse: apiUser.Complement_adresse,
+          codePostal: apiUser.Code_Postal,
+          ville: apiUser.Ville,
+          gouvernorat: apiUser.Gouvernorat,
+          pays: apiUser.Pays,
+          siteDefaut: apiUser.Site_Defaut,
+          heure: apiUser.Heure,
+          tempRaffraichissement: apiUser.Temp_Raffraichissement,
+          couleur: apiUser.Couleur,
           image: apiUser.Image,
+          sexe: apiUser.Sexe,
+          etatCivil: apiUser.Etat_Civil,
+          utilisateur: apiUser.Utilisateur,
+          utilisateurNom: apiUser.Utilisateur_Nom,
           Derniere_connexion: apiUser.Derniere_connexion
         }))
 

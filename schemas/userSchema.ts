@@ -62,6 +62,10 @@ export const updateUserSchema = z.object({
   Image: z.string().nullable().optional(),
   Sexe: z.enum(['Homme', 'Femme']).optional(),
   Etat_Civil: z.enum(['Célibataire', 'Marié(e)', 'Divorcé(e)', 'Veuf(ve)']).optional(),
+  // Security fields
+  Utilisateur: z.string().optional(),
+  Utilisateur_Nom: z.string().optional(),
+  Reinitialisation_mot_de_passe: z.boolean().optional(),
 });
 
 export type UpdateUserFormData = z.infer<typeof updateUserSchema>;
@@ -90,6 +94,10 @@ export interface ViewUserData {
   Image: string | null;
   Sexe?: 'Homme' | 'Femme';
   Etat_Civil?: 'Célibataire' | 'Marié(e)' | 'Divorcé(e)' | 'Veuf(ve)';
+  // Security fields
+  Utilisateur?: string;
+  Utilisateur_Nom?: string;
+  Reinitialisation_mot_de_passe?: boolean;
 }
 
 // Profile Update Schema - for profile section

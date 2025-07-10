@@ -50,7 +50,7 @@ export function ViewUserDialog({ user, open, onOpenChange }: ViewUserDialogProps
       try {
         const baseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000';
         const token = localStorage.getItem('token');
-        const response = await fetch(`${baseUrl}/api/users/get`, {
+        const response = await fetch(`${baseUrl}/api/v1/user`, {
           method: 'POST',
           headers: {
             'Authorization': `Bearer ${token}`,
@@ -79,7 +79,6 @@ export function ViewUserDialog({ user, open, onOpenChange }: ViewUserDialogProps
   const displayUser = fullUserData || user;
 
   if (!displayUser) return null;
-
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
@@ -120,10 +119,7 @@ export function ViewUserDialog({ user, open, onOpenChange }: ViewUserDialogProps
                     <Shield className="h-3 w-3" />
                     {displayUser.Profil_Libelle || displayUser.Profil}
                   </Badge>
-                  <Badge variant="secondary" className="gap-1">
-                    <User className="h-3 w-3" />
-                    {displayUser.Type_Utilisateur}
-                  </Badge>
+                 
                   {displayUser.Sexe && (
                     <Badge variant="outline" className="gap-1">
                       <Heart className="h-3 w-3" />
@@ -263,20 +259,38 @@ export function ViewUserDialog({ user, open, onOpenChange }: ViewUserDialogProps
                       </div>
                     </div>
 
-                    <div className="flex items-center gap-3">
-                      <User className="h-4 w-4 text-gray-500" />
-                      <div>
-                        <p className="text-sm font-medium text-gray-500">Type d'utilisateur</p>
-                        <p className="font-medium">{displayUser.Type_Utilisateur}</p>
+                  
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Security Information */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2 text-lg">
+                    <Shield className="h-5 w-5" />
+                    Informations de Sécurité
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="space-y-3">
+                    {displayUser.Utilisateur && (
+                      <div className="flex items-center gap-3">
+                        <User className="h-4 w-4 text-gray-500" />
+                        <div>
+                          <p className="text-sm font-medium text-gray-500">Créé par</p>
+                          <p className="font-medium">{displayUser.Utilisateur}</p>
+                        </div>
                       </div>
-                    </div>
+                    )}
+
                     {displayUser.Heure && (
                       <div className="flex items-center gap-3">
-                        <Clock className="h-4 w-4 text-gray-500" />
+                        <Calendar className="h-4 w-4 text-gray-500" />
                         <div>
                           <p className="text-sm font-medium text-gray-500">Date de création</p>
                           <p className="font-medium">
-                            {new Date(displayUser?.Heure || '').toLocaleDateString('fr-FR', {
+                            {new Date(displayUser.Heure).toLocaleDateString('fr-FR', {
                               year: 'numeric',
                               month: 'long',
                               day: 'numeric',
@@ -287,13 +301,14 @@ export function ViewUserDialog({ user, open, onOpenChange }: ViewUserDialogProps
                         </div>
                       </div>
                     )}
+
                     {displayUser.Derniere_connexion && (
                       <div className="flex items-center gap-3">
                         <Clock className="h-4 w-4 text-gray-500" />
                         <div>
                           <p className="text-sm font-medium text-gray-500">Dernière connexion</p>
                           <p className="font-medium">
-                            {new Date(displayUser?.Derniere_connexion || '').toLocaleDateString('fr-FR', {
+                            {new Date(displayUser.Derniere_connexion).toLocaleDateString('fr-FR', {
                               year: 'numeric',
                               month: 'long',
                               day: 'numeric',
@@ -301,6 +316,18 @@ export function ViewUserDialog({ user, open, onOpenChange }: ViewUserDialogProps
                               minute: '2-digit'
                             })}
                           </p>
+                        </div>
+                      </div>
+                    )}
+
+                    {displayUser.Reinitialisation_mot_de_passe && (
+                      <div className="flex items-center gap-3">
+                        <Shield className="h-4 w-4 text-amber-500" />
+                        <div>
+                          <p className="text-sm font-medium text-amber-600">Statut mot de passe</p>
+                          <Badge variant="outline" className="text-amber-600 border-amber-200">
+                            Réinitialisation requise
+                          </Badge>
                         </div>
                       </div>
                     )}
