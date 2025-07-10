@@ -6,40 +6,48 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { AddFiliereFormData, addFiliereSchema } from "@/schemas/filiereSchema";
 import { useFilieres } from "@/hooks/useFilieres";
 import { useToast } from "@/hooks/use-toast";
+
 import {
   Dialog,
   DialogContent,
-  DialogDescription,
-  DialogFooter,
   DialogHeader,
   DialogTitle,
+  DialogDescription,
+  DialogFooter,
   DialogTrigger,
 } from "@/components/ui/dialog";
 import {
   Form,
-  FormControl,
   FormField,
   FormItem,
   FormLabel,
+  FormControl,
   FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
-import { Plus, Loader2, GraduationCap, RefreshCw, Shuffle } from "lucide-react";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { useUsers } from "@/hooks/useUsers";
+import {
+  Plus,
+  Loader2,
+  GraduationCap,
+  RefreshCw,
+  Shuffle,
+} from "lucide-react";
 
 interface AddFiliereDialogProps {
   trigger?: React.ReactNode;
   onFiliereAdded?: () => void;
 }
 
-export function AddFiliereDialog({ trigger, onFiliereAdded }: AddFiliereDialogProps) {
+export function AddFiliereDialog({
+  trigger,
+  onFiliereAdded,
+}: AddFiliereDialogProps) {
   const [open, setOpen] = useState(false);
-  const { addFiliere, isLoading, filieres } = useFilieres();
+  const { filieres, refetch, addFiliere, isLoading } = useFilieres();
   const { toast } = useToast();
- 
+
   const form = useForm<AddFiliereFormData>({
     resolver: zodResolver(addFiliereSchema),
     defaultValues: {
@@ -48,92 +56,85 @@ export function AddFiliereDialog({ trigger, onFiliereAdded }: AddFiliereDialogPr
       Description: "",
       Delai_Max_Traitement_Dossier: undefined,
       Prix_Traitement_Dossier: undefined,
-          Heure   : undefined,
+      Heure: undefined,
     },
   });
 
-  // Generate reference function
-  const generateReference = () => {
-    const year = new Date().getFullYear().toString().slice(-2);
-    const month = (new Date().getMonth() + 1).toString().padStart(2, '0');
-    
-    // Get existing references to avoid duplicates
-    const existingRefs = filieres.map(f => f.Reference).filter(ref => ref.startsWith(`FIL${year}${month}`));
-    
-    // Generate a unique number
+  // Génère et set une référence unique
+  const generateReference = async () => {
+    // on refait d'abord un fetch pour avoir la liste à jour
+    await refetch();
+    const yy = new Date().getFullYear().toString().slice(-2);
+    const mm = (new Date().getMonth() + 1).toString().padStart(2, "0");
+    const prefix = `FIL${yy}${mm}`;
+
+    const existing = filieres
+      .map((f) => f.Reference)
+      .filter((r) => r.startsWith(prefix));
+
     let counter = 1;
-    let newRef = `FIL${year}${month}${counter.toString().padStart(3, '0')}`;
-    
-    while (existingRefs.includes(newRef)) {
+    let newRef = `${prefix}${counter.toString().padStart(3, "0")}`;
+    while (existing.includes(newRef)) {
       counter++;
-      newRef = `FIL${year}${month}${counter.toString().padStart(3, '0')}`;
+      newRef = `${prefix}${counter.toString().padStart(3, "0")}`;
     }
-    
-    form.setValue('Reference', newRef);
-    toast({
-      title: "✅ Référence générée",
-      description: `Nouvelle référence: ${newRef}`,
-    });
+
+    form.setValue("Reference", newRef);
+    toast({ title: "✅ Référence générée", description: newRef });
   };
 
   const onSubmit = async (data: AddFiliereFormData) => {
-    try {
-      const success = await addFiliere(data);
-      if (success) {
-        toast({
-          title: "✅ Filière ajoutée",
-          description: `La filière "${data.Libelle}" a été ajoutée avec succès.`,
-        });
-        form.reset();
-        setOpen(false); // Close the dialog
-        onFiliereAdded?.(); // Trigger the callback to refresh the table
-      }
-    } catch (error) {
+    const ok = await addFiliere(data);
+    if (ok) {
       toast({
-        title: "❌ Erreur",
-        description: "Erreur lors de l'ajout de la filière",
-        variant: "destructive",
+        title: "✅ Filière ajoutée",
+        description: data.Libelle,
       });
+      form.reset();
+      setOpen(false);
+      onFiliereAdded?.();
     }
   };
 
   const handleOpenChange = (newOpen: boolean) => {
     setOpen(newOpen);
-    if (!newOpen) {
-      form.reset();
+    if (newOpen) {
+      // A chaque ouverture, on régénère quoi qu'il arrive
+      generateReference();
     } else {
-      // Auto-generate reference when dialog opens
-      if (!form.getValues('Reference')) {
-        generateReference();
-      }
+      form.reset();
     }
   };
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogTrigger asChild>
-        {trigger || (
-          <Button className="bg-[#3A90DA] hover:bg-[#2A7BC8] text-white">
-            <Plus className="h-4 w-4 mr-2" />
-            Ajouter une filière
+        {trigger ?? (
+          <Button className="bg-[#3A90DA] hover:bg-[#2A7BC8] text-white flex items-center gap-2">
+            <Plus className="h-4 w-4" /> Ajouter une filière
           </Button>
         )}
       </DialogTrigger>
+
       <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <GraduationCap className="h-5 w-5 text-[#3A90DA]" />
-            Ajouter une nouvelle filière
+            Nouvelle filière
           </DialogTitle>
           <DialogDescription>
-            Remplissez les informations pour créer une nouvelle filière d'études.
+            Remplissez les informations ci-dessous.
           </DialogDescription>
         </DialogHeader>
 
-        <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+        <Form<AddFiliereFormData> {...form}>
+          <form
+            className="space-y-4"
+            onSubmit={form.handleSubmit(onSubmit)}
+            noValidate
+          >
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {/* Reference */}
+              {/* Référence */}
               <FormField
                 control={form.control}
                 name="Reference"
@@ -142,12 +143,7 @@ export function AddFiliereDialog({ trigger, onFiliereAdded }: AddFiliereDialogPr
                     <FormLabel>Référence *</FormLabel>
                     <div className="flex gap-2">
                       <FormControl>
-                        <Input
-                          placeholder="Ex: FIL001"
-                          {...field}
-                          disabled={isLoading}
-                          className="flex-1"
-                        />
+                        <Input {...field} disabled={isLoading} />
                       </FormControl>
                       <Button
                         type="button"
@@ -155,8 +151,6 @@ export function AddFiliereDialog({ trigger, onFiliereAdded }: AddFiliereDialogPr
                         size="sm"
                         onClick={generateReference}
                         disabled={isLoading}
-                        className="px-3 flex-shrink-0"
-                        title="Générer une référence automatique"
                       >
                         <Shuffle className="h-4 w-4" />
                       </Button>
@@ -166,7 +160,7 @@ export function AddFiliereDialog({ trigger, onFiliereAdded }: AddFiliereDialogPr
                 )}
               />
 
-              {/* Libelle */}
+              {/* Libellé */}
               <FormField
                 control={form.control}
                 name="Libelle"
@@ -174,11 +168,7 @@ export function AddFiliereDialog({ trigger, onFiliereAdded }: AddFiliereDialogPr
                   <FormItem>
                     <FormLabel>Libellé *</FormLabel>
                     <FormControl>
-                      <Input
-                        placeholder="Ex: Informatique"
-                        {...field}
-                        disabled={isLoading}
-                      />
+                      <Input {...field} disabled={isLoading} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -194,33 +184,32 @@ export function AddFiliereDialog({ trigger, onFiliereAdded }: AddFiliereDialogPr
                 <FormItem>
                   <FormLabel>Description</FormLabel>
                   <FormControl>
-                    <Textarea
-                      placeholder="Description de la filière..."
-                      className="min-h-[80px]"
-                      {...field}
-                      disabled={isLoading}
-                    />
+                    <Textarea {...field} disabled={isLoading} />
                   </FormControl>
-                  <FormMessage />
                 </FormItem>
               )}
             />
 
+            {/* Délai max & Prix */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {/* Delai_Max_Traitement_Dossier */}
               <FormField
                 control={form.control}
                 name="Delai_Max_Traitement_Dossier"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Délai max de traitement document (jours)</FormLabel>
+                    <FormLabel>Délai max (jours)</FormLabel>
                     <FormControl>
                       <Input
                         type="number"
-                        placeholder="Ex: 30"
                         {...field}
-                        onChange={(e) => field.onChange(e.target.value ? Number(e.target.value) : undefined)}
-                        value={field.value || ""}
+                        onChange={(e) =>
+                          field.onChange(
+                            e.target.value
+                              ? Number(e.target.value)
+                              : undefined
+                          )
+                        }
+                        value={field.value ?? ""}
                         disabled={isLoading}
                       />
                     </FormControl>
@@ -229,7 +218,6 @@ export function AddFiliereDialog({ trigger, onFiliereAdded }: AddFiliereDialogPr
                 )}
               />
 
-              {/* Prix_Traitement_Dossier */}
               <FormField
                 control={form.control}
                 name="Prix_Traitement_Dossier"
@@ -240,10 +228,15 @@ export function AddFiliereDialog({ trigger, onFiliereAdded }: AddFiliereDialogPr
                       <Input
                         type="number"
                         step="0.01"
-                        placeholder="Ex: 250.00"
                         {...field}
-                        onChange={(e) => field.onChange(e.target.value ? Number(e.target.value) : undefined)}
-                        value={field.value || ""}
+                        onChange={(e) =>
+                          field.onChange(
+                            e.target.value
+                              ? Number(e.target.value)
+                              : undefined
+                          )
+                        }
+                        value={field.value ?? ""}
                         disabled={isLoading}
                       />
                     </FormControl>
@@ -253,11 +246,10 @@ export function AddFiliereDialog({ trigger, onFiliereAdded }: AddFiliereDialogPr
               />
             </div>
 
-
-            <DialogFooter className="flex gap-2 pt-4">
+            <DialogFooter className="flex justify-end gap-2 pt-4">
               <Button
-                type="button"
                 variant="outline"
+                type="button"
                 onClick={() => setOpen(false)}
                 disabled={isLoading}
               >
@@ -271,7 +263,6 @@ export function AddFiliereDialog({ trigger, onFiliereAdded }: AddFiliereDialogPr
                   generateReference();
                 }}
                 disabled={isLoading}
-                className="flex items-center gap-2"
               >
                 <RefreshCw className="h-4 w-4" />
                 Réinitialiser
@@ -281,8 +272,11 @@ export function AddFiliereDialog({ trigger, onFiliereAdded }: AddFiliereDialogPr
                 className="bg-[#3A90DA] hover:bg-[#2A7BC8]"
                 disabled={isLoading}
               >
-                {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                Ajouter la filière
+                {isLoading ? (
+                  <Loader2 className="animate-spin h-4 w-4" />
+                ) : (
+                  "Ajouter"
+                )}
               </Button>
             </DialogFooter>
           </form>
