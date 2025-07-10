@@ -741,11 +741,12 @@ export default function FilieresPage() {
       )}
 
       {selectedFiliere && (
-        <UpdateFiliereDialog
-          filiere={selectedFiliere}
-          open={updateDialogOpen}
-          onOpenChange={setUpdateDialogOpen}
-        />
+<UpdateFiliereDialog
+  reference={selectedFiliere.Reference}
+  open={updateDialogOpen}
+  onOpenChange={setUpdateDialogOpen}
+/>
+
       )}
 
       <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>

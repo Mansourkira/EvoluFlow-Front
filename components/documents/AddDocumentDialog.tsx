@@ -1,7 +1,22 @@
+// components/documents/AddDocumentDialog.tsx
 "use client";
 
 import { useState, useEffect } from "react";
-import { Loader2, FilePlus, Plus, Hash, StickyNote, BookOpen, MapPin, Info, Clock, DollarSign, Layers, CheckCircle, Shuffle } from "lucide-react";
+import {
+  Loader2,
+  FilePlus,
+  Plus,
+  Hash,
+  StickyNote,
+  BookOpen,
+  MapPin,
+  Info,
+  Clock,
+  DollarSign,
+  Layers,
+  CheckCircle,
+  Shuffle,
+} from "lucide-react";
 
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -30,7 +45,15 @@ import {
 } from "@/schemas/documentShema";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useDocuments } from "@/hooks/useDocuments";
+import { useFilieres } from "@/hooks/useFilieres";
 import { useToast } from "@/hooks/use-toast";
+import {
+  Select,
+  SelectTrigger,
+  SelectContent,
+  SelectItem,
+  SelectValue,
+} from "@/components/ui/select";
 
 interface AddDocumentDialogProps {
   open: boolean;
@@ -38,8 +61,13 @@ interface AddDocumentDialogProps {
   onSubmit: (data: AddDocumentFormData) => Promise<void>;
 }
 
-export default function AddDocumentDialog({ open, onClose, onSubmit }: AddDocumentDialogProps) {
-  const { documents } = useDocuments();
+export default function AddDocumentDialog({
+  open,
+  onClose,
+  onSubmit,
+}: AddDocumentDialogProps) {
+  const { documents, fetchDocuments } = useDocuments();
+  const { filieres, fetchFilieres } = useFilieres();
   const { toast } = useToast();
 
   const form = useForm<AddDocumentFormData>({
@@ -66,34 +94,30 @@ export default function AddDocumentDialog({ open, onClose, onSubmit }: AddDocume
     control,
     formState: { isSubmitting },
     setValue,
-    getValues
   } = form;
 
   const generateReference = () => {
     const year = new Date().getFullYear().toString().slice(-2);
-    const month = (new Date().getMonth() + 1).toString().padStart(2, '0');
-    const existingRefs = documents.map(d => d.Reference).filter(ref => ref.startsWith(`DOC${year}${month}`));
-
-    let counter = 1;
-    let newRef = `DOC${year}${month}${counter.toString().padStart(3, '0')}`;
-
-    while (existingRefs.includes(newRef)) {
-      counter++;
-      newRef = `DOC${year}${month}${counter.toString().padStart(3, '0')}`;
+    const month = String(new Date().getMonth() + 1).padStart(2, "0");
+    const prefix = `DOC${year}${month}`;
+    const existing = documents.map((d) => d.Reference).filter((r) => r.startsWith(prefix));
+    let n = 1;
+    let ref = `${prefix}${n.toString().padStart(3, "0")}`;
+    while (existing.includes(ref)) {
+      n++;
+      ref = `${prefix}${n.toString().padStart(3, "0")}`;
     }
-
-    setValue('Reference', newRef);
-    toast({
-      title: "✅ Référence générée",
-      description: `Nouvelle référence: ${newRef}`,
-    });
+    setValue("Reference", ref);
+    toast({ title: "✅ Réf générée", description: ref });
   };
 
   useEffect(() => {
-    if (!getValues('Reference')) {
+    if (open) {
+      fetchDocuments();
+      fetchFilieres();
       generateReference();
     }
-  }, [open]);
+  }, [open, fetchDocuments, fetchFilieres]);
 
   const handleClose = () => {
     reset();
@@ -118,7 +142,7 @@ export default function AddDocumentDialog({ open, onClose, onSubmit }: AddDocume
   };
 
   return (
-    <Dialog open={open} onOpenChange={(state) => !state && handleClose()}>
+    <Dialog open={open} onOpenChange={(ok) => !ok && handleClose()}>
       <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
@@ -131,15 +155,15 @@ export default function AddDocumentDialog({ open, onClose, onSubmit }: AddDocume
 
         <Form {...form}>
           <form onSubmit={handleSubmit(handleFormSubmit)} className="space-y-6">
-            {/* 🧾 Informations Générales */}
+            {/* — Infos générales */}
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2 text-lg">
-                  <FilePlus className="h-5 w-5" /> Informations Générales
+                  <FilePlus className="h-5 w-5" /> Infos Générales
                 </CardTitle>
               </CardHeader>
               <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {["Reference", "Nom_Document", "Type", "Reference_Filiere", "Observation"].map((name) => (
+                {["Reference", "Nom_Document", "Type", "Observation"].map((name) => (
                   <FormField
                     key={name}
                     control={control}
@@ -152,8 +176,7 @@ export default function AddDocumentDialog({ open, onClose, onSubmit }: AddDocume
                             {iconMap[name]}
                             <Input
                               {...field}
-                              type="text"
-                              value={typeof field.value === "boolean" ? "" : field.value ?? ""}
+                              value={String(field.value ?? "")}
                               onChange={(e) => field.onChange(e.target.value)}
                             />
                             {name === "Reference" && (
@@ -168,10 +191,39 @@ export default function AddDocumentDialog({ open, onClose, onSubmit }: AddDocume
                     )}
                   />
                 ))}
+
+                {/* — Sélect filière */}
+                <FormField
+                  control={control}
+                  name="Reference_Filiere"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Réf Filière</FormLabel>
+                      <FormControl>
+                        <div className="flex items-center gap-2">
+                          {iconMap.Reference_Filiere}
+                          <Select value={field.value} onValueChange={field.onChange}>
+                            <SelectTrigger className="w-full">
+                              <SelectValue placeholder="— choisir —" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {filieres.map((f) => (
+                                <SelectItem key={f.Reference} value={f.Reference}>
+                                  {f.Reference} – {f.Libelle}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
               </CardContent>
             </Card>
 
-            {/* 🧭 Traitement & Lieu */}
+            {/* — Traitement & lieu */}
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2 text-lg">
@@ -192,7 +244,7 @@ export default function AddDocumentDialog({ open, onClose, onSubmit }: AddDocume
                             {iconMap[name]}
                             <Input
                               type={["Delai_Traitement", "Prix_Traitement", "Ordre"].includes(name) ? "number" : "text"}
-                              value={field.value !== undefined && field.value !== null ? String(field.value) : ""}
+                              value={field.value != null ? String(field.value) : ""}
                               onChange={(e) =>
                                 field.onChange(
                                   ["Delai_Traitement", "Prix_Traitement", "Ordre"].includes(name)
@@ -211,7 +263,7 @@ export default function AddDocumentDialog({ open, onClose, onSubmit }: AddDocume
               </CardContent>
             </Card>
 
-            {/* ✅ Options */}
+            {/* — Options */}
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2 text-lg">
@@ -219,7 +271,11 @@ export default function AddDocumentDialog({ open, onClose, onSubmit }: AddDocume
                 </CardTitle>
               </CardHeader>
               <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {[{ name: "Obligatoire", label: "Obligatoire" }, { name: "Necessaire_Examen", label: "Nécessaire pour examen" }, { name: "Necessaire_Inscription", label: "Nécessaire pour inscription" }].map(({ name, label }) => (
+                {[
+                  { name: "Obligatoire", label: "Obligatoire" },
+                  { name: "Necessaire_Examen", label: "Pour examen" },
+                  { name: "Necessaire_Inscription", label: "Pour inscription" },
+                ].map(({ name, label }) => (
                   <FormField
                     key={name}
                     control={control}
@@ -227,7 +283,10 @@ export default function AddDocumentDialog({ open, onClose, onSubmit }: AddDocume
                     render={({ field }) => (
                       <FormItem className="flex items-center gap-2">
                         <FormControl>
-                          <Checkbox checked={!!field.value} onCheckedChange={(checked) => field.onChange(!!checked)} />
+                          <Checkbox
+                            checked={!!field.value}
+                            onCheckedChange={(checked) => field.onChange(checked)}
+                          />
                         </FormControl>
                         <FormLabel>{label}</FormLabel>
                       </FormItem>
