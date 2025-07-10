@@ -81,6 +81,11 @@ const getNavigationByRole = (role: UserRole, user: any) => {
           url:"/dashboard/magasins",
           icon:Building,
         },
+         {
+          title:"Sexes",
+          url:"/dashboard/sexe",
+          icon:UserCog,
+        },
         // Subcategories under Fichier de base
         {
           title: "Sécurité",
@@ -197,9 +202,16 @@ const getNavigationByRole = (role: UserRole, user: any) => {
               title:"Horaire de Demande",
               url:"/dashboard/horaire-demande",
               icon:Clock,
+            },
+             {
+              title:"Raison Report",
+              url:"/dashboard/raisons",
+              icon:FileText,
             }
           ],
         },
+        
+        
 
         {
           title: "Prospect-Candidat",

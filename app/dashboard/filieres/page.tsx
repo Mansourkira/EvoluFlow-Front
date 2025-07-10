@@ -10,6 +10,10 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { exportGenericData, createFiliereExportConfig } from "@/lib/exportUtils";
+import { Download } from "lucide-react";
+
+
 import {
   Table,
   TableBody,
@@ -306,9 +310,41 @@ export default function FilieresPage() {
               Gérez les filières et leurs informations
             </p>
           </div>
-          <div className="mt-4 md:mt-0">
-            <AddFiliereDialog onFiliereAdded={fetchFilieres} />
-          </div>
+          <div className="mt-4 md:mt-0 flex items-center gap-2">
+  <DropdownMenu>
+    <DropdownMenuTrigger asChild>
+      <Button variant="outline" className="flex items-center gap-1">
+        <Download className="h-4 w-4" />
+        Exporter
+      </Button>
+    </DropdownMenuTrigger>
+    <DropdownMenuContent align="end">
+      <DropdownMenuItem
+        onClick={() =>
+          exportGenericData(createFiliereExportConfig(filieres), "PDF")
+        }
+      >
+        PDF
+      </DropdownMenuItem>
+      <DropdownMenuItem
+        onClick={() =>
+          exportGenericData(createFiliereExportConfig(filieres), "Excel")
+        }
+      >
+        Excel
+      </DropdownMenuItem>
+      <DropdownMenuItem
+        onClick={() =>
+          exportGenericData(createFiliereExportConfig(filieres), "Word")
+        }
+      >
+        Word
+      </DropdownMenuItem>
+    </DropdownMenuContent>
+  </DropdownMenu>
+
+  <AddFiliereDialog onFiliereAdded={fetchFilieres} />
+</div>
         </div>
 
         {/* Search and Filters */}
@@ -705,11 +741,12 @@ export default function FilieresPage() {
       )}
 
       {selectedFiliere && (
-        <UpdateFiliereDialog
-          filiere={selectedFiliere}
-          open={updateDialogOpen}
-          onOpenChange={setUpdateDialogOpen}
-        />
+<UpdateFiliereDialog
+  reference={selectedFiliere.Reference}
+  open={updateDialogOpen}
+  onOpenChange={setUpdateDialogOpen}
+/>
+
       )}
 
       <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>

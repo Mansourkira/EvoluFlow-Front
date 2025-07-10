@@ -213,7 +213,7 @@ export function AddFiliereDialog({ trigger, onFiliereAdded }: AddFiliereDialogPr
                 name="Delai_Max_Traitement_Dossier"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Délai max de traitement (jours)</FormLabel>
+                    <FormLabel>Délai max de traitement document (jours)</FormLabel>
                     <FormControl>
                       <Input
                         type="number"

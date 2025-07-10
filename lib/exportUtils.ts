@@ -769,3 +769,68 @@ export const createNiveauLangueExportConfig = (niveaux: any[]): ExportConfig => 
     },
   ],
 });
+export const createObjetTacheExportConfig = (objets: any[]): ExportConfig => ({
+  title:    'Liste des Objets de Tâche',
+  filename: 'objets_tache',
+  data:     objets,
+  columns: [
+    { key: 'Reference', label: 'Référence',       width: 20, pdfWidth: 30, excelWidth: 20 },
+    { key: 'Libelle',    label: 'Libellé',         width: 40, pdfWidth: 50, excelWidth: 40 },
+    { key: 'Utilisateur',label: 'Utilisateur',     width: 30, pdfWidth: 40, excelWidth: 30 },
+    {
+      key: 'Heure',
+      label: 'Date de Création',
+      width:     20,
+      pdfWidth:  30,
+      excelWidth:20,
+      formatter: v => v ? new Date(v).toLocaleDateString('fr-FR') : '-'
+    }
+  ]
+});
+export const createUrgenceTacheExportConfig = (urgences: any[]): ExportConfig => ({
+  title:    'Liste des Urgences de Tâche',
+  filename: 'urgences_tache',
+  data:     urgences,
+  columns: [
+    { key:'Reference',    label:'Référence',   width:20, pdfWidth:30, excelWidth:20 },
+    { key:'Libelle',      label:'Libellé',     width:40, pdfWidth:50, excelWidth:40 },
+    { key:'Utilisateur',  label:'Utilisateur', width:30, pdfWidth:40, excelWidth:30 },
+    {
+      key:'Heure',
+      label:'Date de Création',
+      width:20,
+      pdfWidth:30,
+      excelWidth:20,
+      formatter:v=>v?new Date(v).toLocaleDateString('fr-FR'):'-'
+    }
+  ]
+});
+// === Ajoutez ceci ===
+export const createSalleExportConfig = (salles: any[]): ExportConfig => ({
+  title: "Liste des Salles",
+  filename: "salles",
+  data: salles,
+  columns: [
+    { key: "Reference",         label: "Référence",          width: 20, pdfWidth: 30, excelWidth: 20 },
+    { key: "Libelle",           label: "Libellé",           width: 40, pdfWidth: 50, excelWidth: 40 },
+    { key: "Reference_Site",    label: "Réf. Site",         width: 25, pdfWidth: 30, excelWidth: 25 },
+    { key: "Nombre_Candidat_Max", label: "Capacité max",    width: 20, pdfWidth: 25, excelWidth: 20,
+      formatter: (v) => v.toString()
+    },
+    { key: "Utilisateur",       label: "Utilisateur",      width: 30, pdfWidth: 40, excelWidth: 30 },
+    { key: "Heure",             label: "Date de création", width: 25, pdfWidth: 30, excelWidth: 25,
+      formatter: (v) => v ? new Date(v).toLocaleString("fr-FR") : "-"
+    },
+  ],
+});
+export const createProfilUtilisateurExportConfig = (profils: any[]): ExportConfig => ({
+  title: "Liste des Profils Utilisateurs",
+  filename: "profils_utilisateur",
+  data: profils,
+  columns: [
+    { key: "Reference",     label: "Référence",      width: 20, pdfWidth: 30, excelWidth: 20 },
+    { key: "Libelle",       label: "Libellé",        width: 40, pdfWidth: 50, excelWidth: 40 },
+    { key: "Couleur_Badge", label: "Couleur Badge",  width: 30, pdfWidth: 35, excelWidth: 30 },
+  ],
+});
+

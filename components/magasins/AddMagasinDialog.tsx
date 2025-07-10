@@ -1,4 +1,6 @@
-// ✅ AddMagasinDialog.tsx corrigé
+// components/magasins/AddMagasinDialog.tsx
+"use client";
+
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -55,6 +57,7 @@ export default function AddMagasinDialog({ open, onClose, onSubmit }: AddMagasin
           <DialogTitle>Ajouter un magasin</DialogTitle>
         </DialogHeader>
         <form onSubmit={handleSubmit(handleFormSubmit)} className="space-y-4">
+          {/* Référence */}
           <div>
             <label htmlFor="Reference" className="mb-1 block">Référence</label>
             <div className="flex gap-2 items-center">
@@ -71,25 +74,44 @@ export default function AddMagasinDialog({ open, onClose, onSubmit }: AddMagasin
             {errors.Reference && <p className="text-sm text-red-600">{errors.Reference.message}</p>}
           </div>
 
+          {/* Libellé */}
           <div>
             <label htmlFor="Libelle">Libellé</label>
             <Input {...register("Libelle")} id="Libelle" placeholder="Nom du magasin" />
             {errors.Libelle && <p className="text-sm text-red-600">{errors.Libelle.message}</p>}
           </div>
 
-          <div>
-            <label htmlFor="Stock_Negatif">Stock Négatif (0 = non, 1 = oui)</label>
-            <Input
-              type="number"
-              {...register("Stock_Negatif", { valueAsNumber: true })}
-              id="Stock_Negatif"
-              placeholder="0 ou 1"
-            />
+          {/* Stock négatif en radio buttons */}
+          <fieldset className="space-y-1">
+            <legend className="font-medium">Stock Négatif</legend>
+            <div className="flex items-center gap-4">
+              <label className="inline-flex items-center">
+                <input
+                  type="radio"
+                  value="0"
+                  {...register("Stock_Negatif", { valueAsNumber: true })}
+                  defaultChecked={getValues("Stock_Negatif") === 0 || getValues("Stock_Negatif") === undefined}
+                  className="mr-2"
+                />
+                Non
+              </label>
+              <label className="inline-flex items-center">
+                <input
+                  type="radio"
+                  value="1"
+                  {...register("Stock_Negatif", { valueAsNumber: true })}
+                  defaultChecked={getValues("Stock_Negatif") === 1}
+                  className="mr-2"
+                />
+                Oui
+              </label>
+            </div>
             {errors.Stock_Negatif && (
               <p className="text-sm text-red-600">{errors.Stock_Negatif.message}</p>
             )}
-          </div>
+          </fieldset>
 
+          {/* Bouton Ajouter */}
           <div className="flex justify-end">
             <Button type="submit">Ajouter</Button>
           </div>

@@ -1,33 +1,30 @@
-// hooks/useFilieres.ts
 import { useState, useCallback } from "react";
 import {
-  Filiere,
-  AddFiliereFormData,
-  UpdateFiliereFormData,
-} from "@/schemas/filiereSchema";
+  AddProfilUtilisateurFormData,
+  ProfilUtilisateur,
+} from "@/schemas/profilUtilisateurSchema";
 
-export const useFilieres = () => {
-  const [filieres, setFilieres] = useState<Filiere[]>([]);
+export const useProfilUtilisateurs = () => {
+  const [profils, setProfils] = useState<ProfilUtilisateur[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const baseUrl = "http://localhost:3000/api/v1";
 
-  // URL de ton serveur Express (doit tourner sur le port 3000)
-  const baseUrl = "http://localhost:3000/api/v1/filiere";
-
-  // 📄 Liste
-  const fetchFilieres = useCallback(async () => {
+  // ✅ Lister
+  const fetchProfils = useCallback(async () => {
     setIsLoading(true);
     setError(null);
     try {
       const token = localStorage.getItem("token");
-      const res = await fetch(`${baseUrl}/list`, {
+      const res = await fetch(`${baseUrl}/profil-utilisateurs/list`, {
         headers: {
           Authorization: `Bearer ${token}`,
           "Content-Type": "application/json",
         },
       });
-      if (!res.ok) throw new Error("Erreur lors de la récupération des filières");
-      setFilieres(await res.json());
+      if (!res.ok) throw new Error("Erreur lors du chargement");
+      const data: ProfilUtilisateur[] = await res.json();
+      setProfils(data);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Erreur inconnue");
     } finally {
@@ -35,14 +32,14 @@ export const useFilieres = () => {
     }
   }, []);
 
-  // ➕ Ajouter
-  const addFiliere = useCallback(
-    async (payload: AddFiliereFormData) => {
+  // ✅ Ajouter
+  const addProfil = useCallback(
+    async (payload: AddProfilUtilisateurFormData) => {
       setIsLoading(true);
       setError(null);
       try {
         const token = localStorage.getItem("token");
-        const res = await fetch(`${baseUrl}/add`, {
+        const res = await fetch(`${baseUrl}/profil-utilisateurs/add`, {
           method: "POST",
           headers: {
             Authorization: `Bearer ${token}`,
@@ -54,7 +51,7 @@ export const useFilieres = () => {
           const err = await res.json();
           throw new Error(err.error || "Erreur lors de l'ajout");
         }
-        await fetchFilieres();
+        await fetchProfils();
         return true;
       } catch (err) {
         setError(err instanceof Error ? err.message : "Erreur inconnue");
@@ -63,17 +60,17 @@ export const useFilieres = () => {
         setIsLoading(false);
       }
     },
-    [fetchFilieres]
+    [fetchProfils]
   );
 
-  // 🛠 Modifier
-  const updateFiliere = useCallback(
-    async (payload: UpdateFiliereFormData) => {
+  // ✅ Modifier
+  const updateProfil = useCallback(
+    async (payload: ProfilUtilisateur) => {
       setIsLoading(true);
       setError(null);
       try {
         const token = localStorage.getItem("token");
-        const res = await fetch(`${baseUrl}/update`, {
+        const res = await fetch(`${baseUrl}/profil-utilisateurs/update`, {
           method: "PUT",
           headers: {
             Authorization: `Bearer ${token}`,
@@ -85,7 +82,7 @@ export const useFilieres = () => {
           const err = await res.json();
           throw new Error(err.error || "Erreur lors de la modification");
         }
-        await fetchFilieres();
+        await fetchProfils();
         return true;
       } catch (err) {
         setError(err instanceof Error ? err.message : "Erreur inconnue");
@@ -94,29 +91,29 @@ export const useFilieres = () => {
         setIsLoading(false);
       }
     },
-    [fetchFilieres]
+    [fetchProfils]
   );
 
-  // ❌ Supprimer
-  const deleteFiliere = useCallback(
-    async (Reference: string) => {
+  // ✅ Supprimer
+  const deleteProfil = useCallback(
+    async (reference: string) => {
       setIsLoading(true);
       setError(null);
       try {
         const token = localStorage.getItem("token");
-        const res = await fetch(`${baseUrl}/delete`, {
+        const res = await fetch(`${baseUrl}/profil-utilisateurs/delete`, {
           method: "DELETE",
           headers: {
             Authorization: `Bearer ${token}`,
             "Content-Type": "application/json",
           },
-          body: JSON.stringify({ Reference }),
+          body: JSON.stringify({ Reference: reference }),
         });
         if (!res.ok) {
           const err = await res.json();
           throw new Error(err.error || "Erreur lors de la suppression");
         }
-        await fetchFilieres();
+        await fetchProfils();
         return true;
       } catch (err) {
         setError(err instanceof Error ? err.message : "Erreur inconnue");
@@ -125,32 +122,26 @@ export const useFilieres = () => {
         setIsLoading(false);
       }
     },
-    [fetchFilieres]
+    [fetchProfils]
   );
 
-  // 🔍 Récupérer une filière par Reference
-  const getFiliereByReference = useCallback(
+  // ✅ Récupérer un par référence
+  const getProfilByReference = useCallback(
     async (reference: string) => {
       setIsLoading(true);
       setError(null);
       try {
-        console.log("→ getFiliereByReference envoie Reference =", reference);
         const token = localStorage.getItem("token");
-        const res = await fetch(`${baseUrl}/reference`, {
+        const res = await fetch(`${baseUrl}/profil-utilisateurs/get`, {
           method: "POST",
           headers: {
             Authorization: `Bearer ${token}`,
             "Content-Type": "application/json",
           },
-          // ** clé exactement "Reference" **
           body: JSON.stringify({ Reference: reference }),
         });
-        if (!res.ok) {
-          const msg = await res.text();
-          console.error("status", res.status, "body:", msg);
-          throw new Error("Filière non trouvée");
-        }
-        return (await res.json()) as Filiere;
+        if (!res.ok) throw new Error("Non trouvé");
+        return (await res.json()) as ProfilUtilisateur;
       } catch (err) {
         setError(err instanceof Error ? err.message : "Erreur inconnue");
         return null;
@@ -162,14 +153,14 @@ export const useFilieres = () => {
   );
 
   return {
-    filieres,
+    profils,
     isLoading,
     error,
-    fetchFilieres,
-    addFiliere,
-    updateFiliere,
-    deleteFiliere,
-    getFiliereByReference,
-    refetch: fetchFilieres,
+    fetchProfils,
+    addProfil,
+    updateProfil,
+    deleteProfil,
+    getProfilByReference,
+    refetch: fetchProfils,
   };
 };
