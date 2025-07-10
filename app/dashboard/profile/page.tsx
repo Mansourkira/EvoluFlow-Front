@@ -1,7 +1,7 @@
 "use client"
 
 import { useEffect, useState } from 'react'
-import { useCurrentUser, usePasswordChange } from '@/hooks/useAuth'
+import { useAuthStatus, useCurrentUser, usePasswordChange } from '@/hooks/useAuth'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -60,6 +60,7 @@ import {
   TabsTrigger,
 } from "@/components/ui/tabs"
 import { Separator } from "@/components/ui/separator"
+import { TUNISIA_GOVERNORATES, USER_TYPES, safeMapWithUniqueKeys, deduplicateArray } from "@/lib/constants"
 
 interface ExtendedUser {
   Reference: string
@@ -89,6 +90,8 @@ interface ExtendedUser {
 export default function ProfilePage() {
   const { changePassword, isLoading: isPasswordLoading, error: passwordError } = usePasswordChange()
   const [isEditing, setIsEditing] = useState(false)
+    const { user : user2, isAuthenticated, isLoading : isLoading2 } = useAuthStatus()
+
   const [isSaving, setIsSaving] = useState(false)
   const [user, setUser] = useState<ExtendedUser | null>(null)
   const [isLoading, setIsLoading] = useState(true)
@@ -357,7 +360,7 @@ export default function ProfilePage() {
         <div className="flex items-center gap-3">
           <Badge variant="default" className="gap-2">
             <Shield className="h-4 w-4" />
-            {user.Profil}
+            {user2?.profilLabel}
           </Badge>
           <Badge variant="secondary" className="gap-2">
             <User className="h-4 w-4" />
@@ -615,9 +618,18 @@ export default function ProfilePage() {
                             render={({ field }) => (
                               <FormItem>
                                 <FormLabel>Gouvernorat</FormLabel>
-                                <FormControl>
-                                  <Input {...field} placeholder="Gouvernorat" />
-                                </FormControl>
+                                <Select onValueChange={field.onChange} value={field.value}>
+                                  <FormControl>
+                                    <SelectTrigger>
+                                      <SelectValue placeholder="Sélectionner le gouvernorat" />
+                                    </SelectTrigger>
+                                  </FormControl>
+                                  <SelectContent>
+                                    {TUNISIA_GOVERNORATES.map((governorate) => (
+                                      <SelectItem key={governorate} value={governorate}>{governorate}</SelectItem>
+                                    ))}
+                                  </SelectContent>
+                                </Select>
                                 <FormMessage />
                               </FormItem>
                             )}
@@ -745,6 +757,15 @@ export default function ProfilePage() {
                           </div>
                         </div>
                       )}
+                      {user.Gouvernorat && (
+                        <div className="space-y-2">
+                          <Label className="text-sm font-medium text-muted-foreground">Gouvernorat</Label>
+                          <div className="flex items-center gap-2 p-2 bg-gray-50 rounded">
+                            <MapPin className="h-4 w-4 text-muted-foreground mt-0.5" />
+                            <span>{user.Gouvernorat}</span>
+                          </div>
+                        </div>
+                      )}
                     </div>
                   </div>
                 </div>
@@ -825,7 +846,7 @@ export default function ProfilePage() {
                       <User className="h-4 w-4 text-muted-foreground" />
                       <span className="text-sm font-medium">Profil</span>
                     </div>
-                    <span className="text-sm font-medium">{user.Profil || 'Non défini'}</span>
+                    <span className="text-sm font-medium">{user2?.profilLabel || 'Non défini'}</span>
                   </div>
                 </div>
               </div>
