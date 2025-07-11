@@ -87,12 +87,12 @@ export const useSocieteDialog = () => {
       }
       
       // Validate Sigle if it's being updated
-      if (updatedSociete.Sigle !== undefined) {
+     /*  if (updatedSociete.Sigle !== undefined) {
         if (typeof updatedSociete.Sigle !== 'string' || updatedSociete.Sigle === '[object Object]') {
           setError('Format de logo invalide');
           return false;
         }
-      }
+      } */
 
       const response = await fetch('http://localhost:3000/api/v1/societes/update', {
         method: 'PUT',
@@ -103,44 +103,36 @@ export const useSocieteDialog = () => {
         body: JSON.stringify(updatedSociete),
       });
       
+      // Parse the response data
+      const data = await response.json();
+      
       if (response.ok) {
-        // Immediately update local state
-        setSociete(prev => prev ? { ...prev, ...updatedSociete } : null);
+        // After successful update, fetch the latest data
+        const refreshResponse = await fetch('http://localhost:3000/api/v1/societes', {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json',
+          },
+        }); 
         
-        // Force refresh from server after a short delay
-        setTimeout(async () => {
-          try {
-            const refreshResponse = await fetch('http://localhost:3000/api/v1/societes', {
-              method: 'POST',
-              headers: {
-                'Authorization': `Bearer ${token}`,
-                'Content-Type': 'application/json',
-              },
-            });
-            
-            if (refreshResponse.ok) {
-              const refreshData = await refreshResponse.json();
-              if (refreshData.societes && refreshData.societes.length > 0) {
-                const freshData = refreshData.societes[0];
-                // Only update if we got valid data
-                if (freshData && typeof freshData.Sigle === 'string') {
-                  setSociete(freshData);
-                }
-              }
-            }
-          } catch (refreshError) {
-            console.error('Error refreshing société data:', refreshError);
+        if (refreshResponse.ok) {
+          const refreshData = await refreshResponse.json();
+          if (refreshData.societes && refreshData.societes.length > 0) {
+            setSociete(refreshData.societes[0]);
           }
-        }, 500); // Wait 500ms before refreshing to allow server processing
+        }
         
         return true;
       } else {
-        const errorData = await response.json().catch(() => ({}));
-        setError(errorData.error || 'Erreur lors de la mise à jour de la société');
+        // Set the error from the response
+        const errorMessage = data.error || 'Erreur lors de la mise à jour de la société';
+        setError(errorMessage);
         return false;
       }
     } catch (err) {
-      setError('Erreur de connexion au serveur');
+      const errorMessage = err instanceof Error ? err.message : 'Erreur de connexion au serveur';
+      setError(errorMessage);
       console.error('Error updating société:', err);
       return false;
     } finally {

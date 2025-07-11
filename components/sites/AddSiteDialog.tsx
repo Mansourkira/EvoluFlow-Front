@@ -26,6 +26,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { addSiteSchema, type AddSiteFormData } from "@/schemas/siteSchema";
 import { useToast } from "@/hooks/use-toast";
 import { Loader2, Plus, Building, Eye, EyeOff, RefreshCw, Image as ImageIcon, X } from "lucide-react";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { TUNISIA_GOVERNORATES } from "@/lib/constants";
 
 interface AddSiteDialogProps {
   onSiteAdded?: () => void;
@@ -180,6 +182,75 @@ export function AddSiteDialog({ onSiteAdded }: AddSiteDialogProps) {
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                 {/* Logo/Sigle */}
+                 <FormField
+                control={form.control}
+                name="Sigle"
+                render={({ field }) => (
+                  <FormItem className="md:col-span-2">
+                    <FormLabel>Logo/Sigle</FormLabel>
+                    <FormControl>
+                      <div className="space-y-4">
+                        <div className="flex items-center justify-center gap-4">
+                          {!imagePreview ? (
+                            <Button
+                              type="button"
+                              variant="outline"
+                              className="w-full h-24 border-dashed flex flex-col items-center justify-center gap-2"
+                              onClick={() => document.getElementById('logo-upload')?.click()}
+                            >
+                              <ImageIcon className="h-6 w-6 text-gray-400" />
+                              <span className="text-sm text-gray-600">
+                                Cliquez pour sélectionner un logo
+                              </span>
+                              <span className="text-xs text-gray-400">
+                                PNG, JPG jusqu'à 5MB
+                              </span>
+                            </Button>
+                          ) : (
+                            <div className="flex flex-col items-center gap-4">
+                              <div className="relative">
+                                <img
+                                  src={`data:image/jpeg;base64,${imagePreview}`}
+                                  alt="Aperçu du logo"
+                                  className="w-32 h-32 object-cover rounded-lg border"
+                                />
+                                <Button
+                                  type="button"
+                                  variant="destructive"
+                                  size="sm"
+                                  className="absolute -top-1 -right-1 h-5 w-5 rounded-full p-0"
+                                  onClick={removeImage}
+                                >
+                                  <X className="h-3 w-3" />
+                                </Button>
+                              </div>
+                              <Button
+                                type="button"
+                                variant="outline"
+                                size="sm"
+                                className="flex items-center gap-2"
+                                onClick={() => document.getElementById('logo-upload')?.click()}
+                              >
+                                <ImageIcon className="h-4 w-4" />
+                                Changer
+                              </Button>
+                            </div>
+                          )}
+                          <Input
+                            id="logo-upload"
+                            type="file"
+                            accept="image/*"
+                            onChange={handleImageChange}
+                            className="hidden"
+                          />
+                        </div>
+                      </div>
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
               {/* Reference */}
               <FormField
                 control={form.control}
@@ -188,8 +259,29 @@ export function AddSiteDialog({ onSiteAdded }: AddSiteDialogProps) {
                   <FormItem>
                     <FormLabel>Référence *</FormLabel>
                     <FormControl>
-                      <Input placeholder="Référence du site" {...field} />
-                    </FormControl>
+                    <div className="flex gap-2">
+                      <Input 
+                        placeholder="Ex: S001" 
+                        {...field} 
+                        disabled={isLoading}
+                      />
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="icon"
+                        onClick={() => {
+                          const timestamp = Date.now().toString().slice(-6);
+                          const randomSuffix = Math.random().toString(36).substring(2, 5).toUpperCase();
+                          const generatedReference = `S${timestamp}${randomSuffix}`;
+                          field.onChange(generatedReference);
+                        }}
+                        disabled={isLoading}
+                        title="Générer une référence automatique"
+                      >
+                        <RefreshCw className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  </FormControl>
                     <FormMessage />
                   </FormItem>
                 )}
@@ -269,21 +361,31 @@ export function AddSiteDialog({ onSiteAdded }: AddSiteDialogProps) {
                   </FormItem>
                 )}
               />
-
-              {/* Gouvernorat */}
-              <FormField
-                control={form.control}
-                name="Gouvernorat"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Gouvernorat</FormLabel>
-                    <FormControl>
-                      <Input placeholder="Gouvernorat" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+   {/* Governorate */}
+   <FormField
+                  control={form.control}
+                  name="Gouvernorat"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Gouvernorat *</FormLabel>
+                      <Select onValueChange={field.onChange} defaultValue={field.value}>
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Sélectionner le gouvernorat" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          {TUNISIA_GOVERNORATES.map((governorate, index) => (
+                            <SelectItem key={`gov-${governorate}-${index}`} value={governorate}>
+                              {governorate}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
 
               {/* Pays */}
               <FormField
@@ -450,45 +552,7 @@ export function AddSiteDialog({ onSiteAdded }: AddSiteDialogProps) {
                 )}
               />
 
-              {/* Logo/Sigle */}
-              <FormField
-                control={form.control}
-                name="Sigle"
-                render={({ field }) => (
-                  <FormItem className="md:col-span-2">
-                    <FormLabel>Logo/Sigle</FormLabel>
-                    <FormControl>
-                      <div className="space-y-4">
-                        <Input
-                          type="file"
-                          accept="image/*"
-                          onChange={handleImageChange}
-                          className="cursor-pointer"
-                        />
-                        {imagePreview && (
-                          <div className="relative inline-block">
-                            <img
-                              src={`data:image/jpeg;base64,${imagePreview}`}
-                              alt="Aperçu du logo"
-                              className="w-32 h-32 object-cover rounded-lg border"
-                            />
-                            <Button
-                              type="button"
-                              variant="destructive"
-                              size="sm"
-                              className="absolute -top-2 -right-2 h-6 w-6 rounded-full p-0"
-                              onClick={removeImage}
-                            >
-                              <X className="h-3 w-3" />
-                            </Button>
-                          </div>
-                        )}
-                      </div>
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+           
 
               {/* Nombres de relances */}
               <div className="md:col-span-2">

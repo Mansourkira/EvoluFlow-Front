@@ -29,9 +29,7 @@ export const TUNISIA_GOVERNORATES = [
 // User types
 export const USER_TYPES = [
   'Admin',
-  'Utilisateur avec puvoir',
-  'Consultant',
-  'Financier'
+  'Utilisateur avec pouvoir',
 ] as const;
 
 // Utility function to create unique keys for arrays with potential duplicates

@@ -17,6 +17,8 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Building2, Phone, Mail, Globe, MapPin, DollarSign, Calendar, User, ExternalLink, Copy, CheckCircle, Edit3, Save, X, Upload, ImageIcon } from 'lucide-react';
 import { getDynamicLogoUrl, getFallbackLogoUrl, getLogoAltText, getLogoKey } from '@/lib/logoUtils';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { TUNISIA_GOVERNORATES } from '@/lib/constants';
 
 interface Societe {
   Reference: string;
@@ -48,9 +50,17 @@ interface ViewSocieteDialogProps {
   onOpenChange: (open: boolean) => void;
   onUpdateSociete: (updatedSociete: Partial<Societe>) => Promise<boolean>;
   onShowToast: (toast: { title?: string; description?: string; variant?: 'default' | 'destructive' }) => void;
+  error?: string | null;
 }
 
-export function ViewSocieteDialog({ societe, open, onOpenChange, onUpdateSociete, onShowToast }: ViewSocieteDialogProps) {
+export function ViewSocieteDialog({ 
+  societe, 
+  open, 
+  onOpenChange, 
+  onUpdateSociete, 
+  onShowToast,
+  error: updateError 
+}: ViewSocieteDialogProps) {
   const [isEditing, setIsEditing] = useState(false);
   const [formData, setFormData] = useState<Societe | null>(null);
   const [isLoading, setIsLoading] = useState(false);
@@ -161,7 +171,6 @@ export function ViewSocieteDialog({ societe, open, onOpenChange, onUpdateSociete
           }
 
           updateData.Sigle = base64String;
-          console.log('Base64 string length:', base64String.length);
         } catch (error) {
           console.error('Error processing image:', error);
           onShowToast({
@@ -177,6 +186,7 @@ export function ViewSocieteDialog({ societe, open, onOpenChange, onUpdateSociete
       
       // Update société with or without new logo
       const success = await onUpdateSociete(updateData);
+      
       if (success) {
         onShowToast({
           title: 'Succès',
@@ -188,9 +198,10 @@ export function ViewSocieteDialog({ societe, open, onOpenChange, onUpdateSociete
         setLogoFile(null);
         setLogoPreview(null);
       } else {
+        // If onUpdateSociete returns false, it means there was an error
         onShowToast({
           title: 'Erreur',
-          description: 'Erreur lors de la mise à jour des informations',
+          description: updateError || 'Erreur lors de la mise à jour des informations',
           variant: 'destructive'
         });
       }
@@ -198,7 +209,7 @@ export function ViewSocieteDialog({ societe, open, onOpenChange, onUpdateSociete
       console.error('Error updating société:', error);
       onShowToast({
         title: 'Erreur',
-        description: 'Erreur lors de la mise à jour des informations',
+        description: error instanceof Error ? error.message : 'Erreur lors de la mise à jour des informations',
         variant: 'destructive'
       });
     } finally {
@@ -295,51 +306,7 @@ export function ViewSocieteDialog({ societe, open, onOpenChange, onUpdateSociete
                 className="hidden"
               />
               
-              {/* Logo Display */}
-              <div className="relative">
-                {logoPreview ? (
-                  <img
-                    src={logoPreview}
-                    alt={`Nouveau logo de ${formData.Raison_Sociale}`}
-                    className="w-32 h-32 object-cover rounded-xl border-4 border-white shadow-lg"
-                  />
-                ) : (
-                  <img
-                    key={getLogoKey(societe)}
-                    src={getDynamicLogoUrl(societe)}
-                    alt={getLogoAltText(societe)}
-                    className="w-32 h-32 object-cover rounded-xl border-4 border-white shadow-lg"
-                    onError={(e) => {
-                      const target = e.target as HTMLImageElement;
-                      const fallbackUrl = getFallbackLogoUrl(societe);
-                      if (target.src !== fallbackUrl) {
-                        target.src = fallbackUrl;
-                      }
-                    }}
-                  />
-                )}
-                
-                {/* Loading overlay for logo upload */}
-                {isUploadingLogo && (
-                  <div className="absolute inset-0 bg-black/50 rounded-xl flex items-center justify-center">
-                    <div className="text-white text-xs font-medium bg-black/70 px-2 py-1 rounded">
-                      Upload...
-                    </div>
-                  </div>
-                )}
-              </div>
-              
-              {/* Edit button for logo */}
-              {isEditing && !isUploadingLogo && (
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => fileInputRef.current?.click()}
-                  className="absolute -bottom-2 -right-2 bg-[#3A90DA] text-white border-white hover:bg-[#2B75BD] h-8 w-8 p-0 rounded-full"
-                >
-                  <Upload className="h-4 w-4" />
-                </Button>
-              )}
+            
               
               {/* Status indicator */}
               {!isEditing && (
@@ -486,13 +453,21 @@ export function ViewSocieteDialog({ societe, open, onOpenChange, onUpdateSociete
                     <div className="grid grid-cols-2 gap-4">
                       <div>
                         <Label className="text-xs font-medium text-gray-500 uppercase tracking-wide">Gouvernorat</Label>
-                        <Input
-                          value={formData.Gouvernorat || ''}
-                          onChange={(e) => handleInputChange('Gouvernorat', e.target.value)}
-                          className="mt-1"
-                          placeholder="Gouvernorat"
-                        />
+                        <Select 
+                          onValueChange={(value) => handleInputChange('Gouvernorat', value)} 
+                          defaultValue={formData.Gouvernorat || ''}
+                        >
+                          <SelectTrigger className="mt-1">
+                            <SelectValue placeholder="Sélectionner le gouvernorat" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {TUNISIA_GOVERNORATES.map((governorate) => (
+                              <SelectItem key={governorate} value={governorate}>{governorate}</SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
                       </div>
+                    
                       <div>
                         <Label className="text-xs font-medium text-gray-500 uppercase tracking-wide">Pays</Label>
                         <Input
@@ -505,26 +480,37 @@ export function ViewSocieteDialog({ societe, open, onOpenChange, onUpdateSociete
                     </div>
                   </div>
                 ) : (
-                  <div className="p-3 bg-gray-50 rounded-lg border">
-                    <Label className="text-xs font-medium text-gray-500 uppercase tracking-wide">Adresse complète</Label>
-                    <div className="mt-2 space-y-1">
-                      <p className="text-gray-900 font-medium">{societe.Adresse || 'Non spécifiée'}</p>
-                      {societe.Complement_adresse && (
-                        <p className="text-gray-600 text-sm">{societe.Complement_adresse}</p>
-                      )}
-                      <div className="flex items-center gap-2 text-sm text-gray-600 mt-2">
-                        <span className="bg-white px-2 py-1 rounded border">
-                          {societe.Code_Postal || '--'}
-                        </span>
-                        <span>{societe.Ville || 'Ville non spécifiée'}</span>
+                  <div className="grid gap-4">
+                    <div className="p-3 bg-gray-50 rounded-lg border">
+                      <Label className="text-xs font-medium text-gray-500 uppercase tracking-wide">Adresse</Label>
+                      <div className="mt-2">
+                        <p className="text-gray-900 font-medium">{societe.Adresse || 'Non spécifiée'}</p>
+                        {societe.Complement_adresse && (
+                          <p className="text-gray-600 mt-1">{societe.Complement_adresse}</p>
+                        )}
                       </div>
-                      {(societe.Gouvernorat || societe.Pays) && (
-                        <div className="flex items-center gap-2 text-sm text-gray-600">
-                          <span>{societe.Gouvernorat}</span>
-                          {societe.Gouvernorat && societe.Pays && <span>•</span>}
-                          <span className="font-medium">{societe.Pays}</span>
-                        </div>
-                      )}
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="p-3 bg-gray-50 rounded-lg border">
+                        <Label className="text-xs font-medium text-gray-500 uppercase tracking-wide">Code Postal</Label>
+                        <p className="text-gray-900 font-medium mt-2">{societe.Code_Postal || 'Non spécifié'}</p>
+                      </div>
+                      <div className="p-3 bg-gray-50 rounded-lg border">
+                        <Label className="text-xs font-medium text-gray-500 uppercase tracking-wide">Ville</Label>
+                        <p className="text-gray-900 font-medium mt-2">{societe.Ville || 'Non spécifiée'}</p>
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="p-3 bg-gray-50 rounded-lg border">
+                        <Label className="text-xs font-medium text-gray-500 uppercase tracking-wide">Gouvernorat</Label>
+                        <p className="text-gray-900 font-medium mt-2">{societe.Gouvernorat || 'Non spécifié'}</p>
+                      </div>
+                      <div className="p-3 bg-gray-50 rounded-lg border">
+                        <Label className="text-xs font-medium text-gray-500 uppercase tracking-wide">Pays</Label>
+                        <p className="text-gray-900 font-medium mt-2">{societe.Pays || 'Non spécifié'}</p>
+                      </div>
                     </div>
                   </div>
                 )}

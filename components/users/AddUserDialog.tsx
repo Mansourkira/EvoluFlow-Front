@@ -203,11 +203,6 @@ export function AddUserDialog({ onUserAdded }: AddUserDialogProps) {
     }
   }, [open, toast]);
 
-  // Check if current user can modify user types
-  const canModifyUserType = currentUser && 
-    (currentUser.Type_Utilisateur === 'admin' || 
-     currentUser.Type_Utilisateur === 'Admin' ||
-     currentUser.Profil_Libelle?.toLowerCase().includes('admin'));
 
   const onSubmit = async (data: AddUserFormData) => {
     console.log("Form submission started", data);
@@ -611,7 +606,6 @@ export function AddUserDialog({ onUserAdded }: AddUserDialogProps) {
               </h3>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 {/* User Type */}
-                {canModifyUserType ? (
                   <FormField
                     control={form.control}
                     name="Type_Utilisateur"
@@ -639,7 +633,7 @@ export function AddUserDialog({ onUserAdded }: AddUserDialogProps) {
                       </FormItem>
                     )}
                   />
-                ) : (
+               
                   <FormField
                     control={form.control}
                     name="Type_Utilisateur"
@@ -651,7 +645,7 @@ export function AddUserDialog({ onUserAdded }: AddUserDialogProps) {
                       />
                     )}
                   />
-                )}
+               
 
                 {/* Default Site */}
                 <FormField

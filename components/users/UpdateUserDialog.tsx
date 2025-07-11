@@ -223,12 +223,6 @@ export function UpdateUserDialog({ user, open, onOpenChange, onUserUpdated }: Up
     fetchUserData();
   }, [open, user, form]);
 
-  // Check if current user can modify user types
-  const canModifyUserType = currentUser && 
-    (currentUser.Type_Utilisateur === 'admin' || 
-     currentUser.Type_Utilisateur === 'Admin' ||
-     currentUser.Profil_Libelle?.toLowerCase().includes('admin'));
-
   // Fetch profiles when component mounts
   useEffect(() => {
     const fetchProfiles = async () => {
@@ -651,7 +645,6 @@ export function UpdateUserDialog({ user, open, onOpenChange, onUserUpdated }: Up
                         <Select 
                           onValueChange={field.onChange} 
                           value={field.value}
-                          disabled={!canModifyUserType}
                         >
                           <FormControl>
                             <SelectTrigger>
@@ -666,11 +659,7 @@ export function UpdateUserDialog({ user, open, onOpenChange, onUserUpdated }: Up
                             ))}
                           </SelectContent>
                         </Select>
-                        {!canModifyUserType && (
-                          <FormDescription className="text-sm text-amber-600">
-                            Seuls les administrateurs peuvent modifier le type d'utilisateur
-                          </FormDescription>
-                        )}
+                            
                         <FormMessage />
                       </FormItem>
                     )}
@@ -767,7 +756,7 @@ export function UpdateUserDialog({ user, open, onOpenChange, onUserUpdated }: Up
                     Forcer la réinitialisation du mot de passe
                   </Button>
                   <p className="text-sm text-gray-500">
-                    Remet le mot de passe à "123456" et force l'utilisateur à le changer
+                    Remet le mot de passe à "123456" et force l'utilisa teur à le changer
                   </p>
                 </div>
               </div>

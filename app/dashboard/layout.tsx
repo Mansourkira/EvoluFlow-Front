@@ -435,6 +435,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
         onOpenChange={closeDialog}
         onUpdateSociete={updateSociete}
         onShowToast={toast}
+        error={error}
       />
       
       {/* Toast Notifications */}
